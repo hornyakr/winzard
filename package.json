@@ -20,10 +20,11 @@
     "test:e2e:reference": "tsx apps/reference/tests/e2e/lucky-number.smoke.ts",
     "forge": "tsx packages/forge/src/cli.ts",
     "doctor": "pnpm forge doctor --project apps/reference",
+    "verify:documentation": "pnpm forge check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:generate --check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:sync --check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:adapters --check --project packages/forge/tests/fixtures/documented-project && pnpm forge context:check ATLAS-TASK-0001 --project packages/forge/tests/fixtures/documented-project",
     "db:validate:webapp": "prisma validate --config templates/webapp/prisma.config.ts",
     "db:generate:webapp": "prisma generate --config templates/webapp/prisma.config.ts",
     "db:migrate:deploy:webapp": "prisma migrate deploy --config templates/webapp/prisma.config.ts",
-    "verify:core": "pnpm typegen && pnpm typecheck && pnpm lint && pnpm test && pnpm forge check --project apps/reference && pnpm build && pnpm test:e2e:reference",
+    "verify:core": "pnpm typegen && pnpm typecheck && pnpm lint && pnpm test && pnpm verify:documentation && pnpm forge check --project apps/reference && pnpm build && pnpm test:e2e:reference",
     "verify:database": "pnpm forge check --project templates/webapp && pnpm forge env:check --project templates/webapp && pnpm db:validate:webapp && pnpm db:generate:webapp && pnpm db:migrate:deploy:webapp",
     "verify": "pnpm verify:core"
   },

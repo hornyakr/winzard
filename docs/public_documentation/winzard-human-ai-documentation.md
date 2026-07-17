@@ -1,8 +1,8 @@
 ---
 title: "Humán és AI dokumentáció Winzard projektekben"
 description: "A Winzarddal létrehozott alkalmazások projektlokális dokumentációs, AI-kontextus-, jóváhagyási és evidence-szerződése."
-status: "draft-specification"
-document_version: "0.1.0"
+status: "implemented-specification"
+document_version: "0.2.0"
 last_verified: "2026-07-17"
 source_basis: "Symfony Docs — Symfony AI Documentation"
 applies_to: "kitelepített vagy generált Winzard projektek"
@@ -128,8 +128,8 @@ A normatív jelentés csak a nagybetűs kulcsszavakhoz tartozik.
 | **Winzard célparancs** | A kitelepített projektben elvárt, implementálandó Forge-felület. |
 | **Manuális megfelelő** | A célparancs hiányában ember által végrehajtható ellenőrzés vagy fájllétrehozás. |
 
-> [!WARNING]
-> A dokumentáció előbb rögzíti a publikus projektszerződést, mint a teljes `forge docs:*` és `forge context:*` implementáció. Egy célparancs nem tekinthető elérhetőnek csak azért, mert ebben a fejezetben szerepel.
+> [!NOTE]
+> A fejezetben felsorolt `docs:*`, `context:*` és `handoff:new` parancsok implementálva vannak. A tényleges opciókat, kimeneteket és fail-closed hibakódokat a [projekt-dokumentációs CLI referencia](./winzard-project-documentation-cli.md) rögzíti. A később dokumentált új célparancs továbbra sem tekinthető elérhetőnek pusztán a specifikáció alapján.
 
 ---
 
@@ -256,7 +256,7 @@ A `projectPrefix` KÖTELEZŐEN stabil, rövid és a szervezeten belül egyértel
 
 ## 4. Gyors kezdés
 
-### 4.1. Célparancsok
+### 4.1. Implementált parancsok
 
 ```bash
 pnpm forge docs:init
@@ -270,11 +270,11 @@ pnpm forge context:build ATLAS-TASK-0042
 pnpm forge handoff:new ATLAS-TASK-0042
 ```
 
-Ezek Winzard célparancsok.
+Ezek a Winzard Forge jelenleg implementált projekt-dokumentációs parancsai. A stabil opciókat a [CLI referencia](./winzard-project-documentation-cli.md) tartalmazza.
 
 ### 4.2. Manuális minimum
 
-A célparancsok hiányában legalább az alábbiakat kell létrehozni:
+A Forge CLI használatának átmeneti akadálya esetén legalább az alábbi manuális minimumot kell létrehozni:
 
 ```text
 docs/
@@ -968,7 +968,7 @@ A lokális szabály szűkítheti vagy pontosíthatja a root szabályt, de nem ol
 
 A generált adapter és a kanonikus forrás eltérése hibának számít.
 
-Célparancs:
+Implementált parancs:
 
 ```bash
 pnpm forge docs:adapters --check
@@ -1116,7 +1116,7 @@ Budgettúllépéskor:
 - tömörítési vagy scope-szűkítési javaslatot ad;
 - nem vált át észrevétlenül hiányos kontextusra.
 
-### 17.5. Célparancsok
+### 17.5. Implementált parancsok
 
 ```bash
 pnpm forge context:build ATLAS-TASK-0042
@@ -1634,7 +1634,7 @@ A javítást a kanonikus forrásban vagy a generatorban kell elvégezni.
 
 ## 27. Dokumentációs ellenőrzés
 
-Tervezett célparancs:
+Implementált parancs:
 
 ```bash
 pnpm forge docs:check

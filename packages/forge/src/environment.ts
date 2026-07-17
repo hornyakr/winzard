@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { parse as parseDotenv } from 'dotenv';
 
 import type { WinzardManifest } from './manifest';
 
@@ -10,6 +9,25 @@ export type EnvironmentFailure = Readonly<{
   file: string;
   message: string;
 }>;
+
+function parseDotenv(source: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const rawLine of source.replaceAll('\r\n', '\n').split('\n')) {
+    const line = rawLine.trim();
+    if (line === '' || line.startsWith('#')) continue;
+    const normalized = line.startsWith('export ') ? line.slice(7).trim() : line;
+    const separator = normalized.indexOf('=');
+    if (separator <= 0) continue;
+    const key = normalized.slice(0, separator).trim();
+    let value = normalized.slice(separator + 1).trim();
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/u.test(key)) continue;
+    if ((value.startsWith('\"') && value.endsWith('\"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    result[key] = value;
+  }
+  return result;
+}
 
 async function loadEnvironment(root: string): Promise<Record<string, string | undefined>> {
   const environment: Record<string, string | undefined> = { ...process.env };

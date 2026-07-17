@@ -24,7 +24,7 @@ async function file(root: string, projectPath: string, content = ''): Promise<vo
 }
 
 describe('Forge capability checks', () => {
-  it('a minimal profilhoz nem követel Prisma vagy health útvonalat', async () => {
+  it('a minimal profilhoz nem követel Prisma, health vagy dokumentációs útvonalat', async () => {
     const root = await fixture({ schemaVersion: 1, profile: 'minimal', capabilities: ['next-app', 'forge'] });
     await mkdir(path.join(root, 'src/app'), { recursive: true });
     await file(root, 'next.config.ts', 'export default {};');
@@ -43,10 +43,31 @@ describe('Forge capability checks', () => {
     expect(codes).toContain('CAPABILITY_PATH_MISSING');
   });
 
-  it('érvényesíti a capability-függőségeket', async () => {
+  it('érvényesíti az infrastruktúra capability-függőségeket', async () => {
     const root = await fixture({ schemaVersion: 1, profile: 'invalid', capabilities: ['database-readiness'] });
     const failures = await runProjectChecks(root);
     expect(failures).toContainEqual(expect.objectContaining({ code: 'CAPABILITY_DEPENDENCY_MISSING' }));
+  });
+
+  it('az ai-delivery capabilityhez project-documentation szükséges', async () => {
+    const root = await fixture({
+      schemaVersion: 1,
+      profile: 'invalid',
+      capabilities: ['forge', 'ai-delivery'],
+      documentation: {
+        contractVersion: 1,
+        projectPrefix: 'ATLAS',
+        consumerContractVersion: '0.1.0',
+      },
+    });
+    const failures = await runProjectChecks(root);
+    expect(failures).toContainEqual(expect.objectContaining({ code: 'CAPABILITY_DEPENDENCY_MISSING' }));
+  });
+
+  it('a project-documentation capability dokumentációs manifestet igényel', async () => {
+    const root = await fixture({ schemaVersion: 1, profile: 'invalid', capabilities: ['forge', 'project-documentation'] });
+    const failures = await runProjectChecks(root);
+    expect(failures).toContainEqual(expect.objectContaining({ code: 'DOCUMENTATION_MANIFEST_MISSING' }));
   });
 
   it('elutasítja a Prisma Config eager env helperét', async () => {
