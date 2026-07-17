@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": 1,
+  "projectPrefix": "ATLAS",
+  "capabilities": [
+    "project-documentation",
+    "ai-delivery"
+  ],
+  "generatedBy": "winzard-forge"
+}

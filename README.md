@@ -27,6 +27,19 @@ A referenciaalkalmazás útvonalai:
 /api/health/live
 ```
 
+## Kitelepített projekt-dokumentáció
+
+A `project-documentation` és `ai-delivery` recipe a generált alkalmazás saját Project Vaultját, publikus Winzard consumer contractját, dokumentációs ellenőrzéseit és AI-delivery adaptereit biztosítja.
+
+```bash
+pnpm forge docs:init --project <PROJECT> --prefix=ATLAS --ai
+pnpm forge docs:check --project <PROJECT>
+pnpm forge context:build ATLAS-TASK-0001 --project <PROJECT>
+pnpm forge handoff:new ATLAS-TASK-0001 --project <PROJECT>
+```
+
+A kitelepített projekt nem kapja meg a Winzard belső roadmapjét, taskjait, handoffjait vagy nem publikus ADR-jeit. Csak a verziózott, read-only `docs/80-winzard` consumer documentation pack kerül ki.
+
 ## Opcionális PostgreSQL-profil
 
 A `templates/webapp` és a `recipes/prisma-postgresql` tartalmazza az opcionális Prisma/PostgreSQL képességet.
@@ -48,4 +61,5 @@ A root `build` kizárólag a referenciaalkalmazás Next.js buildjét futtatja. P
 - [Setup dokumentáció](docs/public_documentation/winzard-setup.md)
 - [Oldalkészítési dokumentáció](docs/public_documentation/winzard-page-creation.md)
 - [Humán és AI dokumentáció Winzard projektekben](docs/public_documentation/winzard-human-ai-documentation.md)
+- [Kitelepített projekt-dokumentációs CLI referencia](docs/public_documentation/winzard-project-documentation-cli.md)
 - [ADR-0001: Termékhatárok és opcionális képességek](docs/adr/0001-product-boundaries-and-capabilities.md)

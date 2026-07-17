@@ -1,0 +1,20 @@
+{
+  "name": "atlas-app",
+  "private": true,
+  "type": "module",
+  "winzard": {
+    "schemaVersion": 1,
+    "profile": "minimal",
+    "capabilities": [
+      "forge",
+      "project-documentation",
+      "ai-delivery"
+    ],
+    "documentation": {
+      "contractVersion": 1,
+      "projectPrefix": "ATLAS",
+      "consumerContractVersion": "0.1.0",
+      "contextBudgetBytes": 262144
+    }
+  }
+}
