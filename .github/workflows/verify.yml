@@ -3,7 +3,7 @@ name: Verify
 on: [push, pull_request]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
@@ -38,59 +38,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Synchronize CI documentation
-        if: github.event_name == 'push' && github.ref == 'refs/heads/agent/setup-foundation'
-        shell: bash
-        run: |
-          python <<'PY'
-          from pathlib import Path
-
-          path = Path('docs/public_documentation/winzard-setup.md')
-          text = path.read_text(encoding='utf-8')
-          old = '''### 19.4. CI telepítés
-
-          ```bash
-          corepack enable pnpm
-          corepack install
-
-          pnpm install --frozen-lockfile
-          pnpm db:generate
-          pnpm verify
-          ```
-          '''
-          new = '''### 19.4. CI telepítés
-
-          ```bash
-          corepack enable pnpm
-          corepack install
-
-          pnpm install --frozen-lockfile
-          pnpm db:validate
-          pnpm db:generate
-          pnpm db:migrate:deploy
-          pnpm typegen
-          pnpm exec tsc --noEmit
-          pnpm lint
-          pnpm test
-          pnpm forge check
-          pnpm build
-          ```
-
-          A `pnpm verify` a helyi, aggregált ellenőrzési parancs. A GitHub Actions ugyanezeket az ellenőrzéseket külön, elnevezett lépésekben futtatja, hogy a hibás alrendszer közvetlenül azonosítható legyen.
-          '''
-          if old not in text:
-              raise SystemExit('The documented CI block was not found.')
-          path.write_text(text.replace(old, new, 1), encoding='utf-8')
-          PY
-          if git diff --quiet -- docs/public_documentation/winzard-setup.md; then
-            exit 0
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add docs/public_documentation/winzard-setup.md
-          git commit -m 'docs: describe split CI checks'
-          git push
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
