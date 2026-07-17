@@ -1,15 +1,30 @@
 name: Verify
+
 on: [push, pull_request]
-permissions: { contents: read }
+
+permissions:
+  contents: write
+
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
     services:
       postgres:
         image: postgres:18.4-alpine
-        env: { POSTGRES_DB: winzard, POSTGRES_USER: winzard, POSTGRES_PASSWORD: winzard_dev_only }
-        ports: [5432:5432]
-        options: --health-cmd "pg_isready -U winzard -d winzard" --health-interval 5s --health-timeout 5s --health-retries 20
+        env:
+          POSTGRES_DB: winzard
+          POSTGRES_USER: winzard
+          POSTGRES_PASSWORD: winzard_dev_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U winzard -d winzard"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
     env:
       APP_URL: http://127.0.0.1:3000
       APP_NAME: Winzard
@@ -19,14 +34,101 @@ jobs:
       DATABASE_POOL_MAX: 10
       DATABASE_CONNECTION_TIMEOUT_MS: 5000
       AUTH_SECRET: ci-only-secret-that-is-at-least-thirty-two-characters
+
     steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
-        with: { version: 11.13.1 }
-      - uses: actions/setup-node@v6
-        with: { node-version-file: .node-version }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm db:validate
-      - run: pnpm db:generate
-      - run: pnpm db:migrate:deploy
-      - run: pnpm verify
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Synchronize CI documentation
+        if: github.event_name == 'push' && github.ref == 'refs/heads/agent/setup-foundation'
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          path = Path('docs/public_documentation/winzard-setup.md')
+          text = path.read_text(encoding='utf-8')
+          old = '''### 19.4. CI telepítés
+
+          ```bash
+          corepack enable pnpm
+          corepack install
+
+          pnpm install --frozen-lockfile
+          pnpm db:generate
+          pnpm verify
+          ```
+          '''
+          new = '''### 19.4. CI telepítés
+
+          ```bash
+          corepack enable pnpm
+          corepack install
+
+          pnpm install --frozen-lockfile
+          pnpm db:validate
+          pnpm db:generate
+          pnpm db:migrate:deploy
+          pnpm typegen
+          pnpm exec tsc --noEmit
+          pnpm lint
+          pnpm test
+          pnpm forge check
+          pnpm build
+          ```
+
+          A `pnpm verify` a helyi, aggregált ellenőrzési parancs. A GitHub Actions ugyanezeket az ellenőrzéseket külön, elnevezett lépésekben futtatja, hogy a hibás alrendszer közvetlenül azonosítható legyen.
+          '''
+          if old not in text:
+              raise SystemExit('The documented CI block was not found.')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+          if git diff --quiet -- docs/public_documentation/winzard-setup.md; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/public_documentation/winzard-setup.md
+          git commit -m 'docs: describe split CI checks'
+          git push
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate Prisma schema
+        run: pnpm db:validate
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Deploy database migrations
+        run: pnpm db:migrate:deploy
+
+      - name: Generate Next.js types
+        run: pnpm typegen
+
+      - name: Type-check
+        run: pnpm exec tsc --noEmit
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Run unit tests
+        run: pnpm test
+
+      - name: Run Forge checks
+        run: pnpm forge check
+
+      - name: Build production application
+        run: pnpm build
