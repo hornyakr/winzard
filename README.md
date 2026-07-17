@@ -44,6 +44,7 @@ A root `build` kizárólag a referenciaalkalmazás Next.js buildjét futtatja. P
 
 ## Dokumentáció
 
+- [Normatív capability- és setup-kiegészítés](docs/public_documentation/winzard-setup-capabilities.md)
 - [Setup dokumentáció](docs/public_documentation/winzard-setup.md)
 - [Oldalkészítési dokumentáció](docs/public_documentation/winzard-page-creation.md)
 - [ADR-0001: Termékhatárok és opcionális képességek](docs/adr/0001-product-boundaries-and-capabilities.md)
