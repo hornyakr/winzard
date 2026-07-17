@@ -1,0 +1,1 @@
+-- Bootstrap migration; business tables belong to their owning modules.
