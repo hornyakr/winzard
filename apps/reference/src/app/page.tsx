@@ -5,11 +5,11 @@ export default function Home() {
     <main className="min-h-screen px-8 py-24">
       <div className="mx-auto flex max-w-4xl flex-col gap-8">
         <header>
-          <p className="font-mono text-sm">WINZARD 0.1.0</p>
-          <h1 className="mt-6 text-5xl font-semibold">A setup baseline aktív.</h1>
+          <p className="font-mono text-sm">WINZARD REFERENCE APP</p>
+          <h1 className="mt-6 text-5xl font-semibold">A capability-független referencia aktív.</h1>
           <p className="mt-6 max-w-2xl text-lg text-zinc-300">
-            A Next.js delivery adapter; az üzleti architektúra a moduláris domain- és application
-            rétegekben marad.
+            A Next.js delivery adapter; az application művelet, a port, az infrastruktúra-adapter és a
+            composition root külön rétegekben marad. A példa nem igényel adatbázist vagy autentikációt.
           </p>
         </header>
 
