@@ -2595,9 +2595,18 @@ corepack enable pnpm
 corepack install
 
 pnpm install --frozen-lockfile
+pnpm db:validate
 pnpm db:generate
-pnpm verify
+pnpm db:migrate:deploy
+pnpm typegen
+pnpm exec tsc --noEmit
+pnpm lint
+pnpm test
+pnpm forge check
+pnpm build
 ```
+
+A `pnpm verify` a helyi, aggregált ellenőrzési parancs. A GitHub Actions ugyanezeket az ellenőrzéseket külön, elnevezett lépésekben futtatja, hogy a hibás alrendszer közvetlenül azonosítható legyen.
 
 Adatbázisos integration tesztnél:
 
