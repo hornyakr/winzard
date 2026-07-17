@@ -1,4 +1,4 @@
-name: Apply recovered implementation
+name: Export recovered implementation
 
 on:
   pull_request:
@@ -6,38 +6,36 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  apply-recovered-implementation:
+  export-recovered-source:
     if: github.head_ref == 'agent/project-documentation-implementation'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
-      - name: Checkout implementation branch with full history
+      - name: Checkout implementation branch
         uses: actions/checkout@v6
         with:
           ref: agent/project-documentation-implementation
-          fetch-depth: 0
+          fetch-depth: 1
 
-      - name: Reconstruct and verify recovered source archive
+      - name: Reconstruct and verify source archive
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p /tmp/winzard-recovered
           cat .winzard-recovery/chunk-* | base64 --decode > /tmp/winzard-doc-impl.tar.xz
           echo '32412a003d6868515b9813590e73f9738ef38c3424b6d8538f890ccf53c5903e  /tmp/winzard-doc-impl.tar.xz' | sha256sum --check --strict
-          tar -xJf /tmp/winzard-doc-impl.tar.xz -C "$GITHUB_WORKSPACE"
+          tar -xJf /tmp/winzard-doc-impl.tar.xz -C /tmp/winzard-recovered
+          find /tmp/winzard-recovered -type f -print | LC_ALL=C sort > /tmp/winzard-recovered/RECOVERED-FILES.txt
 
-      - name: Commit actual implementation and remove recovery transport
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf .winzard-recovery
-          rm -f .github/workflows/apply-recovered-implementation.yml
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git diff --cached --check
-          git commit -m 'feat: implement project documentation and AI delivery'
-          git push origin "HEAD:agent/project-documentation-implementation"
+      - name: Upload recovered source
+        uses: actions/upload-artifact@v6
+        with:
+          name: winzard-recovered-source
+          path: /tmp/winzard-recovered
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
