@@ -79,3 +79,6 @@ jobs:
 
       - name: Build production application
         run: pnpm build
+
+      - name: Run E2E smoke tests
+        run: pnpm test:e2e

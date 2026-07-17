@@ -14,6 +14,7 @@
     "typecheck": "pnpm typegen && tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
+    "test:e2e": "tsx tools/e2e/lucky-number.smoke.ts",
     "db:validate": "prisma validate",
     "db:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
@@ -22,7 +23,7 @@
     "db:seed": "prisma db seed",
     "forge": "tsx tools/forge/cli.ts",
     "doctor": "pnpm forge doctor",
-    "verify": "pnpm db:validate && pnpm db:generate && pnpm typecheck && pnpm lint && pnpm test && pnpm forge check && pnpm build"
+    "verify": "pnpm db:validate && pnpm db:generate && pnpm typecheck && pnpm lint && pnpm test && pnpm forge check && pnpm build && pnpm test:e2e"
   },
   "winzard": { "profile": "webapp", "schemaVersion": 1 },
   "dependencies": {
