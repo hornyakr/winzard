@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 
 import { demoModule } from '@/composition/demo';
 import { LuckyNumberView } from '@/modules/demo/lucky-number/index.server';
+import { luckyNumberRangeQuerySchema } from '@/modules/demo/lucky-number/presentation/lucky-number.schemas';
 
 export const runtime = 'nodejs';
 
@@ -11,10 +13,15 @@ export const metadata: Metadata = {
   description: 'A Winzard első request-time renderelt példaoldala.',
 };
 
-export default async function LuckyNumberPage() {
+type LuckyNumberPageProps = Readonly<{
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}>;
+
+export default async function LuckyNumberPage({ searchParams }: LuckyNumberPageProps) {
   await connection();
+  const parsed = luckyNumberRangeQuerySchema.safeParse(await searchParams);
+  if (!parsed.success) notFound();
 
-  const result = demoModule.queries.getLuckyNumber.execute();
-
+  const result = demoModule.queries.getLuckyNumber.execute(parsed.data);
   return <LuckyNumberView result={result} />;
 }
