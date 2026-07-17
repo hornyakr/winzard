@@ -6,12 +6,17 @@ on:
       - agent/routing-implementation
     paths:
       - '.github/workflows/apply-routing-implementation.yml'
+  pull_request:
+    branches:
+      - main
+    types: [opened, reopened, synchronize]
 
 permissions:
   contents: write
 
 jobs:
   apply:
+    if: github.event_name == 'push' || github.head_ref == 'agent/routing-implementation'
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
