@@ -1,16 +1,16 @@
 # Kitelepített projekt-dokumentáció implementáció
 
-Ez a jegyzőkönyv a `docs/public_documentation/winzard-human-ai-documentation.md` publikus projektszerződés kódszintű megvalósítását rögzíti.
+Ez a jegyzőkönyv a `docs/public_documentation/winzard-human-ai-documentation.md` publikus projektszerződés kódszintű megvalósítását rögzíti. Az architekturális alapot a `docs/public_documentation/winzard-application-platform.md` foglalja össze.
 
 ## Megvalósított scope
 
 - `project-documentation` és `ai-delivery` capability;
 - dokumentációs manifest projectprefixszel, contractverzióval és context budgettel;
-- `docs:init`, `docs:check`, `docs:status` és `docs:new` Forge-parancsok;
-- frontmatter-, ID-, lifecycle-, relationship-, link-, secret-, placeholder-, path-scope- és boundary-validáció;
+- `docs:init`, `docs:check`, `docs:status`, `docs:generate`, `docs:new`, `docs:adapters`, `docs:sync`, `context:build`, `context:check` és `handoff:new` Forge-parancsok;
+- frontmatter-, ID-, lifecycle-, relationship-, link-, secret-, placeholder-, path-scope- és boundary-validáció, repositoryn kívülre mutató linkek tiltásával;
 - publikus, read-only Winzard consumer documentation pack;
 - generált `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` és Copilot adapterek drift-ellenőrzéssel;
-- determinisztikus, source hash-eket tartalmazó task context package fail-closed Git base commit és restricted-context ellenőrzéssel;
+- determinisztikus, source hash-eket tartalmazó task context package fail-closed Git base commit, teljes renderelt byte budget és kettős restricted-context engedélyezéssel;
 - task path scope-ot, törléseket, tiszta working tree-t és checkoutolt result commitot ellenőrző handoff generátor;
 - negatív fixture-ek és CI-ben futó dokumentációs contract ellenőrzés.
 

@@ -308,6 +308,22 @@ updated: ${today}
     );
   });
 
+  it('elutasítja a repository gyökerén kívülre mutató relatív linket', async () => {
+    const root = await fixture();
+    const projectManifest = await manifest(root);
+    const file = 'docs/10-product/ATLAS-VISION-001.md';
+    await editBody(root, file, `# Product vision
+
+## Summary
+
+[Outside file](../../../../etc/passwd)
+`);
+
+    expect((await runDocumentationChecks(root, projectManifest, { includeGenerated: false })).errors).toContainEqual(
+      expect.objectContaining({ code: 'DOC_LINK_OUTSIDE_PROJECT', file }),
+    );
+  });
+
   it('észleli a duplikált ID-t és a generált adapter driftet', async () => {
     const root = await fixture();
     const projectManifest = await manifest(root);
@@ -407,9 +423,46 @@ updated: ${today}
     }));
     await expect(expectedContextPackage(root, projectManifest, {
       taskId,
+      enforceBaseCommit: false,
+    })).rejects.toMatchObject({ code: 'DOC_AI_ACCESS_DENIED' });
+    await expect(expectedContextPackage(root, projectManifest, {
+      taskId,
       allowRestricted: [specificationId],
       enforceBaseCommit: false,
     })).resolves.toMatchObject({ markdownPath: `docs/90-generated/ai-context/${taskId}.md` });
+  });
+
+  it('a teljes renderelt context package-re érvényesíti a byte budgetet', async () => {
+    const root = await fixture();
+    const specificationId = await createAcceptedSpecification(root);
+    const taskId = await createAcceptedTask(root, specificationId);
+    const projectManifest = await manifest(root);
+    const specification = `docs/30-architecture/specifications/${specificationId}.md`;
+    const parsed = parseMarkdownDocument(
+      await readFile(path.join(root, specification), 'utf8'),
+      path.join(root, specification),
+      specification,
+    );
+    await writeFile(
+      path.join(root, specification),
+      renderMarkdownDocument(parsed.metadata, `${parsed.body}
+
+## Large fixture
+
+${'x'.repeat(20_000)}
+`),
+    );
+    const constrainedManifest = {
+      ...projectManifest,
+      documentation: projectManifest.documentation
+        ? { ...projectManifest.documentation, contextBudgetBytes: 16_384 }
+        : null,
+    };
+
+    await expect(expectedContextPackage(root, constrainedManifest, {
+      taskId,
+      enforceBaseCommit: false,
+    })).rejects.toMatchObject({ code: 'DOC_CONTEXT_BUDGET_EXCEEDED' });
   });
 
   it('nem ír felül kézzel karbantartott projekciót vagy context fájlt', async () => {

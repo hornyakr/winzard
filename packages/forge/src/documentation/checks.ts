@@ -1,10 +1,10 @@
-import { access, readFile, readdir } from 'node:fs/promises';
+import { access, readFile, readdir, realpath } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { WinzardManifest } from '../manifest';
 import { checkAiAdapters } from './adapters';
 import { checkConsumerDocumentationPack } from './consumer-pack';
-import { contentMatches, sha256 } from './generated';
+import { contentMatches } from './generated';
 import { expectedContextPackage } from './context';
 import { buildDocumentationInventory } from './inventory';
 import { checkDocumentationProjections } from './projections';
@@ -52,16 +52,43 @@ function markdownLinks(body: string): readonly string[] {
   return [...links].sort();
 }
 
+function pathWithinRoot(root: string, target: string): boolean {
+  const relative = path.relative(root, target);
+  return relative === '' || (!path.isAbsolute(relative) && relative !== '..' && !relative.startsWith(`..${path.sep}`));
+}
+
 async function checkLinks(root: string, document: CanonicalDocument): Promise<readonly DocumentationIssue[]> {
   const issues: DocumentationIssue[] = [];
+  const resolvedRoot = path.resolve(root);
+  const canonicalRoot = await realpath(resolvedRoot).catch(() => resolvedRoot);
+
   for (const link of markdownLinks(document.body)) {
     const withoutAnchor = link.split('#', 1)[0]?.split('?', 1)[0] ?? '';
     if (withoutAnchor === '') continue;
     let decoded = withoutAnchor;
     try { decoded = decodeURIComponent(withoutAnchor); } catch { /* retain original */ }
     const target = path.resolve(path.dirname(document.filePath), decoded);
+    if (!pathWithinRoot(resolvedRoot, target)) {
+      issues.push(issue(
+        'DOC_LINK_OUTSIDE_PROJECT',
+        document.projectPath,
+        `A relatív Markdown-link kilép a repository gyökeréből: ${link}.`,
+        document.id,
+      ));
+      continue;
+    }
     if (!(await exists(target))) {
       issues.push(issue('DOC_LINK_BROKEN', document.projectPath, `Törött relatív Markdown-link: ${link}.`, document.id));
+      continue;
+    }
+    const canonicalTarget = await realpath(target).catch(() => target);
+    if (!pathWithinRoot(canonicalRoot, canonicalTarget)) {
+      issues.push(issue(
+        'DOC_LINK_OUTSIDE_PROJECT',
+        document.projectPath,
+        `A relatív Markdown-link repositoryn kívüli célra vagy symlinkre mutat: ${link}.`,
+        document.id,
+      ));
     }
   }
   return issues;

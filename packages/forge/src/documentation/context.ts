@@ -176,7 +176,8 @@ export async function expectedContextPackage(
       );
     }
   }
-  for (const requestedId of options.allowRestricted ?? []) {
+  const requestedRestrictedDocuments = new Set(options.allowRestricted ?? []);
+  for (const requestedId of requestedRestrictedDocuments) {
     if (!declaredRestrictedDocuments.has(requestedId)) {
       throw new DocumentationCommandError(
         'DOC_AI_ACCESS_DENIED',
@@ -185,7 +186,7 @@ export async function expectedContextPackage(
       );
     }
   }
-  const allowRestricted = declaredRestrictedDocuments;
+  const allowRestricted = requestedRestrictedDocuments;
   const taskAccess = contextAllowed(task, allowRestricted);
   if (!taskAccess.allowed) {
     throw new DocumentationCommandError(
@@ -253,20 +254,6 @@ export async function expectedContextPackage(
   const ordered = [...sources.values()].sort((left, right) =>
     sourcePriority(left.reason) - sourcePriority(right.reason) ||
     left.document.id.localeCompare(right.document.id));
-  const totalSourceBytes = ordered.reduce(
-    (total, { document }) => total + Buffer.byteLength(document.source, 'utf8'),
-    0,
-  );
-  if (totalSourceBytes > manifest.documentation.contextBudgetBytes) {
-    const largest = [...ordered]
-      .sort((left, right) => Buffer.byteLength(right.document.source) - Buffer.byteLength(left.document.source))[0];
-    throw new DocumentationCommandError(
-      'DOC_CONTEXT_BUDGET_EXCEEDED',
-      `A context forrásai ${totalSourceBytes} bájtot igényelnek, a budget ${manifest.documentation.contextBudgetBytes}. Legnagyobb forrás: ${largest?.document.id ?? 'unknown'}.`,
-      task.projectPath,
-    );
-  }
-
   const baseCommit = optionalString(task.metadata, 'base_commit') ?? '';
   const currentCommit = await currentGitCommit(root);
   if (options.enforceBaseCommit !== false) {
@@ -316,6 +303,17 @@ export async function expectedContextPackage(
   };
   const body = `${GENERATED_HEADER}\n\n# Context package — ${task.id}\n\n## Execution contract\n\n${taskContract(task)}\n\n## Sources\n\n${ordered.map(sourceSection).join('\n\n---\n\n')}\n`;
   const markdown = renderMarkdownDocument(metadata, body);
+  const contextBytes = Buffer.byteLength(markdown, 'utf8');
+  if (contextBytes > manifest.documentation.contextBudgetBytes) {
+    const largest = [...ordered]
+      .sort((left, right) =>
+        Buffer.byteLength(right.document.source, 'utf8') - Buffer.byteLength(left.document.source, 'utf8'))[0];
+    throw new DocumentationCommandError(
+      'DOC_CONTEXT_BUDGET_EXCEEDED',
+      `A renderelt context package ${contextBytes} bájt, a budget ${manifest.documentation.contextBudgetBytes}. Legnagyobb forrás: ${largest?.document.id ?? 'unknown'}.`,
+      task.projectPath,
+    );
+  }
   const outputDirectory = 'docs/90-generated/ai-context';
   const markdownPath = `${outputDirectory}/${task.id}.md`;
   const manifestPath = `${outputDirectory}/${task.id}.manifest.json`;

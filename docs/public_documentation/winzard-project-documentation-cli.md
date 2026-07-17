@@ -101,7 +101,7 @@ A teljes ellenőrzés vizsgálja többek között:
 - a projektprefixet és az idegen projektkapcsolatokat;
 - a dokumentum-, implementáció- és verifikációs lifecycle-t;
 - a kapcsolatokat, supersessiont és dependency cycle-t;
-- a relatív Markdown-linkeket;
+- a relatív Markdown-linkeket, beleértve a repositoryn kívülre mutató vagy symlinken kiszökő célokat;
 - a required human approval hivatkozásokat;
 - a task scope-ot és base commitot;
 - a secretmintákat és tiltott belső Winzard-hivatkozásokat;
@@ -249,7 +249,7 @@ A context package:
 - source hash-eket rögzít;
 - nem tölti be automatikusan a teljes vaultot;
 - kizárja a denied, superseded és jogosulatlan dokumentumokat;
-- context budget túllépésnél hibázik;
+- a teljes renderelt context package byte budgetjének túllépésénél hibázik;
 - alapértelmezetten ellenőrzi, hogy a task base commitja az aktuális HEAD őse.
 
 Kivételes, dokumentált diagnosztikai célra a stale base ellenőrzés lazítható:
@@ -270,7 +270,7 @@ pnpm forge context:build ATLAS-TASK-0001 \
   --allow-restricted=ATLAS-SPEC-042
 ```
 
-Ha az ID nincs a task metadata mezőjében, a parancs fail-closed hibával leáll.
+A két feltétel együttesen kötelező: az ID szerepeljen az accepted task metadata mezőjében, és ugyanaz az ID legyen explicit megadva a `--allow-restricted` opciónak. Bármelyik hiányában a parancs fail-closed hibával leáll.
 
 ## Handoff
 
@@ -299,6 +299,7 @@ DOCUMENTATION_MANIFEST_MISSING
 DOC_SCHEMA_INVALID
 DOC_ID_DUPLICATE
 DOC_REFERENCE_MISSING
+DOC_LINK_OUTSIDE_PROJECT
 DOC_AI_ACCESS_DENIED
 DOC_TASK_APPROVAL_MISSING
 DOC_TASK_BASE_COMMIT_MISMATCH
