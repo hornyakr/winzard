@@ -1,43 +1,112 @@
-name: Apply documentation hardening patch
+name: Verify
 
-on:
-  pull_request:
-    branches:
-      - main
+on: [push, pull_request]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  apply-hardening:
-    if: github.head_ref == 'agent/project-documentation-implementation'
+  core:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
-      - name: Checkout implementation branch with full history
+      - name: Checkout
         uses: actions/checkout@v6
         with:
-          ref: agent/project-documentation-implementation
           fetch-depth: 0
 
-      - name: Apply reviewed hardening patch
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ ! -d .winzard-hardening ]; then
-            echo 'Hardening patch is already applied.'
-            exit 0
-          fi
-          cat .winzard-hardening/chunk-* | base64 --decode > /tmp/winzard-hardening.patch.xz
-          echo '6b860de6be5f72724528c5f3b6ddf119036a68cc724991db1dc5c8d370ea2db2  /tmp/winzard-hardening.patch.xz' | sha256sum --check --strict
-          xz --decompress --stdout /tmp/winzard-hardening.patch.xz > /tmp/winzard-hardening.patch
-          git apply --check /tmp/winzard-hardening.patch
-          git apply --index /tmp/winzard-hardening.patch
-          rm -rf .winzard-hardening .winzard-recovery
-          git add -A
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git diff --cached --check
-          git commit -m 'fix: harden project documentation delivery'
-          git push origin "HEAD:agent/project-documentation-implementation"
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate reference route types
+        run: pnpm typegen
+
+      - name: Type-check
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Run unit tests
+        run: pnpm test
+
+      - name: Verify deployed project documentation contract
+        run: pnpm verify:documentation
+
+      - name: Run reference capability and architecture checks
+        run: pnpm forge check --project apps/reference
+
+      - name: Build reference application
+        run: pnpm build
+
+      - name: Run reference E2E smoke tests
+        run: pnpm test:e2e:reference
+
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_DB: winzard
+          POSTGRES_USER: winzard
+          POSTGRES_PASSWORD: winzard_dev_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U winzard -d winzard"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://winzard:winzard_dev_only@127.0.0.1:5432/winzard?schema=public
+      DATABASE_POOL_MAX: 10
+      DATABASE_CONNECTION_TIMEOUT_MS: 5000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check webapp capabilities
+        run: pnpm forge check --project templates/webapp
+
+      - name: Validate database environment
+        run: pnpm forge env:check --project templates/webapp
+
+      - name: Validate Prisma schema
+        run: pnpm db:validate:webapp
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate:webapp
+
+      - name: Deploy database migrations
+        run: pnpm db:migrate:deploy:webapp
