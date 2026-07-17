@@ -1,0 +1,35 @@
+{
+  "name": "winzard-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typegen": "next typegen",
+    "typecheck": "pnpm typegen && tsc --noEmit",
+    "lint": "eslint . --max-warnings=0",
+    "forge": "winzard-forge"
+  },
+  "winzard": {
+    "schemaVersion": 1,
+    "profile": "minimal",
+    "capabilities": ["next-app", "forge"]
+  },
+  "dependencies": {
+    "next": "16.2.10",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.2",
+    "@types/node": "24.10.9",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.2.10",
+    "tailwindcss": "4.3.2",
+    "typescript": "5.9.3"
+  }
+}

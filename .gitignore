@@ -1,12 +1,14 @@
 /node_modules/
-/.next/
+**/.next/
 /out/
 /coverage/
 .env*
-!.env.example
-!.env.test.example
-/src/generated/prisma/
+!templates/**/.env.example
+**/src/generated/prisma/
 *.tsbuildinfo
-next-env.d.ts
+**/next-env.d.ts
 .DS_Store
 .vercel/
+
+# Local Obsidian workspace
+.obsidian/

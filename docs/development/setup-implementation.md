@@ -1,5 +1,13 @@
 # Setup implementáció
 
-A setup dokumentációhoz szükséges futtatható baseline elkészült: Node/pnpm verziórögzítés, `src/` alapú App Router, környezeti schema, Prisma/PostgreSQL konfiguráció, health endpointok, Forge setup-parancsok, teszt és CI.
+A kezdeti setup baseline-ból kiderült, hogy a gyökéralkalmazás túl korán tette kötelezővé a Prisma/PostgreSQL és auth konfigurációt.
 
-A `create-winzard`, a resource-generátor, a recipe-rendszer és a teljes drift engine tudatosan későbbi mérföldkő; ezek előtt a kézzel megírt referencia-modul és a kapcsolódó ADR-ek szükségesek.
+Az [ADR-0001](../adr/0001-product-boundaries-and-capabilities.md) alapján a repository most három részre válik:
+
+- `packages/forge`: fejlesztői eszköz és capability-aware szabálymotor;
+- `templates`: kihúzható minimal és webapp profilok;
+- `apps/reference`: futtatható golden reference.
+
+A root build adatbázis-független. A PostgreSQL-, Prisma- és database readiness fájlok a webapp template és a hozzájuk tartozó recipe határában találhatók. Az auth secret csak az authentication recipe saját szerződése.
+
+A `create-winzard`, a resource-generátor, a teljes recipe resolver és a drift engine külön későbbi mérföldkő.

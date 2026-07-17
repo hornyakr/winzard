@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "profile": "reference",
+  "capabilities": [
+    "next-app",
+    "forge",
+    "modular-application",
+    "liveness"
+  ]
+}

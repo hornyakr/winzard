@@ -6,34 +6,9 @@ permissions:
   contents: read
 
 jobs:
-  verify:
+  core:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-
-    services:
-      postgres:
-        image: postgres:18.4-alpine
-        env:
-          POSTGRES_DB: winzard
-          POSTGRES_USER: winzard
-          POSTGRES_PASSWORD: winzard_dev_only
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U winzard -d winzard"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
-
-    env:
-      APP_URL: http://127.0.0.1:3000
-      APP_NAME: Winzard
-      LOG_LEVEL: error
-      NEXT_PUBLIC_APP_NAME: Winzard
-      DATABASE_URL: postgresql://winzard:winzard_dev_only@127.0.0.1:5432/winzard?schema=public
-      DATABASE_POOL_MAX: 10
-      DATABASE_CONNECTION_TIMEOUT_MS: 5000
-      AUTH_SECRET: ci-only-secret-that-is-at-least-thirty-two-characters
 
     steps:
       - name: Checkout
@@ -53,20 +28,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Validate Prisma schema
-        run: pnpm db:validate
-
-      - name: Generate Prisma Client
-        run: pnpm db:generate
-
-      - name: Deploy database migrations
-        run: pnpm db:migrate:deploy
-
-      - name: Generate Next.js types
+      - name: Generate reference route types
         run: pnpm typegen
 
       - name: Type-check
-        run: pnpm exec tsc --noEmit
+        run: pnpm typecheck
 
       - name: Lint
         run: pnpm lint
@@ -74,8 +40,68 @@ jobs:
       - name: Run unit tests
         run: pnpm test
 
-      - name: Run Forge checks
-        run: pnpm forge check
+      - name: Run reference capability and architecture checks
+        run: pnpm forge check --project apps/reference
 
-      - name: Build production application
+      - name: Build reference application
         run: pnpm build
+
+      - name: Run reference E2E smoke tests
+        run: pnpm test:e2e:reference
+
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_DB: winzard
+          POSTGRES_USER: winzard
+          POSTGRES_PASSWORD: winzard_dev_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U winzard -d winzard"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://winzard:winzard_dev_only@127.0.0.1:5432/winzard?schema=public
+      DATABASE_POOL_MAX: 10
+      DATABASE_CONNECTION_TIMEOUT_MS: 5000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check webapp capabilities
+        run: pnpm forge check --project templates/webapp
+
+      - name: Validate database environment
+        run: pnpm forge env:check --project templates/webapp
+
+      - name: Validate Prisma schema
+        run: pnpm db:validate:webapp
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate:webapp
+
+      - name: Deploy database migrations
+        run: pnpm db:migrate:deploy:webapp
