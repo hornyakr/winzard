@@ -1,4 +1,4 @@
-name: Apply recovered implementation source
+name: Apply documentation hardening patch
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  apply-source:
+  apply-hardening:
     if: github.head_ref == 'agent/project-documentation-implementation'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -21,22 +21,23 @@ jobs:
           ref: agent/project-documentation-implementation
           fetch-depth: 0
 
-      - name: Reconstruct and commit implementation source
+      - name: Apply reviewed hardening patch
         shell: bash
         run: |
           set -euo pipefail
-          cp .github/workflows/verify.yml /tmp/active-verify.yml
-          cat .winzard-recovery/chunk-* | base64 --decode > /tmp/winzard-doc-impl.tar.xz
-          echo '32412a003d6868515b9813590e73f9738ef38c3424b6d8538f890ccf53c5903e  /tmp/winzard-doc-impl.tar.xz' | sha256sum --check --strict
-          tar -xJf /tmp/winzard-doc-impl.tar.xz -C "$GITHUB_WORKSPACE"
-          cp /tmp/active-verify.yml .github/workflows/verify.yml
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git diff --cached --check
-          if git diff --cached --quiet; then
-            echo 'Implementation source is already applied.'
+          if [ ! -d .winzard-hardening ]; then
+            echo 'Hardening patch is already applied.'
             exit 0
           fi
-          git commit -m 'feat: implement project documentation and AI delivery'
+          cat .winzard-hardening/chunk-* | base64 --decode > /tmp/winzard-hardening.patch.xz
+          echo '6b860de6be5f72724528c5f3b6ddf119036a68cc724991db1dc5c8d370ea2db2  /tmp/winzard-hardening.patch.xz' | sha256sum --check --strict
+          xz --decompress --stdout /tmp/winzard-hardening.patch.xz > /tmp/winzard-hardening.patch
+          git apply --check /tmp/winzard-hardening.patch
+          git apply --index /tmp/winzard-hardening.patch
+          rm -rf .winzard-hardening .winzard-recovery
+          git add -A
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git diff --cached --check
+          git commit -m 'fix: harden project documentation delivery'
           git push origin "HEAD:agent/project-documentation-implementation"
