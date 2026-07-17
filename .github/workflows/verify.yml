@@ -21,21 +21,21 @@ jobs:
           ref: agent/project-documentation-implementation
           fetch-depth: 1
 
-      - name: Reconstruct and verify source archive
+      - name: Reconstruct full implementation tree
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /tmp/winzard-recovered
           cat .winzard-recovery/chunk-* | base64 --decode > /tmp/winzard-doc-impl.tar.xz
           echo '32412a003d6868515b9813590e73f9738ef38c3424b6d8538f890ccf53c5903e  /tmp/winzard-doc-impl.tar.xz' | sha256sum --check --strict
-          tar -xJf /tmp/winzard-doc-impl.tar.xz -C /tmp/winzard-recovered
-          find /tmp/winzard-recovered -type f -print | LC_ALL=C sort > /tmp/winzard-recovered/RECOVERED-FILES.txt
+          tar -xJf /tmp/winzard-doc-impl.tar.xz -C "$GITHUB_WORKSPACE"
+          rm -rf .winzard-recovery
+          rm -f .github/workflows/apply-recovered-implementation.yml
+          tar --exclude=.git -czf /tmp/winzard-full-source.tar.gz .
 
-      - name: Upload recovered source
+      - name: Upload full recovered repository
         uses: actions/upload-artifact@v6
         with:
-          name: winzard-recovered-source
-          path: /tmp/winzard-recovered
-          include-hidden-files: true
+          name: winzard-full-source
+          path: /tmp/winzard-full-source.tar.gz
           if-no-files-found: error
           retention-days: 1
