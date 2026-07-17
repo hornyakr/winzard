@@ -1,0 +1,77 @@
+name: Apply routing documentation
+
+on:
+  push:
+    branches:
+      - agent/routing-documentation
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Decode and verify routing documentation
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64
+          import bz2
+          import hashlib
+
+          root = Path('.')
+          encoded = ''.join(
+              (root / '.routing-upload' / f'part-{index}.txt').read_text(encoding='utf-8').strip()
+              for index in range(5)
+          )
+          raw = bz2.decompress(base64.b64decode(encoded))
+
+          expected_sha = '24095eef18be969a95651f79f2abf77f8fe7bea77395b1a98b4aa106773c8454'
+          actual_sha = hashlib.sha256(raw).hexdigest()
+          if actual_sha != expected_sha:
+              raise SystemExit(f'Routing documentation SHA mismatch: {actual_sha}')
+
+          text = raw.decode('utf-8')
+          if len(text.splitlines()) != 6827:
+              raise SystemExit('Routing documentation line count mismatch.')
+          if text.count('```') % 2 != 0:
+              raise SystemExit('Routing documentation contains unbalanced fenced code blocks.')
+          if not text.startswith('---\n'):
+              raise SystemExit('Routing documentation front matter is missing.')
+
+          target = root / 'docs/public_documentation/winzard-routing.md'
+          target.write_text(text, encoding='utf-8')
+
+          readme_path = root / 'README.md'
+          readme = readme_path.read_text(encoding='utf-8')
+          link = '- [Routing és URL-kezelés Winzardban](docs/public_documentation/winzard-routing.md)'
+          if link not in readme:
+              anchor = '- [Oldalkészítési dokumentáció](docs/public_documentation/winzard-page-creation.md)'
+              if anchor not in readme:
+                  raise SystemExit('README documentation insertion anchor is missing.')
+              readme = readme.replace(anchor, f'{anchor}\n{link}', 1)
+              readme_path.write_text(readme, encoding='utf-8')
+          PY
+
+      - name: Remove one-time transfer files
+        run: |
+          rm -rf .routing-upload
+          rm .github/workflows/apply-routing-documentation.yml
+
+      - name: Commit routing documentation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs: add comprehensive routing guide'
+          git push
