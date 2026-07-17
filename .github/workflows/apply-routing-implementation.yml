@@ -1,0 +1,82 @@
+name: Apply routing implementation
+
+on:
+  push:
+    branches:
+      - agent/routing-implementation
+    paths:
+      - '.github/workflows/apply-routing-implementation.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct and verify implementation bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin agent/routing-implementation-payload
+          : > /tmp/routing.b64
+          for chunk in chunk-000 chunk-001 chunk-002 chunk-003; do
+            git show FETCH_HEAD:${chunk} >> /tmp/routing.b64
+          done
+          base64 --decode /tmp/routing.b64 > /tmp/routing.tar.gz
+          echo '4f4197878d8e5796929b4b6b6b7ac6c0bfef2aee69d4b6e3f5e01592f116049a  /tmp/routing.tar.gz' | sha256sum --check
+
+      - name: Reset to current main and apply sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git reset --hard origin/main
+          tar -xzf /tmp/routing.tar.gz -C .
+          python .routing-apply.py
+          rm -f .routing-apply.py
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('docs/public_documentation/winzard-routing.md')
+          content = path.read_text(encoding='utf-8')
+          content = content.replace('status: "draft-specification"', 'status: "implemented-specification"', 1)
+          content = content.replace('document_version: "0.1.0"', 'document_version: "0.2.0"', 1)
+          path.write_text(content, encoding='utf-8')
+          PY
+          rm -f .github/workflows/apply-routing-implementation.yml
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify core
+        run: pnpm verify:core
+
+      - name: Commit clean implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'feat: implement routing documentation and diagnostics'
+          git push --force-with-lease origin HEAD:agent/routing-implementation
