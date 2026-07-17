@@ -1,6 +1,6 @@
 name: Verify
 on: [push, pull_request]
-permissions: { contents: write }
+permissions: { contents: read }
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -25,16 +25,7 @@ jobs:
         with: { version: 11.13.1 }
       - uses: actions/setup-node@v6
         with: { node-version-file: .node-version }
-      - id: lock
-        run: test -f pnpm-lock.yaml && echo 'present=true' >> "$GITHUB_OUTPUT" || echo 'present=false' >> "$GITHUB_OUTPUT"
-      - run: pnpm install --no-frozen-lockfile
-      - if: github.event_name == 'push' && steps.lock.outputs.present == 'false'
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add pnpm-lock.yaml
-          git commit -m 'chore: generate pnpm lockfile'
-          git push
+      - run: pnpm install --frozen-lockfile
       - run: pnpm db:validate
       - run: pnpm db:generate
       - run: pnpm db:migrate:deploy
