@@ -9,3 +9,6 @@
 **/next-env.d.ts
 .DS_Store
 .vercel/
+
+# Local Obsidian workspace
+.obsidian/
