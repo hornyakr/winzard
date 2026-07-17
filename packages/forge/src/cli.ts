@@ -33,6 +33,11 @@ import {
 } from './documentation/types';
 import { checkCapabilityEnvironment } from './environment';
 import { loadProjectManifest, type WinzardManifest } from './manifest';
+import { checkRouteDocumentation, generateRouteDocumentation } from './routing/docs';
+import { buildRouteInventory, inspectRoutePattern } from './routing/inventory';
+import { matchRoutePath } from './routing/matcher';
+import { HTTP_METHODS, type HttpMethod } from './routing/types';
+import { renderAliases, renderRouteInspection, renderRouteList, renderRouteMatches, renderRoutingIssues } from './routing/render';
 
 const supportedCommands = [
   'about',
@@ -50,6 +55,12 @@ const supportedCommands = [
   'context:build',
   'context:check',
   'handoff:new',
+  'route:list',
+  'route:inspect',
+  'route:match',
+  'route:check',
+  'route:aliases',
+  'route:docs',
 ] as const;
 
 const argumentsList = process.argv.slice(2);
@@ -407,6 +418,94 @@ async function runHandoffNew(): Promise<void> {
   console.log(jsonOutput ? JSON.stringify(result, null, 2) : `CREATED: ${result.file} (${result.id})`);
 }
 
+
+async function requireNextAppManifest(): Promise<WinzardManifest | null> {
+  const manifest = await manifestOrExit();
+  if (!manifest) return null;
+  if (!manifest.capabilities.includes('next-app')) {
+    console.error('[CAPABILITY_MISSING] A routing parancsokhoz next-app capability szükséges.');
+    process.exitCode = 1;
+    return null;
+  }
+  return manifest;
+}
+
+function routePatternArgument(label: string): string {
+  const value = parsedArguments.positionals[0]?.trim();
+  if (!value) throw new DocumentationCommandError('ROUTE_ARGUMENT_MISSING', `A ${label} parancshoz route pattern vagy pathname szükséges.`);
+  return value.startsWith('/') ? value : `/${value}`;
+}
+
+function routeMethodArgument(): HttpMethod | null {
+  const value = option('--method');
+  if (value === null) return null;
+  const method = value.trim().toUpperCase() as HttpMethod;
+  if (!HTTP_METHODS.includes(method)) {
+    throw new DocumentationCommandError('ROUTE_METHOD_INVALID', `Nem támogatott HTTP-metódus: ${value}`);
+  }
+  return method;
+}
+
+async function runRouteList(): Promise<void> {
+  if (!(await requireNextAppManifest())) return;
+  const inventory = await buildRouteInventory(root);
+  console.log(jsonOutput ? JSON.stringify(inventory, null, 2) : renderRouteList(inventory));
+}
+
+async function runRouteInspect(): Promise<void> {
+  if (!(await requireNextAppManifest())) return;
+  const pattern = routePatternArgument('route:inspect');
+  const inventory = await buildRouteInventory(root);
+  const routes = inspectRoutePattern(inventory, pattern);
+  if (routes.length === 0) {
+    console.error(`[ROUTE_NOT_FOUND] ${pattern}`);
+    process.exitCode = 1;
+    return;
+  }
+  console.log(jsonOutput ? JSON.stringify({ pattern, routes }, null, 2) : renderRouteInspection(routes));
+}
+
+async function runRouteMatch(): Promise<void> {
+  if (!(await requireNextAppManifest())) return;
+  const pathname = routePatternArgument('route:match');
+  const method = routeMethodArgument();
+  const matches = matchRoutePath(await buildRouteInventory(root), pathname, method ?? undefined);
+  if (matches.length === 0) process.exitCode = 1;
+  console.log(jsonOutput
+    ? JSON.stringify({ approximation: true, authoritativeRuntime: 'Next.js', pathname, method, matches }, null, 2)
+    : renderRouteMatches(matches));
+}
+
+async function runRouteCheck(): Promise<void> {
+  if (!(await requireNextAppManifest())) return;
+  const inventory = await buildRouteInventory(root);
+  if (jsonOutput) {
+    console.log(JSON.stringify({ issues: inventory.issues }, null, 2));
+  } else {
+    console.log(renderRoutingIssues(inventory.issues));
+  }
+  if (inventory.issues.some(({ severity }) => severity === 'error')) process.exitCode = 1;
+}
+
+async function runRouteAliases(): Promise<void> {
+  if (!(await requireNextAppManifest())) return;
+  const aliases = (await buildRouteInventory(root)).aliases;
+  console.log(jsonOutput ? JSON.stringify({ aliases }, null, 2) : renderAliases(aliases));
+}
+
+async function runRouteDocs(): Promise<void> {
+  if (!(await requireNextAppManifest())) return;
+  if (flag('--check')) {
+    const issues = await checkRouteDocumentation(root);
+    if (jsonOutput) console.log(JSON.stringify({ issues }, null, 2));
+    else console.log(renderRoutingIssues(issues));
+    if (issues.some(({ severity }) => severity === 'error')) process.exitCode = 1;
+    return;
+  }
+  const files = await generateRouteDocumentation(root);
+  console.log(jsonOutput ? JSON.stringify({ files }, null, 2) : `GENERATED: ${files.length} routing dokumentum`);
+}
+
 async function main(): Promise<void> {
   switch (command) {
     case 'list':
@@ -455,6 +554,24 @@ async function main(): Promise<void> {
       break;
     case 'handoff:new':
       await runHandoffNew();
+      break;
+    case 'route:list':
+      await runRouteList();
+      break;
+    case 'route:inspect':
+      await runRouteInspect();
+      break;
+    case 'route:match':
+      await runRouteMatch();
+      break;
+    case 'route:check':
+      await runRouteCheck();
+      break;
+    case 'route:aliases':
+      await runRouteAliases();
+      break;
+    case 'route:docs':
+      await runRouteDocs();
       break;
     default:
       console.error(`Unknown Forge command: ${command}`);

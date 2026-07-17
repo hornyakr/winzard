@@ -1,8 +1,8 @@
 ---
 title: "Routing és URL-kezelés Winzardban"
 description: "A Next.js App Router fájlrendszer-alapú útvonalainak, paramétereinek, URL-generálásának, átirányításainak, proxyfeltételeinek, lokalizációjának, biztonságának és diagnosztikájának teljes Winzard-szerződése."
-status: "draft-specification"
-document_version: "0.1.0"
+status: "implemented-specification"
+document_version: "0.2.0"
 last_verified: "2026-07-17"
 source_basis: "Symfony Docs — Routing"
 nextjs_baseline: "16.2.10"
@@ -42,7 +42,7 @@ A Winzard ezért **nem vezet be második runtime routert**. A Next.js router mar
 > A `src/app` könyvtár delivery-, routing-, rendering- és HTTP-adapter. A route fájl nem válhat domain-, application-, persistence- vagy policy-réteggé.
 
 > [!IMPORTANT]
-> A dokumentumban szereplő `forge route:list`, `forge route:inspect`, `forge route:match` és `forge route:check` parancsok **cél-CLI szerződések**, amíg a repository tényleges CLI-je ezeket külön nem implementálja. A dokumentum minden ilyen esetben megadja a jelenleg használható Next.js- vagy manuális ellenőrzést is.
+> A repository implementálja a `forge route:list`, `forge route:inspect`, `forge route:match`, `forge route:check`, `forge route:aliases` és `forge route:docs` diagnosztikai parancsokat. A statikus fájlrendszer- és AST-inventory bizonyítékot ad, de nem helyettesíti a Next.js typegen, build és E2E ellenőrzését.
 
 > [!NOTE]
 > A fejezet a kitelepített Winzard-projektek publikus contractját írja le. Nem dokumentálja a Winzard alaprendszer belső routing fejlesztési taskjait, belső roadmapjét vagy maintainer-specifikus implementációs részleteit.
@@ -4490,15 +4490,17 @@ describe('productUrls', () => {
 
 E2E bizonyítja, hogy a buildben valóban létezik.
 
-### 30.7. Célparancsok
+### 30.7. Implementált diagnosztikai parancsok
 
-Tervezett Winzard felület:
+A repositoryban elérhető Winzard felület:
 
 ```bash
 pnpm forge route:list --project <PROJECT>
 pnpm forge route:inspect /products/[slug] --project <PROJECT>
 pnpm forge route:match /products/red-shoe --method=GET --project <PROJECT>
 pnpm forge route:check --project <PROJECT>
+pnpm forge route:aliases --project <PROJECT>
+pnpm forge route:docs --check --project <PROJECT>
 ```
 
 Elvárt jelentés:
@@ -4530,6 +4532,8 @@ A `route:list` vagy `route:check` csak akkor tekinthető erős bizonyítéknak, 
 - nem puszta regexszel olvas mappaneveket;
 - kezeli route groupot, metadata route-ot, Proxyt, redirectet és rewrite-ot;
 - builddel és E2E-vel egészül ki.
+
+A jelenlegi Forge extractor statikus fájlrendszer- és TypeScript AST-vizsgálatot végez. Ezért a `route:*` output diagnosztikai bizonyíték; a Next.js typegen, build és futó E2E marad az autoritatív runtime ellenőrzés. A generált route dokumentáció driftjét a `route:docs --check` ellenőrzi.
 
 ### 30.9. Route contract ID létezése
 
@@ -5484,7 +5488,7 @@ Route log:
 
 Raw query, secret, cookie, Authorization header ne kerüljön logba.
 
-### 35.13. Forge célparancs
+### 35.13. Forge diagnosztikai parancs
 
 ```bash
 pnpm forge route:inspect /products/[slug] --project <PROJECT>
@@ -5506,7 +5510,7 @@ Evidence:            verified
 Drift:               none
 ```
 
-Amíg ez nincs implementálva, manuális/typegen/build/E2E az autoritatív ellenőrzés.
+A jelenlegi implementáció statikus, közelítő inventoryt ad. A typegen, build és E2E továbbra is az autoritatív ellenőrzés; route contract ID, URL builder, policy és evidence mező csak akkor jelenhet meg erős bizonyítékként, ha külön, verziózott contractforrásból származik.
 
 ---
 

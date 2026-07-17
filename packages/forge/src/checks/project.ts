@@ -5,6 +5,7 @@ import ts from 'typescript';
 
 import { runDocumentationChecks } from '../documentation/checks';
 import { loadProjectManifest, type WinzardCapability, type WinzardManifest } from '../manifest';
+import { runRouteChecks } from '../routing/checks';
 
 export type CheckFailure = Readonly<{
   code: string;
@@ -346,6 +347,10 @@ export async function runProjectChecks(root = process.cwd()): Promise<readonly C
 
   failures.push(...(await checkCapabilities(root, manifestResult.manifest)));
   const enabled = new Set(manifestResult.manifest.capabilities);
+  if (enabled.has('next-app')) {
+    const routingIssues = await runRouteChecks(root);
+    failures.push(...routingIssues.filter(({ severity }) => severity === 'error').map(({ code, file, message }) => ({ code, file, message })));
+  }
   if (enabled.has('liveness')) {
     failures.push(...(await checkNoStore(root, 'src/app/api/health/live/route.ts', 'LIVENESS_CACHE_POLICY')));
   }

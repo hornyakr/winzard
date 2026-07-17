@@ -45,6 +45,9 @@ jobs:
       - name: Verify deployed project documentation contract
         run: pnpm verify:documentation
 
+      - name: Verify routing inventory and generated route documentation
+        run: pnpm verify:routing
+
       - name: Run reference capability and architecture checks
         run: pnpm forge check --project apps/reference
 
