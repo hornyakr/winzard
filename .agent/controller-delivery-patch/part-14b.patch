@@ -1,0 +1,98 @@
+ = exportedGetBody(sourceFile);
++  return /\b(?:commands?|mutations?)\.[A-Za-z0-9_]+\.execute\s*\(/u.test(body) ||
++    /\.(?:create|update|delete|remove|save|approve|reject|publish|archive|activate)\s*\(/u.test(body);
++}
++
++function unscopedTenant(source: string): boolean {
++  const readsTenant = /(?:formData\.get\s*\(\s*['"]tenantId['"]|\bbody\.tenantId\b|\btenantId\s*:\s*formData\.get)/u.test(source);
++  const resolvesTenant = /\b(?:resolveTenant|getTenant|requireTenant|actor\.tenantId|context\.tenantId)\b/u.test(source);
++  return readsTenant && !resolvesTenant;
++}
++
++function writesCookieDuringPage(source: string, kind: DeliveryKind): boolean {
++  if (kind !== 'page') return false;
++  return /(?:await\s+cookies\s*\(\s*\)|cookieStore)\s*\)?\s*\.\s*(?:set|delete)\s*\(/u.test(source);
++}
++
++function streamBeforeAuthorization(source: string): boolean {
++  const streamIndex = source.search(/\bnew\s+ReadableStream\s*(?:<[^>]+>)?\s*\(/u);
++  if (streamIndex < 0) return false;
++  const authIndex = source.search(/\b(?:requireActor|authorize|authorization|can[A-Z]|getActor|getSession|verifyToken)\b/u);
++  return authIndex < 0 || streamIndex < authIndex;
++}
++
++function processEnvironmentAccess(source: string): boolean {
++  return /\bprocess\.env(?:\.|\[)/u.test(source);
++}
++
++function issuesFor(record: DeliveryRecord, sourceFile: ts.SourceFile, source: string): readonly DeliveryIssue[] {
++  const issues: DeliveryIssue[] = [];
++  const add = (code: string, message: string, severity: 'error' | 'warning' = 'error'): void => {
++    issues.push({ severity, code, file: record.entrypoint, message });
++  };
++
++  if (processEnvironmentAccess(source)) {
++    add('DELIVERY_PROCESS_ENV_ACCESS', 'A delivery entrypoint közvetlen process.env hozzáférést használ; validált config capability szükséges.');
++  }
++  if (obviousUnsafeRedirect(source)) {
++    add('DELIVERY_UNSAFE_REDIRECT', 'A redirect célja közvetlenül bizalmatlan request inputból származik.');
++  }
++  if (rawErrorResponse(source)) {
++    add('DELIVERY_RAW_ERROR_RESPONSE', 'A válasz nyers validator- vagy exceptionrészletet tehet publikussá.');
++  }
++  if (unvalidatedPayload(source, record.kind, record.inputSchemas)) {
++    add('DELIVERY_UNVALIDATED_BODY', 'A request payload vagy FormData schema-validáció nélkül kerül felhasználásra.');
++  }
++  if (directDomainResponse(source)) {
++    add('DELIVERY_DOMAIN_ENTITY_RESPONSE', 'A Route Handler közvetlen domain/entity objektumot serializálhat explicit presenter helyett.');
++  }
++  if (record.kind === 'route-handler' && record.methods.includes('GET') && getMutation(sourceFile)) {
++    add('DELIVERY_GET_MUTATION', 'A GET handler mutációs műveletet hívhat.');
++  }
++  if (unscopedTenant(source)) {
++    add('DELIVERY_UNSCOPED_TENANT_INPUT', 'A tenant azonosító bizalmatlan payloadból származik feloldott tenant context nélkül.');
++  }
++  if (writesCookieDuringPage(source, record.kind)) {
++    add('DELIVERY_SESSION_WRITE_DURING_RENDER', 'A Page renderelés közben cookie/session írást végez.');
++  }
++  if (record.streaming && streamBeforeAuthorization(source)) {
++    add('DELIVERY_STREAM_BEFORE_AUTH', 'A stream létrehozása authentikáció/authorizáció előtt történik vagy a security check nem azonosítható.');
++  }
++  if (record.kind === 'server-action') {
++    const invalidExports = invalidServerActionExports(sourceFile);
++    if (invalidExports.length > 0) {
++      add(
++        'DELIVERY_SERVER_ACTION_EXPORT_INVALID',
++        `A modul-szintű \"use server\" fájl csak async function runtime exportot tartalmazhat; hibás export: ${invalidExports.join(', ')}.`,
++      );
++    }
++  }
++
++  return issues;
++}
++
++function isDeliveryFile(appRoot: string, filePath: string, sourceFile: ts.SourceFile): DeliveryKind | null {
++  const relativeToApp = path.relative(appRoot, filePath);
++  if (!relativeToApp.startsWith(`..${path.sep}`) && ROUTE_ENTRYPOINT_PATTERN.test(path.basename(filePath))) {
++    return path.basename(filePath).startsWith('page.') ? 'page' : 'route-handler';
++  }
++  if (fileHasDirective(sourceFile, 'use server')) return 'server-action';
++  return null;
++}
++
++async function linkedTests(root: string, record: DeliveryRecord, testFiles: readonly string[]): Promise<readonly string[]> {
++  const entrypointWithoutExtension = record.entrypoint.replace(/\.[^.]+$/u, '');
++  const aliases = [
++    entrypointWithoutExtension,
++    entrypointWithoutExtension.replace(/^src\//u, '@/'),
++    ...record.exportedActions,
++  ];
++  const matches: string[] = [];
++  for (const testFile of testFiles) {
++    const source = await readFile(testFile, 'utf8');
++    if (aliases.some((alias) => alias.length > 2 && source.includes(alias))) matches.push(toProjectPath(root, testFile));
++  }
++  return matches.sort();
++}
++
++export async function buildDeliveryInventory(roo
