@@ -1,0 +1,130 @@
+.pascalOperation}ViewProps) {\n  return (\n    <main>\n      <pre>{JSON.stringify(value, null, 2)}</pre>\n    </main>\n  );\n}\n`,
++  };
++}
++
++function actorResolverFile(target: Target): PlannedFile {
++  return {
++    file: `src/modules/${target.module}/${target.feature}/presentation/${target.operation}.actor.server.ts`,
++    content: `${GENERATED_HEADER}\n\nimport 'server-only';\n\nimport type { ${target.pascalOperation}Actor } from '../application/policies/${target.operation}.policy';\n\nexport async function resolve${target.pascalOperation}Actor(\n  _request?: Request,\n): Promise<${target.pascalOperation}Actor> {\n  return Object.freeze({ subject: null, roles: Object.freeze([]) });\n}\n`,
++  };
++}
++
++function actionStateFile(target: Target): PlannedFile {
++  return {
++    file: `src/modules/${target.module}/${target.feature}/presentation/${target.operation}.action-state.ts`,
++    content: `${GENERATED_HEADER}\n\nexport type ${target.pascalOperation}ActionState = Readonly<{\n  ok: boolean;\n  formError?: string;\n}>;\n\nexport const initial${target.pascalOperation}ActionState: ${target.pascalOperation}ActionState = Object.freeze({\n  ok: false,\n});\n`,
++  };
++}
++
++function compositionFile(target: Target, mode: OperationMode): PlannedFile {
++  const imports = [
++    ...(mode === 'query' || mode === 'both'
++      ? [`import { ${target.pascalOperation} } from '@/modules/${target.module}/${target.feature}/application/queries/${target.operation}';`]
++      : []),
++    ...(mode === 'command' || mode === 'both'
++      ? [
++          `import { ${target.pascalOperation}Command } from '@/modules/${target.module}/${target.feature}/application/commands/${target.operation}';`,
++          `import { ${target.pascalOperation}Policy } from '@/modules/${target.module}/${target.feature}/application/policies/${target.operation}.policy';`,
++        ]
++      : []),
++    `import { ${target.pascalOperation}Adapter } from '@/modules/${target.module}/${target.feature}/infrastructure/${target.operation}.adapter';`,
++  ].join('\n');
++  const declarations = [
++    `const ${target.camelOperation}Adapter = new ${target.pascalOperation}Adapter();`,
++    ...(mode === 'command' || mode === 'both'
++      ? [`const ${target.camelOperation}Policy = new ${target.pascalOperation}Policy();`]
++      : []),
++  ].join('\n');
++  const groups = [
++    ...(mode === 'query' || mode === 'both'
++      ? [`  queries: Object.freeze({\n    ${target.camelOperation}: new ${target.pascalOperation}(${target.camelOperation}Adapter),\n  }),`]
++      : []),
++    ...(mode === 'command' || mode === 'both'
++      ? [`  commands: Object.freeze({\n    ${target.camelOperation}: new ${target.pascalOperation}Command(\n      ${target.camelOperation}Adapter,\n      ${target.camelOperation}Policy,\n    ),\n  }),`]
++      : []),
++  ].join('\n');
++  return {
++    file: `src/composition/generated/${target.module}-${target.feature}-${target.operation}.ts`,
++    content: `${GENERATED_HEADER}\n\nimport 'server-only';\n\n${imports}\n\n${declarations}\n\nexport const ${target.camelOperation}Module = Object.freeze({\n${groups}\n});\n`,
++  };
++}
++
++function pageFile(target: Target): PlannedFile {
++  return {
++    file: `src/app/${target.module}/${target.feature}/${target.operation}/page.tsx`,
++    content: `${GENERATED_HEADER}\n\nimport { ${target.camelOperation}Module } from '@/composition/generated/${target.module}-${target.feature}-${target.operation}';\nimport { ${target.pascalOperation}View } from '@/modules/${target.module}/${target.feature}/presentation/${target.operation}-view';\nimport { ${target.camelOperation}QuerySchema } from '@/modules/${target.module}/${target.feature}/presentation/${target.operation}.schemas';\n\ntype PageProps = Readonly<{\n  searchParams: Promise<Record<string, string | string[] | undefined>>;\n}>;\n\nexport default async function ${target.pascalOperation}Page({ searchParams }: PageProps) {\n  const parsed = ${target.camelOperation}QuerySchema.safeParse(await searchParams);\n  if (!parsed.success) return <main>Invalid request.</main>;\n\n  const result = await ${target.camelOperation}Module.queries.${target.camelOperation}.execute(parsed.data);\n  return <${target.pascalOperation}View value={result.value} />;\n}\n`,
++  };
++}
++
++function routeHandlerFile(target: Target): PlannedFile {
++  return {
++    file: `src/app/api/${target.module}/${target.feature}/${target.operation}/route.ts`,
++    content: `${GENERATED_HEADER}\n\nimport { ${target.camelOperation}Module } from '@/composition/generated/${target.module}-${target.feature}-${target.operation}';\nimport { ${target.camelOperation}QuerySchema } from '@/modules/${target.module}/${target.feature}/presentation/${target.operation}.schemas';\nimport { to${target.pascalOperation}Response } from '@/modules/${target.module}/${target.feature}/presentation/${target.operation}.presenter';\n\ntype HttpProblem = Readonly<{\n  type: string;\n  title: string;\n  status: number;\n  code: string;\n}>;\n\nexport const runtime = 'nodejs';\nexport const dynamic = 'force-dynamic';\n\nconst noStoreHeaders = { 'Cache-Control': 'no-store' } as const;\n\nfunction problem(input: HttpProblem): Response {\n  return Response.json(input, {\n    status: input.status,\n    headers: {\n      ...noStoreHeaders,\n      'Content-Type': 'application/problem+json',\n    },\n  });\n}\n\nexport async function GET(request: Request): Promise<Response> {\n  const url = new URL(request.url);\n  const parsed = ${target.camelOperation}QuerySchema.safeParse({\n    query: url.searchParams.get('query') ?? undefined,\n  });\n  if (!parsed.success) {\n    return problem({\n      type: 'about:blank',\n      title: 'Invalid query parameters',\n      status: 400,\n      code: 'INVALID_QUERY',\n    });\n  }\n\n  const result = await ${target.camelOperation}Module.queries.${target.camelOperation}.execute(parsed.data);\n  return Response.json(to${target.pascalOperation}Response(result.value), {\n    status: 200,\n    headers: noStoreHeaders,\n  });\n}\n`,
++  };
++}
++
++function actionFile(target: Target): PlannedFile {
++  return {
++    file: `src/modules/${target.module}/${target.feature}/presentation/${target.operation}.actions.ts`,
++    content: `'use server';\n\n${GENERATED_HEADER}\n\nimport { ${target.camelOperation}Module } from '@/composition/generated/${target.module}-${target.feature}-${target.operation}';\n\nimport type { ${target.pascalOperation}ActionState } from './${target.operation}.action-state';\nimport { resolve${target.pascalOperation}Actor } from './${target.operation}.actor.server';\nimport { ${target.camelOperation}PayloadSchema } from './${target.operation}.schemas';\n\nexport async function ${target.camelOperation}Action(\n  _previousState: ${target.pascalOperation}ActionState,\n  formData: FormData,\n): Promise<${target.pascalOperation}ActionState> {\n  const parsed = ${target.camelOperation}PayloadSchema.safeParse({\n    payload: formData.get('payload'),\n  });\n  if (!parsed.success) return { ok: false, formError: 'Érvénytelen űrlapadat.' };\n\n  const result = await ${target.camelOperation}Module.commands.${target.camelOperation}.execute({\n    actor: await resolve${target.pascalOperation}Actor(),\n    ...parsed.data,\n  });\n  if (result.kind === 'forbidden') return { ok: false, formError: 'A művelet nincs engedélyezve.' };\n  return { ok: true };\n}\n`,
++  };
++}
++
++function queryTestFile(target: Target): PlannedFile {
++  return {
++    file: `tests/unit/modules/${target.module}/${target.feature}/${target.operation}.query.test.ts`,
++    content: `${GENERATED_HEADER}\n\nimport { describe, expect, it } from 'vitest';\n\nimport { ${target.pascalOperation} } from '@/modules/${target.module}/${target.feature}/application/queries/${target.operation}';\nimport type { ${target.pascalOperation}QueryPort } from '@/modules/${target.module}/${target.feature}/application/ports/${target.operation}.port';\n\ndescribe('${target.pascalOperation} query', () => {\n  it('a port eredményét explicit application resultba képezi', async () => {\n    const port: ${target.pascalOperation}QueryPort = {\n      query: async (input) => ({ query: input.query ?? null }),\n    };\n    const operation = new ${target.pascalOperation}(port);\n    await expect(operation.execute({ query: 'example' })).resolves.toEqual({\n      kind: 'success',\n      value: { query: 'example' },\n    });\n  });\n});\n`,
++  };
++}
++
++function commandTestFile(target: Target): PlannedFile {
++  return {
++    file: `tests/unit/modules/${target.module}/${target.feature}/${target.operation}.command.test.ts`,
++    content: `${GENERATED_HEADER}\n\nimport { describe, expect, it } from 'vitest';\n\nimport { ${target.pascalOperation}Command } from '@/modules/${target.module}/${target.feature}/application/commands/${target.operation}';\nimport type { ${target.pascalOperation}CommandPort } from '@/modules/${target.module}/${target.feature}/application/ports/${target.operation}.port';\nimport { ${target.pascalOperation}Policy } from '@/modules/${target.module}/${target.feature}/application/policies/${target.operation}.policy';\n\ndescribe('${target.pascalOperation} command', () => {\n  it('alapértelmezetten fail-closed authorizációt használ', async () => {\n    let calls = 0;\n    const port: ${target.pascalOperation}CommandPort = {\n      execute: async () => { calls += 1; return {}; },\n    };\n    const operation = new ${target.pascalOperation}Command(port, new ${target.pascalOperation}Policy());\n    await expect(operation.execute({\n      actor: { subject: 'generated-test', roles: [] },\n      payload: 'example',\n    })).resolves.toEqual({ kind: 'forbidden' });\n    expect(calls).toBe(0);\n  });\n});\n`,
++  };
++}
++
++function adapterTestFile(target: Target, kind: 'page' | 'route-handler' | 'action'): PlannedFile {
++  const targetFile = kind === 'page'
++    ? `src/app/${target.module}/${target.feature}/${target.operation}/page.tsx`
++    : kind === 'route-handler'
++      ? `src/app/api/${target.module}/${target.feature}/${target.operation}/route.ts`
++      : `src/modules/${target.module}/${target.feature}/presentation/${target.operation}.actions.ts`;
++  const extraAssertions = kind === 'route-handler'
++    ? `\n    expect(source).toMatch(/application\\/problem\\+json/u);\n    expect(source).toMatch(/Cache-Control/u);`
++    : kind === 'action'
++      ? `\n    expect(source).toMatch(/resolve${target.pascalOperation}Actor/u);`
++      : '';
++  return {
++    file: `tests/architecture/${target.module}-${target.feature}-${target.operation}-${kind}.test.ts`,
++    content: `${GENERATED_HEADER}\n\nimport { readFile } from 'node:fs/promises';\n\nimport { describe, expect, it } from 'vitest';\n\ndescribe('${kind} delivery adapter', () => {\n  it('schema és application operation határt használ', async () => {\n    const source = await readFile('${targetFile}', 'utf8');\n    expect(source).toMatch(/safeParse/u);\n    expect(source).toMatch(/\\.execute\\s*\\(/u);${extraAssertions}\n    expect(source).not.toMatch(/@prisma\\/client|process\\.env/u);\n  });\n});\n`,
++  };
++}
++
++function uniquePlans(plans: readonly PlannedFile[]): readonly PlannedFile[] {
++  return [...new Map(plans.map((item) => [item.file, item])).values()]
++    .sort((left, right) => left.file.localeCompare(right.file));
++}
++
++function plan(kind: DeliveryGenerationKind, target: Target): readonly PlannedFile[] {
++  switch (kind) {
++    case 'operation':
++      return uniquePlans([
++        portFile(target, 'query'),
++        queryOperationFile(target),
++        queryTestFile(target),
++      ]);
++    case 'page':
++      return uniquePlans([
++        portFile(target, 'query'),
++        infrastructureAdapterFile(target, 'query'),
++        queryOperationFile(target),
++        schemaFile(target),
++        viewFile(target),
++        compositionFile(target, 'query'),
++        pageFile(target),
++        queryTestFile(target),
++        adapterTestFile(target, 'page'),
++      ]);
++    case 'route-handler':
++      retu
