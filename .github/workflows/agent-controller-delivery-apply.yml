@@ -1,0 +1,144 @@
+name: Apply controller delivery implementation
+
+on:
+  push:
+    branches:
+      - agent/controller-delivery-complete-20260718
+    paths:
+      - '.agent/controller-delivery-complete.patch'
+      - '.agent/controller-delivery-patch/**'
+      - '.github/workflows/agent-controller-delivery-apply.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: controller-delivery-apply-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apply-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct and verify exact patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected='573bdf29d3495446e8d9a0376e05cdda99a34b5eb727195f75e5139e8b9b3151'
+          output=/tmp/controller-delivery.patch
+          rm -f "$output"
+
+          accept_candidate() {
+            local candidate="$1"
+            if [[ -f "$candidate" ]] && [[ "$(sha256sum "$candidate" | awk '{print $1}')" == "$expected" ]]; then
+              cp "$candidate" "$output"
+              return 0
+            fi
+            return 1
+          }
+
+          accept_candidate .agent/controller-delivery-complete.patch || true
+
+          if [[ ! -f "$output" ]] && [[ -f .agent/controller-delivery-patch/part-00.b64 ]]; then
+            if base64 --decode .agent/controller-delivery-patch/part-00.b64 | xz --decompress --stdout > /tmp/controller-delivery-xz.patch 2>/dev/null; then
+              accept_candidate /tmp/controller-delivery-xz.patch || true
+            fi
+          fi
+
+          if [[ ! -f "$output" ]]; then
+            rm -rf /tmp/controller-delivery-parts
+            mkdir -p /tmp/controller-delivery-parts
+            cp .agent/controller-delivery-patch/*.patch /tmp/controller-delivery-parts/ 2>/dev/null || true
+
+            for encoded in .agent/controller-delivery-patch/*.b64; do
+              [[ -e "$encoded" ]] || continue
+              [[ "$(basename "$encoded")" == 'part-00.b64' ]] && continue
+              decoded="/tmp/controller-delivery-parts/$(basename "${encoded%.b64}").patch"
+              base64 --decode "$encoded" > "$decoded" 2>/dev/null || rm -f "$decoded"
+            done
+
+            python <<'PY'
+          from pathlib import Path
+
+          root = Path('/tmp/controller-delivery-parts')
+
+          p = root / 'part-07.patch'
+          if p.exists():
+              source = p.read_text()
+              source = source.replace(
+                  '.regex(/^(W\\/)?”[^”]+”$/u);',
+                  '.regex(/^(W\\/)?"[^"]+"$/u);',
+              )
+              p.write_text(source)
+
+          def strip_extra_plus(name: str, marker: str) -> None:
+              p = root / name
+              if not p.exists():
+                  return
+              lines = p.read_text().splitlines(keepends=True)
+              active = False
+              output: list[str] = []
+              for line in lines:
+                  if line.startswith(marker):
+                      active = True
+                  if active and line.startswith('+'):
+                      line = line[1:]
+                  output.append(line)
+              p.write_text(''.join(output))
+
+          strip_extra_plus('part-10.patch', '+diff --git a/package.json b/package.json')
+          strip_extra_plus(
+              'part-11.patch',
+              '+diff --git a/packages/forge/src/delivery/generator.ts b/packages/forge/src/delivery/generator.ts',
+          )
+          PY
+
+            find /tmp/controller-delivery-parts -maxdepth 1 -type f -name 'part-*.patch' -print0 \
+              | sort -z \
+              | xargs -0 cat > /tmp/controller-delivery-chunks.patch
+            accept_candidate /tmp/controller-delivery-chunks.patch || true
+          fi
+
+          test -f "$output"
+          echo "$expected  $output" | sha256sum --check
+          git apply --check "$output"
+          git apply "$output"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run complete core verification
+        run: pnpm verify:core
+
+      - name: Commit verified implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .agent/controller-delivery-patch
+          rm -f .agent/controller-delivery-complete.patch
+          rm -f .github/workflows/agent-controller-delivery-apply.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: implement controller and delivery platform'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
