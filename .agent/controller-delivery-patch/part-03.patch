@@ -1,0 +1,195 @@
+eLuckyNumberActionState } from '@/modules/demo/lucky-number/presentation/lucky-number.action-state';
++import { generateLuckyNumberAction } from '@/modules/demo/lucky-number/presentation/lucky-number.actions';
++
++const headersMock = vi.fn();
++vi.mock('next/headers', () => ({ headers: headersMock }));
++
++describe('generateLuckyNumberAction', () => {
++  beforeEach(() => {
++    headersMock.mockResolvedValue(new Headers());
++  });
++
++  it('field errorokat ad invalid FormData esetén', async () => {
++    const formData = new FormData();
++    formData.set('minimum', '20');
++    formData.set('maximum', '10');
++    const result = await generateLuckyNumberAction(initialGenerateLuckyNumberActionState, formData);
++    expect(result.ok).toBe(false);
++    expect(result.fieldErrors?.maximum).toBeDefined();
++  });
++
++  it('minden hívásnál újra feloldja az aktort és tilt jogosultság nélkül', async () => {
++    const formData = new FormData();
++    formData.set('minimum', '10');
++    formData.set('maximum', '20');
++    const result = await generateLuckyNumberAction(initialGenerateLuckyNumberActionState, formData);
++    expect(result).toMatchObject({ ok: false, formError: expect.stringContaining('operator') });
++    expect(headersMock).toHaveBeenCalledOnce();
++  });
++});
+diff --git a/docs/development/controller-delivery-implementation.md b/docs/development/controller-delivery-implementation.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..a5925a42110f290c223748992c1b9bb5da4c1c9d
+--- /dev/null
++++ b/docs/development/controller-delivery-implementation.md
+@@ -0,0 +1,40 @@
++# Controller- és delivery implementáció
++
++Ez a jegyzőkönyv a `docs/public_documentation/winzard-controller.md` specifikáció első teljes, futtatható kódszintű megvalósítását rögzíti.
++
++## Megvalósított scope
++
++- statikus Page-, Route Handler- és Server Action-inventory;
++- input schema, actor resolver, authorizáció, application operation, output, cache, stream és tesztkapcsolat feltérképezése;
++- `delivery:list`, `delivery:inspect`, `delivery:check` és `http:contracts` Forge parancs;
++- determinisztikus delivery map, HTTP/UI contract és security status dokumentáció;
++- a kilenc normatív `DELIVERY_*` architecture check és a Server Action exportformátum framework-konformitási ellenőrzése;
++- idempotens, dry-run- és konfliktusvédett `make:page`, `make:route-handler`, `make:action`, `make:operation` és `make:vertical-slice` generátor, porttal, infrastruktúra-adapterrel, composition wiringgal, tesztvázzal és mutation esetén fail-closed policy/actor placeholderrel;
++- RFC 9457-alapú problem response helper és stabil validációs hibaformátum;
++- explicit response presenter;
++- authorizációt birtokló application command;
++- Zod-validált Server Action és React form adapter;
++- 400/403/415/422 response mapping;
++- Forge-, application-, Route Handler- és Server Action-tesztek;
++- CI-ben külön delivery contract kapu.
++
++## Statikus diagnosztika korlátja
++
++A Forge AST- és szövegalapú inventory bizonyítékot ad, de nem helyettesíti a Next.js typegen/build, a runtime authorizációs teszt, a production E2E, a proxy- és deploymentkonfiguráció, illetve a manuális security review ellenőrzéseit. A checkek szándékosan konzervatív, jól azonosítható veszélyes mintákat keresnek.
++
++## Ellenőrzés
++
++```bash
++pnpm forge delivery:list --project apps/reference
++pnpm forge delivery:inspect src/app/api/lucky/number/route.ts --project apps/reference
++pnpm forge delivery:check --project apps/reference
++pnpm forge http:contracts --check --project apps/reference
++pnpm forge make:vertical-slice catalog/product/show --dry-run --project apps/reference
++pnpm typegen
++pnpm typecheck
++pnpm lint
++pnpm test
++pnpm verify:delivery
++pnpm build
++pnpm test:e2e:reference
++```
+diff --git a/docs/public_documentation/winzard-controller.md b/docs/public_documentation/winzard-controller.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..0c24eed998de3f6e6ed577415f0a983d88969792
+--- /dev/null
++++ b/docs/public_documentation/winzard-controller.md
+@@ -0,0 +1,3363 @@
++---
++title: "Controller- és delivery adapterek Winzard alkalmazásokban"
++description: "A Symfony Controller fejezetének teljes Winzard-specifikus átültetése: page-ek, Route Handlerek, Server Actionök, request mapping, hibák, session, JSON, fájlok, streaming, SSE, biztonság, tesztelés és frameworkfüggetlen application réteg."
++status: "implemented-specification"
++document_version: "0.2.0"
++last_verified: "2026-07-18"
++source_basis: "Symfony Docs — Controller"
++nextjs_baseline: "16.2.10"
++applies_to: "kitelepített Winzard projektek és a Winzard Reference App delivery rétege"
++related_documents:
++  - "winzard-page-creation.md"
++  - "winzard-routing.md"
++  - "winzard-application-platform.md"
++  - "winzard-human-ai-documentation.md"
++---
++
++# Controller- és delivery adapterek Winzard alkalmazásokban
++
++## A dokumentum célja
++
++Ez a dokumentum a Symfony **„Controller”** fejezetének teljes, Winzard-specifikus szakmai átültetése. Nem szó szerinti fordítás. A Symfony témakészletét követi — URL és controller összerendelése, helper metódusok, szolgáltatások, hibák, request mapping, session, JSON, fájlletöltés, Early Hints, Server-Sent Events és frameworkfüggetlen controllertervezés —, de minden fogalmat a Winzard **Next.js App Router + moduláris application layer + ports and adapters + explicit composition root** architektúrájához igazít.
++
++A Winzard központi controllerelve:
++
++> **A page, Route Handler és Server Action vékony delivery adapter. A requestet értelmezi, az aktort és a műveleti inputot előállítja, application műveletet hív, majd HTTP- vagy UI-választ képez. Üzleti szabályt, ORM-hozzáférést, tranzakciós workflow-t és infrastruktúra-wiringot nem birtokolhat.**
++
++A dokumentum végére egy fejlesztő:
++
++1. megérti, mely Next.js entrypointok felelnek meg a Symfony controller különböző szerepeinek;
++2. külön tudja választani a HTML page-et, a Route Handlert és a Server Actiont;
++3. biztonságosan tud route paramétert, query stringet, JSON-t, formadatot, fájlt, headert és cookie-t leképezni;
++4. explicit DTO-n és application műveleten keresztül tud választ előállítani;
++5. helyesen kezeli a redirectet, 404-et, 400/401/403/409/415/422 és 500 hibát;
++6. képes session- és flash-message adaptert használni frameworkfüggetlen application réteggel;
++7. explicit JSON-, fájl-, stream- és SSE-választ tud kialakítani;
++8. megérti az Early Hints és a Next.js preload mechanizmusok közötti különbséget;
++9. helyesen kezeli az authentikációt, authorizációt, CSRF-et, CORS-t, idempotenciát és cache-t;
++10. unit-, adapter-, architecture- és E2E tesztekkel tudja bizonyítani a delivery contractot.
++
++> [!IMPORTANT]
++> A dokumentum nem vezet be második HTTP frameworköt vagy saját runtime controller-dispatchert. A route feloldását a Next.js App Router végzi. A Winzard a delivery entrypointok szerkezetét, dependency-határait, input/output contractját, diagnosztikáját és későbbi generálását szabályozza.
++
++> [!NOTE]
++> A repository implementálja a `forge make:page`, `make:route-handler`, `make:action`, `make:operation`, `make:vertical-slice`, `delivery:list`, `delivery:inspect`, `delivery:check` és `http:contracts` parancsokat. A generátorok portot, infrastruktúra-adaptert, composition wiringot és tesztvázat készítenek; mutation szeletnél a policy és az actor resolver alapértelmezetten fail-closed. A generátorok dry-runt, idempotenciát és konfliktusvédelmet biztosítanak; a statikus inventory nem helyettesíti a Next.js buildet és a production E2E-t.
++
++## Tartalomjegyzék
++
++1. [Fogalmak és normatív nyelv](#1-fogalmak-és-normatív-nyelv)
++2. [Hatókör, előfeltételek és technikai baseline](#2-hatókör-előfeltételek-és-technikai-baseline)
++3. [Mi számít controllernek Winzardban?](#3-mi-számít-controllernek-winzardban)
++4. [A három elsődleges delivery entrypoint](#4-a-három-elsődleges-delivery-entrypoint)
++5. [Egy alap Page mint controller](#5-egy-alap-page-mint-controller)
++6. [Egy alap Route Handler mint controller](#6-egy-alap-route-handler-mint-controller)
++7. [Server Action mint mutation controller](#7-server-action-mint-mutation-controller)
++8. [A request–response életciklus](#8-a-request–response-életciklus)
++9. [Nincs AbstractController és service locator](#9-nincs-abstractcontroller-és-service-locator)
++10. [Dependency wiring és service-ek](#10-dependency-wiring-és-service-ek)
++11. [URL-generálás controllerből](#11-url-generálás-controllerből)
++12. [Redirectek](#12-redirectek)
++13. [HTML renderelés és template-ek](#13-html-renderelés-és-template-ek)
++14. [Controller-generálás és Forge célfelület](#14-controller-generálás-és-forge-célfelület)
++15. [Hibamodell és HTTP státuszok](#15-hibamodell-és-http-státuszok)
++16. [404 és not-found kezelés](#16-404-és-not-found-kezelés)
++17. [Váratlan hibák és error boundaryk](#17-váratlan-hibák-és-error-boundaryk)
++18. [Request-adatok Page-ben](#18-request-adatok-page-ben)
++19. [Request-adatok Route Handlerben](#19-request-adatok-route-handlerben)
++20. [Egyedi query paraméterek leképezése](#20-egyedi-query-paraméterek-leképezése)
++21. [A teljes query string leképezése](#21-a-teljes-query-string-leképezése)
++22. [Route paraméterek leképezése](#22-route-paraméterek-leképezése)
++23. [JSON request payload leképezése](#23-json-request-payload-leképezése)
++24. [FormData és HTML form mapping](#24-formdata-és-html-form-mapping)
++25. [Üres és hiányzó payload szemantikája](#25-üres-és-hiányzó-payload-szemantikája)
++26. [Fájlfeltöltés](#26-fájlfeltöltés)
++27. [Request headerek leképezése](#27-request-headerek-leképezése)
++28. [Session](#28-session)
++29. [Flash message és Post/Redirect/Get](#29-flash-message-és-postredirectget)
++30. [Web Request és Response API](#30-web-request-és-response-api)
++31. [Konfigurációs értékek](#31-konfigurációs-értékek)
++32. [JSON válaszok](#32-json-válaszok)
++33. [Automatikus serialization helyett explicit presenter](#33-automatikus-serialization-helyett-explicit-presenter)
++34. [Problem Details és validációs hiba](#34-problem-details-és-validációs-hiba)
++35. [Fájlletöltés](#35-fájlletöltés)
++36. [Általános streaming response](#36-általános-streaming-response)
++37. [Early Hints és resource hintok](#37-early-hints-és-resource-hintok)
++38. [Server-Sent Events](#38-server-sent-events)
++39. [Válasz utáni munka és `after()`](#39-válasz-utáni-munka-és-after)
++40. [Authentikáció és authorizáció](#40-authentikáció-és-authorizáció)
++41. [CSRF, CORS és Origin](#41-csrf-cors-és-origin)
++42. [Idempotencia és HTTP metódusok](#42-idempotencia-és-http-metódusok)
++43. [Cache, revalidation és controller output](#43-cache-revalidation-és-controller-output)
++44. [Tranzakció, side effect és controller ownership](#44-tranzakció-side-effect-és-controller-ownership)
++45. [Controller frameworkfüggetlenítése](#45-controller-frameworkfüggetlenítése)
++46. [Delivery adapterek projektstruktúrája](#46-delivery-adapterek-projektstruktúrája)
++47. [Controller és delivery architecture checkek](#47-controller-és-delivery-architecture-checkek)
++48. [Tesztelési stratégia](#48-tesztelési-stratégia)
++49. [Diagnosztika és célparancsok](#49-diagnosztika-és-célparancsok)
++50. [Biztonsági ellenőrzőlista](#50-biztonsági-ellenőrzőlista)
++51. [Implementációs elfogadási kritériumok](#51-implementációs-elfogadási-kritériumok)
++52. [Gyakori hibák és hibaelhárítás](#52-gyakori-hibák-és-hibaelhárítás)
++53. [Symfony–Winzard megfeleltetés](#53-symfony–winzard-megfeleltetés)
++54. [Források és attribúció](#54-források-és-attribúció)
++
++---
++
++## 1. Fogalmak és normatív nyelv
++
++### 1.1. Kötelező erejű kifejezések
++
++A dokumentumban:
++
++- **KÖTELEZŐ / MUST**: a szabály megsértése nem támogatott, vagy architekturális, biztonsági, kompatibilitási, illetve reprodukálhatósági hibát okozhat;
++- **TILOS / MUST NOT**: a megoldás Winzard-kompatibilis delivery kódban nem alkalmazható;
++- **AJÁNLOTT / SHOULD**: indokolt esetben eltérhető, de az eltérést dokumentálni és tesztelni kell;
++- **NEM AJÁNLOTT / SHOULD NO
