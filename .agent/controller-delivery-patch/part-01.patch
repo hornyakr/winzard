@@ -1,0 +1,260 @@
+e52c5dabde50cc98a 100644
+--- a/apps/reference/src/app/api/lucky/number/range/[minimum]/[maximum]/route.ts
++++ b/apps/reference/src/app/api/lucky/number/range/[minimum]/[maximum]/route.ts
+@@ -1,5 +1,7 @@
+ import { demoModule } from '@/composition/demo';
++import { toLuckyNumberResponse } from '@/modules/demo/lucky-number/index.server';
+ import { luckyNumberRangeParamsSchema } from '@/modules/demo/lucky-number/presentation/lucky-number.schemas';
++import { validationProblem } from '@/platform/http/problem';
+ 
+ export const runtime = 'nodejs';
+ export const dynamic = 'force-dynamic';
+@@ -13,13 +15,15 @@ type RouteContext = Readonly<{
+ export async function GET(_request: Request, context: RouteContext): Promise<Response> {
+   const parsed = luckyNumberRangeParamsSchema.safeParse(await context.params);
+   if (!parsed.success) {
+-    return Response.json({ code: 'INVALID_RANGE', issues: parsed.error.issues }, {
++    return validationProblem(parsed.error, {
++      type: 'https://winzard.invalid/problems/invalid-lucky-number-range',
++      title: 'Invalid lucky-number range',
+       status: 400,
+-      headers: noStoreHeaders,
++      code: 'INVALID_RANGE',
+     });
+   }
+ 
+-  return Response.json(demoModule.queries.getLuckyNumber.execute(parsed.data), {
++  return Response.json(toLuckyNumberResponse(demoModule.queries.getLuckyNumber.execute(parsed.data)), {
+     status: 200,
+     headers: noStoreHeaders,
+   });
+diff --git a/apps/reference/src/app/api/lucky/number/route.ts b/apps/reference/src/app/api/lucky/number/route.ts
+index b77359350900861c13192e018e957ee3d0ec2e03..a780edb9f6df057fc13b5963cf73452ae43954b3 100644
+--- a/apps/reference/src/app/api/lucky/number/route.ts
++++ b/apps/reference/src/app/api/lucky/number/route.ts
+@@ -1,6 +1,8 @@
+ import { demoModule } from '@/composition/demo';
++import { toLuckyNumberResponse } from '@/modules/demo/lucky-number/index.server';
+ import { luckyNumberActorFromRequest } from '@/modules/demo/lucky-number/presentation/lucky-number.http';
+ import { luckyNumberRequestSchema } from '@/modules/demo/lucky-number/presentation/lucky-number.schemas';
++import { isJsonContentType, problem, validationProblem } from '@/platform/http/problem';
+ 
+ export const runtime = 'nodejs';
+ export const dynamic = 'force-dynamic';
+@@ -8,7 +10,7 @@ export const dynamic = 'force-dynamic';
+ const noStoreHeaders = { 'Cache-Control': 'no-store' } as const;
+ 
+ export function GET(): Response {
+-  return Response.json(demoModule.queries.getLuckyNumber.execute(), {
++  return Response.json(toLuckyNumberResponse(demoModule.queries.getLuckyNumber.execute()), {
+     status: 200,
+     headers: noStoreHeaders,
+   });
+@@ -17,9 +19,21 @@ export function GET(): Response {
+ export async function POST(request: Request): Promise<Response> {
+   const actor = luckyNumberActorFromRequest(request);
+   if (!demoModule.policies.luckyNumber.canGenerateCustomRange(actor)) {
+-    return Response.json({ code: 'FORBIDDEN', message: 'Az egyedi tartomány operator szerepkört igényel.' }, {
++    return problem({
++      type: 'https://winzard.invalid/problems/forbidden',
++      title: 'Forbidden',
+       status: 403,
+-      headers: noStoreHeaders,
++      code: 'FORBIDDEN',
++      detail: 'Az egyedi tartomány operator szerepkört igényel.',
++    });
++  }
++
++  if (!isJsonContentType(request.headers.get('content-type'))) {
++    return problem({
++      type: 'https://winzard.invalid/problems/unsupported-media-type',
++      title: 'Unsupported Media Type',
++      status: 415,
++      code: 'UNSUPPORTED_MEDIA_TYPE',
+     });
+   }
+ 
+@@ -27,21 +41,35 @@ export async function POST(request: Request): Promise<Response> {
+   try {
+     body = await request.json();
+   } catch {
+-    return Response.json({ code: 'INVALID_JSON', message: 'Érvényes JSON body szükséges.' }, {
++    return problem({
++      type: 'https://winzard.invalid/problems/malformed-json',
++      title: 'Malformed JSON',
+       status: 400,
+-      headers: noStoreHeaders,
++      code: 'MALFORMED_JSON',
+     });
+   }
+ 
+   const parsed = luckyNumberRequestSchema.safeParse(body);
+   if (!parsed.success) {
+-    return Response.json({ code: 'INVALID_RANGE', issues: parsed.error.issues }, {
+-      status: 400,
+-      headers: noStoreHeaders,
++    return validationProblem(parsed.error, {
++      type: 'https://winzard.invalid/problems/invalid-lucky-number-range',
++      title: 'Invalid lucky-number range',
++      status: 422,
++      code: 'INVALID_RANGE',
++    });
++  }
++
++  const result = demoModule.commands.generateLuckyNumber.execute({ actor, ...parsed.data });
++  if (result.kind === 'forbidden') {
++    return problem({
++      type: 'https://winzard.invalid/problems/forbidden',
++      title: 'Forbidden',
++      status: 403,
++      code: 'FORBIDDEN',
+     });
+   }
+ 
+-  return Response.json(demoModule.queries.getLuckyNumber.execute(parsed.data), {
++  return Response.json(toLuckyNumberResponse(result.value), {
+     status: 200,
+     headers: noStoreHeaders,
+   });
+diff --git a/apps/reference/src/composition/demo.ts b/apps/reference/src/composition/demo.ts
+index 109ba3bb0245a4a878ef67c4af7bce7f50a8d3c1..48072d6fe4749b1626c366f4f521da4f48b2f7a8 100644
+--- a/apps/reference/src/composition/demo.ts
++++ b/apps/reference/src/composition/demo.ts
+@@ -1,16 +1,22 @@
+ import 'server-only';
+ 
++import { GenerateLuckyNumber } from '@/modules/demo/lucky-number/application/commands/generate-lucky-number';
+ import { LuckyNumberPolicy } from '@/modules/demo/lucky-number/application/policies/lucky-number.policy';
+ import { GetLuckyNumber } from '@/modules/demo/lucky-number/application/queries/get-lucky-number';
+ import { NodeCryptoRandomIntegerGenerator } from '@/modules/demo/lucky-number/infrastructure/random/node-crypto-random-integer-generator';
+ 
+ const randomIntegerGenerator = new NodeCryptoRandomIntegerGenerator();
++const luckyNumberPolicy = new LuckyNumberPolicy();
++const getLuckyNumber = new GetLuckyNumber(randomIntegerGenerator);
+ 
+ export const demoModule = Object.freeze({
+   queries: Object.freeze({
+-    getLuckyNumber: new GetLuckyNumber(randomIntegerGenerator),
++    getLuckyNumber,
++  }),
++  commands: Object.freeze({
++    generateLuckyNumber: new GenerateLuckyNumber(getLuckyNumber, luckyNumberPolicy),
+   }),
+   policies: Object.freeze({
+-    luckyNumber: new LuckyNumberPolicy(),
++    luckyNumber: luckyNumberPolicy,
+   }),
+ });
+diff --git a/apps/reference/src/modules/demo/lucky-number/application/commands/generate-lucky-number.ts b/apps/reference/src/modules/demo/lucky-number/application/commands/generate-lucky-number.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..e0229de1c5d7408de603b0308b6b47b8f898a558
+--- /dev/null
++++ b/apps/reference/src/modules/demo/lucky-number/application/commands/generate-lucky-number.ts
+@@ -0,0 +1,29 @@
++import type { LuckyNumberDto } from '../dto/lucky-number.dto';
++import type { LuckyNumberActor } from '../policies/lucky-number.policy';
++import { LuckyNumberPolicy } from '../policies/lucky-number.policy';
++import { GetLuckyNumber } from '../queries/get-lucky-number';
++
++export type GenerateLuckyNumberInput = Readonly<{
++  actor: LuckyNumberActor;
++  minimum: number;
++  maximum: number;
++}>;
++
++export type GenerateLuckyNumberResult =
++  | Readonly<{ kind: 'success'; value: LuckyNumberDto }>
++  | Readonly<{ kind: 'forbidden' }>;
++
++export class GenerateLuckyNumber {
++  constructor(
++    private readonly query: GetLuckyNumber,
++    private readonly policy: LuckyNumberPolicy,
++  ) {}
++
++  execute(input: GenerateLuckyNumberInput): GenerateLuckyNumberResult {
++    if (!this.policy.canGenerateCustomRange(input.actor)) return { kind: 'forbidden' };
++    return {
++      kind: 'success',
++      value: this.query.execute({ minimum: input.minimum, maximum: input.maximum }),
++    };
++  }
++}
+diff --git a/apps/reference/src/modules/demo/lucky-number/index.server.ts b/apps/reference/src/modules/demo/lucky-number/index.server.ts
+index 043baa6782da5cd0f9a1d8da965cc305f14c87de..7a44e192cdf6164df4dd3c590ae2f0a3431e4190 100644
+--- a/apps/reference/src/modules/demo/lucky-number/index.server.ts
++++ b/apps/reference/src/modules/demo/lucky-number/index.server.ts
+@@ -3,3 +3,4 @@ import 'server-only';
+ export type { LuckyNumberDto } from './application/dto/lucky-number.dto';
+ export { InvalidLuckyNumberRangeError } from './application/errors/invalid-lucky-number-range.error';
+ export { LuckyNumberView } from './presentation/lucky-number-view';
++export { toLuckyNumberResponse, type LuckyNumberResponse } from './presentation/lucky-number.presenter';
+diff --git a/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number-form.tsx b/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number-form.tsx
+new file mode 100644
+index 0000000000000000000000000000000000000000..5b3f53cbcfb03018f277352f1f8cc60eec0054c7
+--- /dev/null
++++ b/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number-form.tsx
+@@ -0,0 +1,39 @@
++'use client';
++
++import { useActionState } from 'react';
++
++import { generateLuckyNumberAction } from './lucky-number.actions';
++import { initialGenerateLuckyNumberActionState } from './lucky-number.action-state';
++
++export function LuckyNumberForm() {
++  const [state, formAction, pending] = useActionState(
++    generateLuckyNumberAction,
++    initialGenerateLuckyNumberActionState,
++  );
++
++  return (
++    <form action={formAction} className="space-y-4 rounded-2xl border border-zinc-800 p-5">
++      <fieldset className="grid gap-4 sm:grid-cols-2" disabled={pending}>
++        <label className="grid gap-2">
++          <span>Minimum</span>
++          <input className="rounded border border-zinc-700 bg-zinc-950 px-3 py-2" defaultValue="10" name="minimum" />
++          {state.fieldErrors?.minimum?.map((message) => <small key={message}>{message}</small>)}
++        </label>
++        <label className="grid gap-2">
++          <span>Maximum</span>
++          <input className="rounded border border-zinc-700 bg-zinc-950 px-3 py-2" defaultValue="20" name="maximum" />
++          {state.fieldErrors?.maximum?.map((message) => <small key={message}>{message}</small>)}
++        </label>
++      </fieldset>
++      <button className="rounded-full bg-zinc-100 px-5 py-2 font-medium text-zinc-950" disabled={pending} type="submit">
++        {pending ? 'Generálás…' : 'Generálás Server Actionnel'}
++      </button>
++      {state.formError ? <p role="alert">{state.formError}</p> : null}
++      {state.result ? (
++        <output className="block" aria-live="polite">
++          Eredmény: {state.result.value} ({state.result.minimum}–{state.result.maximum})
++        </output>
++      ) : null}
++    </form>
++  );
++}
+diff --git a/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number-view.tsx b/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number-view.tsx
+index 47034a41bfa343863948eebc3e5dd5043773c254..1aad9955aed043a555c79d75be0a29996965c80c 100644
+--- a/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number-view.tsx
++++ b/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number-view.tsx
+@@ -1,6 +1,7 @@
+ import Link from 'next/link';
+ 
+ import type { LuckyNumberDto } from '../application/dto/lucky-number.dto';
++import { LuckyNumberForm } from './lucky-number-form';
+ import { luckyNumberRoutes } from './lucky-number.routes';
+ 
+ type LuckyNumberViewProps = Readonly<{
+@@ -23,6 +24,8 @@ export function LuckyNumberView({ result }: LuckyNumberViewProps) {
+         A szám a {result.minimum}–{result.maximum} tartományból származik.
+       </p>
+ 
++      <LuckyNumberForm />
++
+       <nav aria-label="Szerencseszám műveletek" className="flex flex-wrap gap-4">
+         <Link className="underline" href={luckyNumberRoutes.index()}>
+           Másik szám kérése
+diff --git a/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number.action-state.ts b/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number.action-state.ts
+new file mode 100644
+index 000000000000000000
