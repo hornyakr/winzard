@@ -1,0 +1,109 @@
+node.expression.getText();
++}
++
++function collectCallNames(sourceFile: ts.SourceFile): readonly string[] {
++  const calls = new Set<string>();
++  const visit = (node: ts.Node): void => {
++    if (ts.isCallExpression(node)) calls.add(callName(node));
++    ts.forEachChild(node, visit);
++  };
++  visit(sourceFile);
++  return [...calls].sort();
++}
++
++function collectInputSchemas(sourceFile: ts.SourceFile): readonly string[] {
++  const schemas = new Set<string>();
++  const visit = (node: ts.Node): void => {
++    if (
++      ts.isCallExpression(node) &&
++      ts.isPropertyAccessExpression(node.expression) &&
++      (node.expression.name.text === 'parse' || node.expression.name.text === 'safeParse')
++    ) {
++      schemas.add(node.expression.expression.getText(sourceFile));
++    }
++    ts.forEachChild(node, visit);
++  };
++  visit(sourceFile);
++  return [...schemas].sort();
++}
++
++function collectApplicationOperations(sourceFile: ts.SourceFile): readonly string[] {
++  const operations = new Set<string>();
++  const visit = (node: ts.Node): void => {
++    if (
++      ts.isCallExpression(node) &&
++      ts.isPropertyAccessExpression(node.expression) &&
++      node.expression.name.text === 'execute'
++    ) {
++      operations.add(node.expression.expression.getText(sourceFile));
++    }
++    ts.forEachChild(node, visit);
++  };
++  visit(sourceFile);
++  return [...operations].sort();
++}
++
++function collectMatchingCalls(calls: readonly string[], pattern: RegExp): readonly string[] {
++  return calls.filter((name) => pattern.test(name)).sort();
++}
++
++function outputKinds(kind: DeliveryKind, source: string): readonly DeliveryOutputKind[] {
++  const outputs = new Set<DeliveryOutputKind>();
++  if (kind === 'page') outputs.add('react-ui');
++  if (/\bResponse(?:\.json|\.redirect)?\s*\(|\bnew\s+Response\s*\(/u.test(source)) outputs.add('response');
++  if (/\bredirect\s*\(|\bpermanentRedirect\s*\(/u.test(source)) outputs.add('redirect');
++  if (/\bnotFound\s*\(/u.test(source)) outputs.add('not-found');
++  if (/\bReadableStream\s*</u.test(source) || /\bnew\s+ReadableStream\s*\(/u.test(source)) outputs.add('stream');
++  if (kind === 'server-action' && /\breturn\s+\{/u.test(source)) outputs.add('action-state');
++  return [...outputs].sort();
++}
++
++function cachePolicy(source: string): string | null {
++  const cacheControl = source.match(/['"]Cache-Control['"]\s*:\s*['"]([^'"]+)['"]/u)?.[1];
++  const revalidation = [...source.matchAll(/\b(revalidatePath|revalidateTag|updateTag)\s*\(/gu)].map((match) => match[1]);
++  if (cacheControl && revalidation.length > 0) return `${cacheControl}; ${[...new Set(revalidation)].sort().join(',')}`;
++  if (cacheControl) return cacheControl;
++  if (revalidation.length > 0) return [...new Set(revalidation)].sort().join(',');
++  return null;
++}
++
++function obviousUnsafeRedirect(source: string): boolean {
++  return /\b(?:redirect|permanentRedirect)\s*\(\s*(?:formData\.get|searchParams(?:\.get|\[)|request\.(?:url|nextUrl)|params\.|body\.)/u.test(source) ||
++    /\bResponse\.redirect\s*\(\s*(?:formData\.get|searchParams(?:\.get|\[)|request\.url|params\.|body\.)/u.test(source);
++}
++
++function rawErrorResponse(source: string): boolean {
++  return /Response\.json\s*\([^)]*(?:\.error\.issues|\.issues\b|error\.message|error\.stack|String\s*\(\s*error\s*\))/su.test(source);
++}
++
++function readsRequestPayload(source: string, kind: DeliveryKind): boolean {
++  return /\brequest\.(?:json|formData|text|arrayBuffer)\s*\(/u.test(source) ||
++    (kind === 'server-action' && /\bFormData\b/u.test(source) && /\bformData\.get(?:All)?\s*\(/u.test(source));
++}
++
++function unvalidatedPayload(source: string, kind: DeliveryKind, schemas: readonly string[]): boolean {
++  return readsRequestPayload(source, kind) && schemas.length === 0;
++}
++
++function directDomainResponse(source: string): boolean {
++  const importsDomain = /from\s+['"][^'"]*\/domain(?:\/|['"])/u.test(source);
++  const obviousValue = /Response\.json\s*\(\s*(?:domain[A-Za-z0-9_]*|[A-Za-z0-9_]*(?:Entity|Aggregate|Record|Model))\b/u.test(source);
++  return importsDomain && obviousValue;
++}
++
++function exportedGetBody(sourceFile: ts.SourceFile): string {
++  for (const statement of sourceFile.statements) {
++    const exported = isExported(statement);
++    if (!exported) continue;
++    if (ts.isFunctionDeclaration(statement) && statement.name?.text === 'GET') return statement.body?.getText(sourceFile) ?? '';
++    if (ts.isVariableStatement(statement)) {
++      for (const declaration of statement.declarationList.declarations) {
++        if (ts.isIdentifier(declaration.name) && declaration.name.text === 'GET') return declaration.initializer?.getText(sourceFile) ?? '';
++      }
++    }
++  }
++  return '';
++}
++
++function getMutation(sourceFile: ts.SourceFile): boolean {
++  const body
