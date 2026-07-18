@@ -1,0 +1,549 @@
+2. `Object.fromEntries()` korlát
++
++A React/Next form mechanizmus action-specifikus extra mezőket is hozzáadhat. Ne add át vakon a teljes `Object.fromEntries(formData)` eredményt `.passthrough()` schemának.
++
++### 24.3. Checkbox
++
++Nem bejelölt checkbox hiányzik a FormDatából.
++
++```ts
++const isFeatured = formData.get('isFeatured') === 'on';
++```
++
++A pontos encodingot a form component contractja határozza meg.
++
++### 24.4. Többszörös mező
++
++```ts
++const categoryIds = formData.getAll('categoryId');
++```
++
++### 24.5. HTML és szervervalidáció
++
++HTML `required`, `min`, `max`, `type=email` hasznos UX, de nem security boundary. A szerveroldali schema minden esetben kötelező.
++
++### 24.6. Action state
++
++Az action state:
++
++- szerializálható;
++- minimális;
++- field error és form error elkülönített;
++- nem tartalmaz exceptiont;
++- nem tartalmaz teljes submitted secretet;
++- stabil shape-et használ.
++
++---
++
++## 25. Üres és hiányzó payload szemantikája
++
++A Symfony `mapWhenEmpty` témájának Winzard megfelelője explicit endpointcontract.
++
++Különböző állapotok:
++
++```text
++nincs body
++üres byte stream
++üres JSON objektum: {}
++JSON null
++üres FormData
++csak opcionális mezők
++```
++
++### 25.1. PATCH
++
++PATCH esetén az üres objektum lehet:
++
++- no-op és 200/204;
++- invalid, mert legalább egy mező kell;
++- precondition update, ha csak verzióheader van.
++
++A schema döntse el:
++
++```ts
++const patchSchema = z
++  .object({
++    name: z.string().trim().min(1).optional(),
++    status: z.enum(['draft', 'active']).optional(),
++  })
++  .strict()
++  .refine(
++    (value) => Object.keys(value).length > 0,
++    'At least one field is required',
++  );
++```
++
++### 25.2. Default objektum
++
++Defaultot ne egy rejtett serializer/denormalizer állítson elő request contextből. Actor-, tenant- és sessionadat explicit bemenet legyen.
++
++### 25.3. Body jelenlét
++
++A `Content-Length` nem minden transportnál megbízható. Ha a különbség fontos, olvasd a body-t egyszer text/byte formában, majd parse-old kontrolláltan.
++
++### 25.4. Audit
++
++A hiányzó és explicit `null` eltérését update contractban meg kell őrizni, ha üzleti jelentése van.
++
++---
++
++## 26. Fájlfeltöltés
++
++### 26.1. FormData fájl
++
++```ts
++const formData = await request.formData();
++const candidate = formData.get('image');
++
++if (!(candidate instanceof File)) {
++  return problem({
++    type: 'https://example.invalid/problems/file-required',
++    title: 'File is required',
++    status: 422,
++  });
++}
++```
++
++### 26.2. Kötelező ellenőrzések
++
++- maximális byte méret;
++- megengedett MIME allowlist;
++- tényleges file signature/magic bytes;
++- fájlnév hossz és karakterek;
++- extension nem biztonsági forrás;
++- képfelbontás vagy dokumentumszám limit;
++- archive bomb és decompression limit;
++- malware scan, ha a threat model indokolja;
++- tenant/user quota;
++- storage key szerveroldali generálása.
++
++### 26.3. Tilos user path használata
++
++Tilos:
++
++```ts
++const path = `/uploads/${file.name}`;
++await writeFile(path, buffer);
++```
++
++Használj generált storage ID-t, és a megjelenítési fájlnevet külön metadata mezőként tárold.
++
++### 26.4. Nagy fájl
++
++Server Action request body alaplimitje a jelenlegi Next baseline szerint 1 MB, konfigurálható, és a multipart overhead is beleszámít. Nagy feltöltéshez ajánlott:
++
++```text
++browser
++→ rövid életű, scope-olt object-storage upload URL
++→ közvetlen upload
++→ finalize command
++→ scan/process worker
++```
++
++### 26.5. Memória
++
++`await file.arrayBuffer()` az egész fájlt memóriába tölti. Nagy fájlnál stream vagy közvetlen object storage szükséges.
++
++### 26.6. Authorizáció
++
++A feltöltés megkezdése és véglegesítése külön authorizálandó. A kliens által közölt tenant/object key nem megbízható.
++
++---
++
++## 27. Request headerek leképezése
++
++### 27.1. Explicit olvasás
++
++```ts
++const requestId = request.headers.get('x-request-id');
++const ifMatch = request.headers.get('if-match');
++const accept = request.headers.get('accept');
++```
++
++### 27.2. Schema
++
++```ts
++const etagSchema = z
++  .string()
++  .regex(/^(W\/)?”[^”]+”$/u);
++```
++
++### 27.3. Header típusok
++
++A header mindig string vagy null. Többértékű header parsingja header-specifikus:
++
++- `accept`;
++- `accept-language`;
++- `cache-control`;
++- `forwarded`;
++- `if-none-match`;
++- `cookie`.
++
++Ne splitelj minden headert vesszőn.
++
++### 27.4. Trust boundary
++
++A következők csak trusted proxy konfiguráció mellett használhatók:
++
++```text
++x-forwarded-for
++x-forwarded-host
++x-forwarded-proto
++forwarded
++```
++
++### 27.5. Security header
++
++`Authorization`, session cookie vagy belső service token nem kerülhet application DTO-ba teljes értékével. Az auth adapter aktort készít.
++
++### 27.6. Concurrency control
++
++`If-Match` vagy explicit version field használható optimistic concurrencyhez. A command kapjon normalizált expected versiont, ne nyers `Headers` objektumot.
++
++---
++
++## 28. Session
++
++A Next.js nem ad Symfony-szerű általános session service-t. A session külön capability és adapter.
++
++### 28.1. Session port
++
++```ts
++export interface SessionReader {
++  getActor(): Promise<Actor | null>;
++  get<T>(key: SessionKey<T>): Promise<T | null>;
++}
++
++export interface SessionWriter {
++  set<T>(key: SessionKey<T>, value: T): Promise<void>;
++  delete(key: string): Promise<void>;
++  rotate(): Promise<void>;
++}
++```
++
++### 28.2. Storage modellek
++
++- signed/encrypted cookie;
++- adatbázis session;
++- Redis/session store;
++- identity provider token + server-side lookup.
++
++### 28.3. Cookie írás
++
++Cookie módosítás csak Server Actionben vagy Route Handlerben, még streamelés előtt.
++
++### 28.4. Session security
++
++Kötelező mérlegelni:
++
++```text
++HttpOnly
++Secure
++SameSite
++Path
++Domain
++Max-Age/Expires
++session fixation
++rotation
++revocation
++absolute és idle timeout
++CSRF
++```
++
++### 28.5. Üzleti adat sessionben
++
++Sessionben ne tárolj nagy vagy kanonikus üzleti objektumot. Tárolj minimális referenciát, flow ID-t vagy rövid állapotot. A valódi adat source of truthja maradjon a domain/persistence réteg.
++
++### 28.6. Cache-hatás
++
++Session/cookie olvasás személyes request contextet jelenthet. Public shared cache nem használható megfelelő Vary/private policy nélkül.
++
++---
++
++## 29. Flash message és Post/Redirect/Get
++
++### 29.1. Port
++
++```ts
++export type FlashLevel = 'success' | 'info' | 'warning' | 'error';
++
++export type FlashMessage = Readonly<{
++  id: string;
++  level: FlashLevel;
++  code: string;
++  parameters: Readonly<Record<string, string>>;
++}>;
++
++export interface FlashMessageStore {
++  push(message: FlashMessage): Promise<void>;
++  consumeAll(): Promise<readonly FlashMessage[]>;
++}
++```
++
++### 29.2. Command utáni használat
++
++```ts
++await flash.push({
++  id: crypto.randomUUID(),
++  level: 'success',
++  code: 'PRODUCT_UPDATED',
++  parameters: {},
++});
++
++redirect(productRoutes.detail(productId));
++```
++
++Page:
++
++```tsx
++const messages = await flash.consumeAll();
++return <FlashMessages messages={messages} />;
++```
++
++### 29.3. Egyszer fogyaszthatóság
++
++A consume művelet atomikus legyen, ha több párhuzamos request lehetséges.
++
++### 29.4. Lokalizáció
++
++Ajánlott code + parameters tárolása, nem végleges, locale-specifikus mondat.
++
++### 29.5. Biztonság
++
++Flashben tilos:
++
++- secret;
++- teljes exception;
++- személyes adat szükségtelenül;
++- raw HTML;
++- user által kontrollált, escape nélküli markup.
++
++### 29.6. Cookie-alapú flash
++
++Méretlimit, aláírás/titkosítás, replay és több tab viselkedés dokumentálandó. Komplex flowhoz server-side store ajánlott.
++
++---
++
++## 30. Web Request és Response API
++
++### 30.1. Request
++
++Hasznos mezők:
++
++```ts
++request.method
++request.url
++request.headers
++request.body
++request.bodyUsed
++request.signal
++request.credentials
++request.cache
++```
++
++Szerveroldali inbound requestnél nem minden browser fetch mező bír azonos jelentéssel.
++
++### 30.2. Response
++
++```ts
++return new Response(body, {
++  status: 200,
++  headers: {
++    'Content-Type': 'text/plain; charset=utf-8',
++  },
++});
++```
++
++### 30.3. JSON shortcut
++
++```ts
++return Response.json(dto, {
++  status: 200,
++  headers: {
++    'Cache-Control': 'no-store',
++  },
++});
++```
++
++### 30.4. Header normalizálás
++
++A Web `Headers` case-insensitive. Ettől függetlenül a dokumentációban kanonikus casing használható.
++
++### 30.5. Hop-by-hop header
++
++Alkalmazáskód rendszerint ne állítsa:
++
++```text
++Connection
++Keep-Alive
++Transfer-Encoding
++Upgrade
++Proxy-Connection
++```
++
++Ezeket a runtime/proxy kezeli.
++
++### 30.6. Body nélküli válasz
++
++```ts
++return new Response(null, { status: 204 });
++```
++
++204 válaszhoz ne adj body-t.
++
++### 30.7. HEAD és OPTIONS
++
++A Next kezelhet automatikus viselkedést, de publikus API-contractnál teszteld a metódusokat, CORS preflightot és Allow headert.
++
++---
++
++## 31. Konfigurációs értékek
++
++A Symfony `getParameter()` helperének megfelelője nem közvetlen `process.env` a controllerben.
++
++### 31.1. Capability-specifikus parser
++
++```ts
++const publicOriginEnvironmentSchema = z.object({
++  APP_URL: z.url(),
++});
++```
++
++### 31.2. Config objektum
++
++```ts
++export type PublicOriginConfig = Readonly<{
++  appUrl: URL;
++}>;
++```
++
++Composition:
++
++```ts
++const config: PublicOriginConfig = {
++  appUrl: new URL(environment.APP_URL),
++};
++```
++
++### 31.3. Controller input
++
++A delivery adapter csak azt a config szolgáltatást kapja, amire szüksége van:
++
++```ts
++const absoluteUrl = publicUrlBuilder.productDetail(productId);
++```
++
++### 31.4. Tilos
++
++```ts
++const secret = process.env.AUTH_SECRET;
++const dbUrl = process.env.DATABASE_URL;
++```
++
++page/route/action fájlban.
++
++### 31.5. Build-time és runtime
++
++A `NEXT_PUBLIC_*` változó kliensbundle-ba kerülhet. Secret soha nem használhat ilyen prefixet.
++
++A build-time inlining és runtime env elérhetőség deploymentenként eltérhet; a capability contract rögzítse.
++
++---
++
++## 32. JSON válaszok
++
++### 32.1. Explicit DTO
++
++```ts
++export type ProductResponse = Readonly<{
++  id: string;
++  name: string;
++  price: Readonly<{
++    amountMinor: number;
++    currency: string;
++  }>;
++  version: number;
++}>;
++```
++
++### 32.2. Válasz
++
++```ts
++return Response.json(productResponse, {
++  status: 200,
++  headers: {
++    'Cache-Control': 'private, no-store',
++    'ETag': `"product-${productResponse.id}-${productResponse.version}"`,
++  },
++});
++```
++
++### 32.3. Szerializálhatóság
++
++Figyelj:
++
++- `Date` → ISO 8601 string;
++- `BigInt` → dokumentált string/number stratégia;
++- `Map`/`Set` → explicit array/object;
++- undefined mezők;
++- NaN/Infinity;
++- Unicode;
++- numerikus precizitás;
++- circular reference.
++
++### 32.4. Content negotiation
++
++Ha az endpoint csak JSON:
++
++- dokumentáld;
++- ellenőrizd a request `Content-Type`-ot mutationnél;
++- az `Accept` headerre adhatsz 406 választ, ha a contract előírja;
++- a response `Content-Type` legyen egyértelmű.
++
++### 32.5. JSON hijacking és top-level shape
++
++Modern JSON API-nál top-level object ajánlott a verziózhatóság és metadata miatt, bár nem minden esetben kötelező.
++
++### 32.6. XSS
++
++A JSON önmagában nem HTML. Ne interpoláld escape nélkül `<script>` blokkba. Használj React propot vagy biztonságos JSON-LD mintát.
++
++---
++
++## 33. Automatikus serialization helyett explicit presenter
++
++A Symfony `#[Serialize]` automatikusan controller return értéket serializálhat. Winzard alapértelmezése tudatosan explicit.
++
++### 33.1. Nem támogatott alapminta
++
++```ts
++return domainProduct;
++```
++
++és valamilyen globális hook majd JSON-ná alakítja.
++
++### 33.2. Miért explicit?
++
++- elkerüli a secret/PII mezőszivárgást;
++- stabil API-contractot ad;
++- leválasztja az ORM/domain modellt;
++- dokumentálja a null/enum/date formátumot;
++- egyszerűbb contract tesztet ad;
++- megakadályozza a relation graph véletlen betöltését.
++
++### 33.3. Presenter
++
++```ts
++export function toProductResponse(
++  dto: ProductDetailDto,
++): ProductResponse {
++  return {
++    id: dto.id,
++    name: dto.name,
++    price: {
++      amountMinor: dto.priceMinor,
++      currency: dto.currency,
++    },
++    version: dto.version,
++  };
++}
