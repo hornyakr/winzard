@@ -1,0 +1,490 @@
+ata: FormData,
++): Promise<UpdateProductActionState> {
++  const actor = await getActor();
++  const parsed = updateProductFormSchema.safeParse({
++    productId: formData.get('productId'),
++    name: formData.get('name'),
++    version: formData.get('version'),
++  });
++
++  if (!parsed.success) {
++    return {
++      ok: false,
++      fieldErrors: parsed.error.flatten().fieldErrors,
++    };
++  }
++
++  const result = await catalogModule.commands.updateProduct.execute({
++    actor,
++    ...parsed.data,
++  });
++
++  if (result.kind === 'forbidden') {
++    return { ok: false, formError: 'A művelet nem engedélyezett.' };
++  }
++
++  if (result.kind === 'conflict') {
++    return { ok: false, formError: 'Az erőforrás időközben megváltozott.' };
++  }
++
++  revalidatePath(`/products/${parsed.data.productId}`);
++  redirect(`/products/${parsed.data.productId}`);
++}
++```
++
++### 7.1. Biztonsági szabályok
++
++A Server Action:
++
++- nem bízhat hidden inputban actor-, role-, tenant- vagy árengedmény-forrásként;
++- minden híváskor újra feloldja az aktort;
++- minden híváskor authorizál;
++- a `FormData` minden mezőjét bizalmatlannak tekinti;
++- nem küld vissza secretet vagy belső exceptiont;
++- nem használható durable background job helyett.
++
++### 7.2. Redirect és try/catch
++
++A `redirect()` kontrollfolyam-interruptot dob. Ne zárd olyan általános `catch` blokkba, amely alkalmazáshibává alakítja.
++
++Helyes:
++
++```ts
++const result = await command.execute(input);
++
++if (result.kind === 'success') {
++  redirect(result.location);
++}
++```
++
++Nem ajánlott:
++
++```ts
++try {
++  redirect('/products');
++} catch {
++  return { ok: false };
++}
++```
++
++---
++
++## 8. A request–response életciklus
++
++### 8.1. Page kérés
++
++```text
++HTTP request
++→ Next.js route resolution
++→ layout/page render graph
++→ request mapping
++→ actor/context
++→ application query
++→ DTO
++→ React Server Component render
++→ streamed vagy teljes HTML response
++```
++
++### 8.2. Route Handler kérés
++
++```text
++HTTP request
++→ route.ts + HTTP method
++→ Request parsing
++→ schema validation
++→ actor/context
++→ application query/command
++→ application result
++→ status/header/body mapping
++→ Response
++```
++
++### 8.3. Server Action kérés
++
++```text
++React form/client invocation
++→ generated Server Action endpoint
++→ origin/host protection
++→ action deserialization
++→ FormData/arguments
++→ actor/context
++→ schema validation
++→ application command
++→ action state / cache invalidation / redirect
++```
++
++### 8.4. Közös invariánsok
++
++Minden entrypointnál:
++
++1. a delivery input nem megbízható;
++2. a security checket nem helyettesíti a UI;
++3. az application layer nem ismeri a Next.js-t;
++4. a kimenet explicit contract;
++5. a side effect ownership egyértelmű;
++6. a cache és redirect csak sikeres művelet után módosul;
++7. a log nem tartalmaz secretet vagy teljes érzékeny payloadot.
++
++---
++
++## 9. Nincs AbstractController és service locator
++
++A Symfony `AbstractController` helper metódusokat kínál. Winzardban nem készül univerzális base controller osztály.
++
++### 9.1. Miért nincs base class?
++
++A base controller könnyen:
++
++- service locatorrá válik;
++- elrejti a dependency-ket;
++- összeköti a page-et, API-t, sessiont, loggert és adatbázist;
++- megnehezíti a tiszta unit tesztet;
++- ösztönzi a helperfüggő üzleti logikát.
++
++### 9.2. Használandó eszközök
++
++| Feladat | Winzard-megoldás |
++| --- | --- |
++| Renderelés | React komponens |
++| Redirect | `redirect()` / `permanentRedirect()` vagy explicit `Response` |
++| 404 | `notFound()` vagy explicit 404 problem |
++| URL-generálás | pure route builder |
++| JSON | `Response.json()` + explicit DTO |
++| Service hozzáférés | composition root |
++| Session | session port/adapter |
++| Flash | flash message port/adapter |
++| Logger | application/infrastructure port vagy request context |
++| Config | validált config objektum |
++| File | file/object-storage adapter |
++| Serialization | explicit presenter |
++
++### 9.3. Helperfüggvények megengedettek
++
++Kis, tiszta helper elfogadható:
++
++```ts
++export function problem(input: HttpProblem): Response {
++  return Response.json(input, {
++    status: input.status,
++    headers: {
++      'Content-Type': 'application/problem+json',
++      'Cache-Control': 'no-store',
++    },
++  });
++}
++```
++
++A helper nem olvashat globális adatbázist vagy service containert.
++
++---
++
++## 10. Dependency wiring és service-ek
++
++### 10.1. Explicit composition root
++
++```ts
++// src/composition/catalog.ts
++import 'server-only';
++
++import { GetProduct } from '@/modules/catalog/product/application/queries/get-product';
++import { UpdateProduct } from '@/modules/catalog/product/application/commands/update-product';
++import { PrismaProductRepository } from '@/modules/catalog/product/infrastructure/persistence/prisma-product.repository';
++import { db } from '@/platform/database/client';
++
++const repository = new PrismaProductRepository(db);
++
++export const catalogModule = Object.freeze({
++  queries: Object.freeze({
++    getProduct: new GetProduct(repository),
++  }),
++  commands: Object.freeze({
++    updateProduct: new UpdateProduct(repository),
++  }),
++});
++```
++
++### 10.2. Konstruktoros dependency injection
++
++Application osztály:
++
++```ts
++export class GetProduct {
++  constructor(
++    private readonly products: ProductReadRepository,
++  ) {}
++
++  async execute(input: GetProductInput): Promise<GetProductResult> {
++    return this.products.getById(input.productId);
++  }
++}
++```
++
++Az application osztály nem importál:
++
++```text
++next/*
++react
++server-only
++Prisma Client
++pg
++process.env
++cookies()
++headers()
++```
++
++### 10.3. Request-scoped dependency
++
++Requestfüggő adatot ne singleton composition objektumba írj.
++
++Helyes:
++
++```ts
++const actor = await getActor();
++await command.execute({ actor, ...input });
++```
++
++Ha request context port szükséges, explicit inputként vagy request-scoped factoryból add át.
++
++### 10.4. Logger
++
++A controller logolhat technikai request eseményt, de üzleti audit eseményt a command/domain oldalon kell létrehozni.
++
++Tilos teljes body vagy authorization header logolása.
++
++---
++
++## 11. URL-generálás controllerből
++
++A Symfony route-name helperének Winzard megfelelője a típusos pure route builder.
++
++```ts
++import type { Route } from 'next';
++
++export const productRoutes = Object.freeze({
++  list: (): Route => '/products',
++
++  detail: (productId: string): Route =>
++    `/products/${encodeURIComponent(productId)}` as Route,
++
++  edit: (productId: string): Route =>
++    `/products/${encodeURIComponent(productId)}/edit` as Route,
++});
++```
++
++### 11.1. Szabályok
++
++- path szegmenst mindig `encodeURIComponent()` segítségével építs;
++- query stringhez `URLSearchParams` használható;
++- abszolút URL-t origin service készítsen;
++- a route builder pure legyen;
++- route group neve nem kerülhet URL-be;
++- tenant- és locale-origin döntés külön port feladata;
++- user inputból közvetlen redirect URL nem készülhet.
++
++### 11.2. Fragment
++
++```ts
++const target = `${productRoutes.detail(productId)}#inventory`;
++```
++
++A fragment nem kerül el a szerverhez, kizárólag kliensoldali navigációs információ.
++
++### 11.3. Query továbbvitel
++
++Ne másold át automatikusan az összes query paramétert redirectnél. Allowlist:
++
++```ts
++const output = new URLSearchParams();
++
++for (const key of ['page', 'sort']) {
++  const value = input.get(key);
++  if (value !== null) output.set(key, value);
++}
++```
++
++### 11.4. Typed routes
++
++A Next.js `typedRoutes` képes statikusan ellenőrizni a `Link` és egyes navigációs pathok alakját. Ez nem helyettesíti a dinamikus paraméter validációját és encodingját.
++
++---
++
++## 12. Redirectek
++
++### 12.1. Page és Server Action
++
++```ts
++import { redirect, permanentRedirect } from 'next/navigation';
++
++redirect('/login');            // ideiglenes
++permanentRedirect('/new-url'); // tartós
++```
++
++A redirect interrupt, ezért a függvény végrehajtása megszakad.
++
++### 12.2. Route Handler
++
++```ts
++export async function GET(request: Request): Promise<Response> {
++  const target = new URL('/products', request.url);
++  return Response.redirect(target, 307);
++}
++```
++
++Vagy `redirect()` használható, ha a Next control-flow viselkedése kívánatos.
++
++### 12.3. Post/Redirect/Get
++
++Sikeres HTML mutation után ajánlott:
++
++```text
++POST vagy Server Action
++→ command
++→ flash message
++→ redirect
++→ GET page
++```
++
++Ez csökkenti az újraküldés kockázatát.
++
++### 12.4. Open redirect védelem
++
++Tilos:
++
++```ts
++redirect(String(formData.get('returnTo')));
++```
++
++Használj relatív path allowlistet:
++
++```ts
++function safeReturnPath(value: unknown): string {
++  if (typeof value !== 'string') return '/';
++  if (!value.startsWith('/') || value.startsWith('//')) return '/';
++
++  const url = new URL(value, 'https://local.invalid');
++  if (url.origin !== 'https://local.invalid') return '/';
++
++  return `${url.pathname}${url.search}${url.hash}`;
++}
++```
++
++### 12.5. Permanent redirect
++
++Tartós redirect csak akkor:
++
++- a régi URL végleg megszűnt;
++- a cache és keresőhatás elfogadott;
++- nincs user- vagy tenantfüggő cél;
++- rollbackterv létezik;
++- redirectlánc nem jön létre.
++
++---
++
++## 13. HTML renderelés és template-ek
++
++A Symfony Twig template helyett Winzard React Server Componenteket használ.
++
++### 13.1. Presentation komponens
++
++```tsx
++// src/modules/catalog/product/presentation/product-view.tsx
++import type { ProductDetailDto } from '../application/dto/product-detail.dto';
++
++export function ProductView({
++  product,
++}: {
++  product: ProductDetailDto;
++}) {
++  return (
++    <main>
++      <h1>{product.name}</h1>
++      <p>{product.formattedPrice}</p>
++    </main>
++  );
++}
++```
++
++### 13.2. DTO-határ
++
++A view csak minimális DTO-t kapjon.
++
++Tilos átadni:
++
++- Prisma rekordot;
++- lazy relationt;
++- repositoryt;
++- logger példányt;
++- session store-t;
++- secretet;
++- teljes user entityt;
++- belső authorization objektumot.
++
++### 13.3. Server/Client határ
++
++A page és a view maradjon Server Component, amíg nincs szükség:
++
++- böngésző API-ra;
++- lokális interaktív state-re;
++- event handlerre;
++- kliensoldali hookra.
++
++A `"use client"` határ legyen a lehető legkisebb subtree.
++
++### 13.4. Response státusz HTML page esetén
++
++A Page nem tetszőleges `Response` builder. A státuszt tipikusan:
++
++- normál render;
++- `notFound()`;
++- redirect;
++- framework error boundary
++
++határozza meg.
++
++Egyedi gépi HTTP státusz és body esetén Route Handler indokolt.
++
++---
++
++## 14. Controller-generálás és Forge célfelület
++
++A Symfony Maker controller- és CRUD-fájlokat generál. Winzardban a generálásnak az architekturális szeletet kell céloznia, nem csak egy route fájlt.
++
++### 14.1. Implementált parancsok
++
++```bash
++pnpm forge make:page catalog/product/show
++pnpm forge make:route-handler catalog/product/api-show
++pnpm forge make:action catalog/product/update
++pnpm forge make:operation catalog/product/get-product
++pnpm forge make:vertical-slice catalog/product/show
++```
++
++Ezek a repositoryban implementált Forge-parancsok. Alapértelmezésben nem írnak felül eltérő kézi fájlt; `--dry-run` változási tervet ad, `--force` csak explicit döntéssel használható. A generált query szelet porton és szerveroldali infrastruktúra-adapteren keresztül működik. A mutation szelet külön application policyt, actor resolvert és Server Action state fájlt kap; a placeholder policy és actor resolver szándékosan nem engedélyez műveletet, amíg a projekt nem vezeti be a valódi auth contractot.
++
++### 14.2. Egy generált vertical slice minimális tartalma
++
++```text
++page.tsx vagy route.ts
++application input/result
++application query vagy command
++portok
++composition wiring
++presentation schema
++presentation view/response mapper
++unit teszt
++adapterteszt
++architecture fixture
++```
++
++### 14.3. Generált fájl ownership
++
++A generátor:
++
++- nem írhat felül kézi kódot csendben;
++- determinisztikus, verziózott generálási tervből dolgozik;
++- előnézetet és dry-runt adjon;
++- driftet jelezzen;
++- idempotens legyen;
++- explicit conflictot adjon.
++
++### 
