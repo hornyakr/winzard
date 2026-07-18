@@ -1,0 +1,294 @@
+0000000000000000000000..a87e36d965757f7aca957069ce8a8383570ba7dd
+--- /dev/null
++++ b/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number.action-state.ts
+@@ -0,0 +1,12 @@
++import type { LuckyNumberDto } from '../application/dto/lucky-number.dto';
++
++export type GenerateLuckyNumberActionState = Readonly<{
++  ok: boolean;
++  result?: LuckyNumberDto;
++  fieldErrors?: Readonly<Record<string, readonly string[]>>;
++  formError?: string;
++}>;
++
++export const initialGenerateLuckyNumberActionState: GenerateLuckyNumberActionState = Object.freeze({
++  ok: false,
++});
+diff --git a/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number.actions.ts b/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number.actions.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..373ad414b65b29c24a347d185051caa007bbccc5
+--- /dev/null
++++ b/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number.actions.ts
+@@ -0,0 +1,36 @@
++'use server';
++
++import { demoModule } from '@/composition/demo';
++import { getDemoActor } from '@/platform/auth/get-demo-actor.server';
++
++import type { GenerateLuckyNumberActionState } from './lucky-number.action-state';
++import { luckyNumberRequestSchema } from './lucky-number.schemas';
++
++export async function generateLuckyNumberAction(
++  _previousState: GenerateLuckyNumberActionState,
++  formData: FormData,
++): Promise<GenerateLuckyNumberActionState> {
++  const parsed = luckyNumberRequestSchema.safeParse({
++    minimum: formData.get('minimum'),
++    maximum: formData.get('maximum'),
++  });
++  if (!parsed.success) {
++    return {
++      ok: false,
++      fieldErrors: parsed.error.flatten().fieldErrors,
++    };
++  }
++
++  const result = demoModule.commands.generateLuckyNumber.execute({
++    actor: await getDemoActor(),
++    ...parsed.data,
++  });
++  if (result.kind === 'forbidden') {
++    return {
++      ok: false,
++      formError: 'Az egyedi tartomány operator szerepkört igényel.',
++    };
++  }
++
++  return { ok: true, result: result.value };
++}
+diff --git a/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number.http.ts b/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number.http.ts
+index c4545a11581fe575cf58a01f545768f5d0257c0d..e6bd996e9583cd7e15b845d53dff2ab29b65bfcd 100644
+--- a/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number.http.ts
++++ b/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number.http.ts
+@@ -1,10 +1,13 @@
+ import type { LuckyNumberActor } from '../application/policies/lucky-number.policy';
+ 
+-export function luckyNumberActorFromRequest(request: Request): LuckyNumberActor {
+-  const roleHeader = request.headers.get('x-demo-role') ?? '';
+-  const roles = roleHeader.split(',').map((role) => role.trim()).filter(Boolean);
++function actorFromHeaders(headers: Headers): LuckyNumberActor {
++  const roleHeader = headers.get('x-demo-role') ?? '';
+   return Object.freeze({
+-    subject: request.headers.get('x-demo-subject'),
+-    roles: Object.freeze(roles),
++    subject: headers.get('x-demo-subject'),
++    roles: Object.freeze(roleHeader.split(',').map((role) => role.trim()).filter(Boolean)),
+   });
+ }
++
++export function luckyNumberActorFromRequest(request: Request): LuckyNumberActor {
++  return actorFromHeaders(request.headers);
++}
+diff --git a/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number.presenter.ts b/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number.presenter.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..299caeb40257a87d22fa847e9264c8a64a6991f4
+--- /dev/null
++++ b/apps/reference/src/modules/demo/lucky-number/presentation/lucky-number.presenter.ts
+@@ -0,0 +1,15 @@
++import type { LuckyNumberDto } from '../application/dto/lucky-number.dto';
++
++export type LuckyNumberResponse = Readonly<{
++  value: number;
++  minimum: number;
++  maximum: number;
++}>;
++
++export function toLuckyNumberResponse(dto: LuckyNumberDto): LuckyNumberResponse {
++  return {
++    value: dto.value,
++    minimum: dto.minimum,
++    maximum: dto.maximum,
++  };
++}
+diff --git a/apps/reference/src/platform/auth/get-demo-actor.server.ts b/apps/reference/src/platform/auth/get-demo-actor.server.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..66d4a58a383e2a9674856010aaee10da9072db1c
+--- /dev/null
++++ b/apps/reference/src/platform/auth/get-demo-actor.server.ts
+@@ -0,0 +1,14 @@
++import 'server-only';
++
++import { headers } from 'next/headers';
++
++import type { LuckyNumberActor } from '@/modules/demo/lucky-number/application/policies/lucky-number.policy';
++
++export async function getDemoActor(): Promise<LuckyNumberActor> {
++  const incomingHeaders = await headers();
++  const roleHeader = incomingHeaders.get('x-demo-role') ?? '';
++  return Object.freeze({
++    subject: incomingHeaders.get('x-demo-subject'),
++    roles: Object.freeze(roleHeader.split(',').map((role) => role.trim()).filter(Boolean)),
++  });
++}
+diff --git a/apps/reference/src/platform/http/problem.ts b/apps/reference/src/platform/http/problem.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..80a140962bd4473b686f8af909234c81120cfbf4
+--- /dev/null
++++ b/apps/reference/src/platform/http/problem.ts
+@@ -0,0 +1,48 @@
++import type { ZodError } from 'zod';
++
++export type ValidationError = Readonly<{
++  path: string;
++  code: string;
++  message: string;
++}>;
++
++export type HttpProblem = Readonly<{
++  type: string;
++  title: string;
++  status: number;
++  detail?: string;
++  code?: string;
++  errors?: readonly ValidationError[];
++}>;
++
++const noStoreHeaders = {
++  'Cache-Control': 'no-store',
++  'Content-Type': 'application/problem+json',
++} as const;
++
++export function problem(input: HttpProblem): Response {
++  return Response.json(input, {
++    status: input.status,
++    headers: noStoreHeaders,
++  });
++}
++
++export function validationProblem(
++  error: ZodError,
++  input: Readonly<Pick<HttpProblem, 'type' | 'title' | 'status' | 'code'>>,
++): Response {
++  return problem({
++    ...input,
++    errors: error.issues.map((issue) => ({
++      path: issue.path.map(String).join('.'),
++      code: issue.code,
++      message: issue.message,
++    })),
++  });
++}
++
++export function isJsonContentType(value: string | null): boolean {
++  if (value === null) return false;
++  const mediaType = value.split(';', 1)[0]?.trim().toLowerCase();
++  return mediaType === 'application/json' || mediaType?.endsWith('+json') === true;
++}
+diff --git a/apps/reference/tests/unit/app/api/lucky/number/routing.test.ts b/apps/reference/tests/unit/app/api/lucky/number/routing.test.ts
+index 8bc4733b094ff1095d2a909205f25d375e718be4..fc79655f6a87a33e684d0d4ad632675dff109ed9 100644
+--- a/apps/reference/tests/unit/app/api/lucky/number/routing.test.ts
++++ b/apps/reference/tests/unit/app/api/lucky/number/routing.test.ts
+@@ -3,18 +3,49 @@ import { describe, expect, it } from 'vitest';
+ import { POST } from '@/app/api/lucky/number/route';
+ import { GET as GET_RANGE } from '@/app/api/lucky/number/range/[minimum]/[maximum]/route';
+ 
+-describe('lucky-number routing adapters', () => {
+-  it('403 választ ad jogosulatlan POST kérésre', async () => {
++describe('lucky-number delivery adapters', () => {
++  it('403 Problem Details választ ad jogosulatlan POST kérésre', async () => {
+     const response = await POST(new Request('http://localhost/api/lucky/number', {
+       method: 'POST',
+       headers: { 'content-type': 'application/json' },
+       body: JSON.stringify({ minimum: 10, maximum: 20 }),
+     }));
+     expect(response.status).toBe(403);
++    expect(response.headers.get('content-type')).toContain('application/problem+json');
+     expect(response.headers.get('Cache-Control')).toBe('no-store');
+   });
+ 
+-  it('operator szerepkörrel validált POST választ ad', async () => {
++  it('415 választ ad nem támogatott médiatípusra', async () => {
++    const response = await POST(new Request('http://localhost/api/lucky/number', {
++      method: 'POST',
++      headers: { 'content-type': 'text/plain', 'x-demo-role': 'operator' },
++      body: 'minimum=10&maximum=20',
++    }));
++    expect(response.status).toBe(415);
++  });
++
++  it('400 választ ad malformed JSON-ra', async () => {
++    const response = await POST(new Request('http://localhost/api/lucky/number', {
++      method: 'POST',
++      headers: { 'content-type': 'application/json', 'x-demo-role': 'operator' },
++      body: '{',
++    }));
++    expect(response.status).toBe(400);
++  });
++
++  it('422 stabil validációs problem contractot ad', async () => {
++    const response = await POST(new Request('http://localhost/api/lucky/number', {
++      method: 'POST',
++      headers: { 'content-type': 'application/json', 'x-demo-role': 'operator' },
++      body: JSON.stringify({ minimum: 20, maximum: 10 }),
++    }));
++    const body = await response.json() as { code: string; errors: Array<{ path: string; code: string }> };
++    expect(response.status).toBe(422);
++    expect(body.code).toBe('INVALID_RANGE');
++    expect(body.errors).toContainEqual(expect.objectContaining({ path: 'maximum' }));
++  });
++
++  it('operator szerepkörrel explicit presenter DTO-t ad', async () => {
+     const response = await POST(new Request('http://localhost/api/lucky/number', {
+       method: 'POST',
+       headers: { 'content-type': 'application/json', 'x-demo-role': 'operator' },
+@@ -32,6 +63,7 @@ describe('lucky-number routing adapters', () => {
+       params: Promise.resolve({ minimum: 'x', maximum: '20' }),
+     });
+     expect(response.status).toBe(400);
++    expect(response.headers.get('content-type')).toContain('application/problem+json');
+     expect(response.headers.get('Cache-Control')).toBe('no-store');
+   });
+ });
+diff --git a/apps/reference/tests/unit/modules/demo/lucky-number/generate-lucky-number.test.ts b/apps/reference/tests/unit/modules/demo/lucky-number/generate-lucky-number.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..bc50c57956a30d54232c50996dd21e2f056722a0
+--- /dev/null
++++ b/apps/reference/tests/unit/modules/demo/lucky-number/generate-lucky-number.test.ts
+@@ -0,0 +1,38 @@
++import { describe, expect, it } from 'vitest';
++
++import { GenerateLuckyNumber } from '@/modules/demo/lucky-number/application/commands/generate-lucky-number';
++import { LuckyNumberPolicy } from '@/modules/demo/lucky-number/application/policies/lucky-number.policy';
++import type { RandomIntegerGenerator } from '@/modules/demo/lucky-number/application/ports/random-integer-generator';
++import { GetLuckyNumber } from '@/modules/demo/lucky-number/application/queries/get-lucky-number';
++
++class FixedRandomIntegerGenerator implements RandomIntegerGenerator {
++  betweenInclusive(): number {
++    return 15;
++  }
++}
++
++describe('GenerateLuckyNumber', () => {
++  const command = new GenerateLuckyNumber(
++    new GetLuckyNumber(new FixedRandomIntegerGenerator()),
++    new LuckyNumberPolicy(),
++  );
++
++  it('explicit forbidden resultot ad jogosultság nélkül', () => {
++    expect(command.execute({
++      actor: { subject: null, roles: [] },
++      minimum: 10,
++      maximum: 20,
++    })).toEqual({ kind: 'forbidden' });
++  });
++
++  it('operator actor számára explicit success DTO-t ad', () => {
++    expect(command.execute({
++      actor: { subject: 'demo', roles: ['operator'] },
++      minimum: 10,
++      maximum: 20,
++    })).toEqual({
++      kind: 'success',
++      value: { value: 15, minimum: 10, maximum: 20 },
++    });
++  });
++});
+diff --git a/apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.actions.test.ts b/apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.actions.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..7780c8fe92a3698257d216024fede1bd0357a208
+--- /dev/null
++++ b/apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.actions.test.ts
+@@ -0,0 +1,31 @@
++import { beforeEach, describe, expect, it, vi } from 'vitest';
++
++import { initialGenerat
