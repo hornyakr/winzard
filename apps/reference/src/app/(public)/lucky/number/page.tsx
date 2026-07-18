@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 
 import { demoModule } from '@/composition/demo';
-import { LuckyNumberView } from '@/modules/demo/lucky-number/index.server';
+import { LuckyNumberView, presentLuckyNumber } from '@/modules/demo/lucky-number/index.server';
 import { luckyNumberRangeQuerySchema } from '@/modules/demo/lucky-number/presentation/lucky-number.schemas';
 
 export const runtime = 'nodejs';
@@ -23,5 +23,5 @@ export default async function LuckyNumberPage({ searchParams }: LuckyNumberPageP
   if (!parsed.success) notFound();
 
   const result = demoModule.queries.getLuckyNumber.execute(parsed.data);
-  return <LuckyNumberView result={result} />;
+  return <LuckyNumberView model={presentLuckyNumber(result)} />;
 }

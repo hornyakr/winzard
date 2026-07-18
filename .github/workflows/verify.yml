@@ -51,6 +51,9 @@ jobs:
       - name: Verify controller and delivery contracts
         run: pnpm verify:delivery
 
+      - name: Verify template, view and presentation contracts
+        run: pnpm verify:views
+
       - name: Run reference capability and architecture checks
         run: pnpm forge check --project apps/reference
 

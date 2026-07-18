@@ -1,8 +1,8 @@
-import type { LuckyNumberDto } from '../application/dto/lucky-number.dto';
+import type { LuckyNumberResponse } from './lucky-number.presenter';
 
 export type GenerateLuckyNumberActionState = Readonly<{
   ok: boolean;
-  result?: LuckyNumberDto;
+  result?: LuckyNumberResponse;
   fieldErrors?: Readonly<Partial<Record<string, readonly string[]>>>;
   formError?: string;
 }>;

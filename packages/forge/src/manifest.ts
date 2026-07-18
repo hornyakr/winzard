@@ -6,6 +6,7 @@ import { DEFAULT_CONTEXT_BUDGET_BYTES, DOCUMENTATION_CONTRACT_VERSION } from './
 export const knownCapabilities = [
   'next-app',
   'forge',
+  'presentation-contract',
   'modular-application',
   'liveness',
   'prisma-postgresql',

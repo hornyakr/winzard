@@ -56,6 +56,8 @@ async function assertLuckyNumberPage(): Promise<void> {
   assert.match(html, /A szerencseszámod:/u);
   assert.match(html, /0–100 tartományból/u);
   assert.match(html, /\/lucky\/number\/range\/10\/20/u);
+  assert.match(html, /data-navigation-boundary="lucky-number"/u);
+  assert.match(html, /alt="Geometrikus pályák a szerencseszám körül"/u);
 }
 
 async function assertQueryPage(): Promise<void> {

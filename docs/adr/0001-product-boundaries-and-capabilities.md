@@ -88,7 +88,8 @@ Példa minimal projektre:
   "profile": "minimal",
   "capabilities": [
     "next-app",
-    "forge"
+    "forge",
+    "presentation-contract"
   ]
 }
 ```
@@ -102,6 +103,7 @@ Példa PostgreSQL webapp projektre:
   "capabilities": [
     "next-app",
     "forge",
+    "presentation-contract",
     "modular-application",
     "liveness",
     "prisma-postgresql",
@@ -116,6 +118,7 @@ Elsőként támogatott képességek:
 | --- | --- |
 | `next-app` | `src/app` és Next.js konfiguráció |
 | `forge` | Winzard-manifest és ellenőrizhető projektgyökér |
+| `presentation-contract` | View inventory, presentation architecture check és generált contractok |
 | `modular-application` | `src/modules` és `src/composition` |
 | `liveness` | no-store liveness Route Handler |
 | `prisma-postgresql` | Prisma schema/config és adatbázis-env szerződés |

@@ -43,6 +43,19 @@ describe('Forge capability checks', () => {
     expect(codes).toContain('CAPABILITY_PATH_MISSING');
   });
 
+  it('a presentation-contract capability a view architecture checkeket is bekapcsolja', async () => {
+    const root = await fixture({
+      schemaVersion: 1,
+      profile: 'minimal',
+      capabilities: ['next-app', 'forge', 'presentation-contract'],
+    });
+    await file(root, 'next.config.ts', 'export default {};');
+    await file(root, 'tsconfig.json', '{}');
+    await file(root, 'src/app/page.tsx', 'export default function Page() { return <img src="/logo.png" />; }');
+
+    expect(await runProjectChecks(root)).toContainEqual(expect.objectContaining({ code: 'VIEW_MISSING_IMAGE_ALT' }));
+  });
+
   it('érvényesíti az infrastruktúra capability-függőségeket', async () => {
     const root = await fixture({ schemaVersion: 1, profile: 'invalid', capabilities: ['database-readiness'] });
     const failures = await runProjectChecks(root);
