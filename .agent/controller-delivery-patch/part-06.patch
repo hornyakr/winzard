@@ -1,0 +1,547 @@
+ 14.4. CRUD-generálás
++
++Adatbázis-schemából közvetlen publikus CRUD generálása nem kanonikus. Resource metadata, authorization, DTO és operation schema szükséges.
++
++---
++
++## 15. Hibamodell és HTTP státuszok
++
++### 15.1. Expected és unexpected failure
++
++Expected result példa:
++
++```ts
++export type UpdateProductResult =
++  | Readonly<{ kind: 'success'; product: ProductDetailDto }>
++  | Readonly<{ kind: 'not_found' }>
++  | Readonly<{ kind: 'forbidden' }>
++  | Readonly<{ kind: 'conflict'; currentVersion: number }>;
++```
++
++Unexpected failure:
++
++- adatbázis kiesés;
++- programhiba;
++- sérült invariáns;
++- nem kezelt adapterhiba.
++
++Az unexpected failure ne váljon automatikusan `400` válasszá.
++
++### 15.2. Ajánlott státuszmátrix
++
++| Helyzet | HTTP státusz |
++| --- | --- |
++| Hibás route/query szintaxis | 400 |
++| Nincs authentikáció | 401 |
++| Nincs jogosultság | 403 |
++| Erőforrás nem létezik | 404 |
++| Metódus nem támogatott | 405 |
++| Verzió/állapot konfliktus | 409 |
++| Előfeltétel nem teljesül | 412 vagy 428 |
++| Payload túl nagy | 413 |
++| Nem támogatott médiatípus | 415 |
++| Szemantikailag invalid payload | 422 |
++| Rate limit | 429 |
++| Váratlan szerverhiba | 500 |
++| Átmeneti upstream hiba | 502/503/504 |
++
++### 15.3. Stabil hibakód
++
++A felhasználói szöveg lokalizálható; a gépi hibakód stabil legyen:
++
++```json
++{
++  "type": "https://example.invalid/problems/product-version-conflict",
++  "title": "Product version conflict",
++  "status": 409,
++  "code": "PRODUCT_VERSION_CONFLICT"
++}
++```
++
++### 15.4. Információszivárgás
++
++Production válaszban tilos:
++
++- stack trace;
++- SQL;
++- belső classnév;
++- filesystem path;
++- secret;
++- upstream credential;
++- teljes exceptionüzenet.
++
++---
++
++## 16. 404 és not-found kezelés
++
++### 16.1. Page
++
++```tsx
++import { notFound } from 'next/navigation';
++
++if (result.kind === 'not_found') {
++  notFound();
++}
++```
++
++A route-szegmens `not-found.tsx` fájlja adja a UI-t.
++
++### 16.2. Route Handler
++
++API esetén explicit response:
++
++```ts
++return problem({
++  type: 'https://example.invalid/problems/product-not-found',
++  title: 'Product not found',
++  status: 404,
++});
++```
++
++### 16.3. Invalid ID: 400 vagy 404?
++
++Döntési szabály:
++
++- ha az endpoint contractja szerint az ID szintaktikai hibája klienshiba: **400**;
++- ha a publikus erőforrástérben minden ismeretlen slug egységesen nem létezőként kezelendő: **404**;
++- érzékeny erőforrásnál a 404 csökkentheti az enumerációs szivárgást;
++- a döntés endpointonként dokumentált legyen.
++
++### 16.4. Streamelt 404
++
++Streamelés megkezdése után a státusz módosíthatósága korlátozott. A Next.js not-found UI streamelt esetben eltérő HTTP-viselkedést mutathat. Kritikus API-contracthoz ne HTML streamelt not-found mechanizmust használj; használj Route Handlert.
++
++### 16.5. Global not found
++
++A globális unmatched route és az application-level resource-not-found külön jelenség. Külön E2E teszt szükséges.
++
++---
++
++## 17. Váratlan hibák és error boundaryk
++
++### 17.1. Page hibahatár
++
++```text
++error.tsx
++global-error.tsx
++instrumentation / observability
++```
++
++Az `error.tsx` Client Component, mert retry/reset interakciót kezel.
++
++### 17.2. Route Handler
++
++A Route Handler expected hibákat explicit mapel. Unexpected hibát általában hagyja a központi runtime/observability rétegre.
++
++Ha lokális catch szükséges:
++
++```ts
++try {
++  return await execute();
++} catch (error) {
++  reportUnexpectedError(error, requestContext);
++  return problem({
++    type: 'about:blank',
++    title: 'Internal Server Error',
++    status: 500,
++  });
++}
++```
++
++A válasz ne tartalmazza `String(error)` értékét.
++
++### 17.3. Server Action
++
++A form validációs hibát action state-ként vissza lehet adni. Váratlan hibát ne alakíts általános „invalid form” üzenetté; a hibahatár és logging kezelje.
++
++### 17.4. Correlation ID
++
++A request ID:
++
++- trusted proxy headerről csak allowlist/normalizálás után fogadható el;
++- egyébként szerver generálja;
++- logban, problem response-ban és downstream callban követhető;
++- nem tartalmaz személyes adatot.
++
++---
++
++## 18. Request-adatok Page-ben
++
++A Page nem kap általános `Request` objektumot.
++
++### 18.1. Route paraméter
++
++```tsx
++export default async function Page({
++  params,
++}: PageProps<'/products/[productId]'>) {
++  const { productId } = await params;
++}
++```
++
++### 18.2. Query string
++
++```tsx
++export default async function Page({
++  searchParams,
++}: PageProps<'/products'>) {
++  const raw = await searchParams;
++}
++```
++
++A pontos prop alakot a Next typegen és az aktuális Next baseline szerint ellenőrizni kell.
++
++### 18.3. Header
++
++```ts
++import { headers } from 'next/headers';
++
++const incomingHeaders = await headers();
++const acceptLanguage = incomingHeaders.get('accept-language');
++```
++
++A `headers()` read-only és dinamikus API. Használata request-time renderelést eredményezhet.
++
++### 18.4. Cookie
++
++```ts
++import { cookies } from 'next/headers';
++
++const cookieStore = await cookies();
++const sessionCookie = cookieStore.get('session');
++```
++
++Page renderben cookie olvasható, de nem írható.
++
++### 18.5. Inputhatár
++
++A Page ne adja tovább nyersen a teljes `searchParams`, `Headers` vagy cookie store objektumot az application layernek. Készíts minimális, validált inputot.
++
++---
++
++## 19. Request-adatok Route Handlerben
++
++```ts
++export async function POST(request: Request): Promise<Response> {
++  const url = new URL(request.url);
++  const query = url.searchParams;
++  const contentType = request.headers.get('content-type');
++  const authorization = request.headers.get('authorization');
++  // ...
++}
++```
++
++### 19.1. A body egyszer olvasható
++
++A Request body stream. A következő műveletek egyikét válaszd:
++
++```ts
++await request.json();
++await request.formData();
++await request.text();
++await request.arrayBuffer();
++```
++
++Ne próbáld ugyanazt a body-t kétszer olvasni.
++
++### 19.2. URL
++
++```ts
++const url = new URL(request.url);
++```
++
++A host/origin csak trusted proxy és deployment contract mellett tekinthető canonical originnek.
++
++### 19.3. Header allowlist
++
++Ne forwardold automatikusan az összes incoming headert. Különösen érzékeny:
++
++```text
++authorization
++cookie
++set-cookie
++x-forwarded-*
++x-internal-*
++trace/baggage
++```
++
++### 19.4. Abort signal
++
++Hosszú műveletnél figyeld:
++
++```ts
++request.signal
++```
++
++A klienskapcsolat megszakadása leállíthatja a nem szükséges streamet vagy upstream fetch-et. Durable commandot azonban ne tegyél automatikusan visszavonhatóvá pusztán kliensdisconnect alapján.
++
++---
++
++## 20. Egyedi query paraméterek leképezése
++
++A Symfony `MapQueryParameter` megfelelője operation-specifikus schema.
++
++```ts
++import { z } from 'zod';
++
++const pageSchema = z.coerce.number().int().min(1).max(10_000);
++const includeArchivedSchema = z
++  .enum(['true', 'false'])
++  .transform((value) => value === 'true');
++
++export function parseProductListQuery(url: URL) {
++  return z.object({
++    page: pageSchema.default(1),
++    includeArchived: includeArchivedSchema.default(false),
++  }).safeParse({
++    page: url.searchParams.get('page') ?? undefined,
++    includeArchived:
++      url.searchParams.get('includeArchived') ?? undefined,
++  });
++}
++```
++
++### 20.1. Hiányzó és üres érték
++
++Különbözik:
++
++```text
++nincs `page`
++?page=
++?page=0
++?page=abc
++```
++
++A schema explicit defaultot csak a hiányzó értékre alkalmazzon, ha ez a contract.
++
++### 20.2. Ismételt query paraméter
++
++```ts
++const tags = url.searchParams.getAll('tag');
++```
++
++Ne használd a `get()` értéket, ha a contract listát enged.
++
++### 20.3. Boolean coercion
++
++A JavaScript `Boolean("false")` igaz. Boolean queryhez explicit enum/transzformáció kell.
++
++### 20.4. Numerikus coercion
++
++Ellenőrizd:
++
++- egész szám;
++- safe integer;
++- minimum/maximum;
++- exponenciális vagy hex formátum elfogadhatósága;
++- leading zero policy.
++
++---
++
++## 21. A teljes query string leképezése
++
++```ts
++const productListQuerySchema = z.object({
++  page: z.coerce.number().int().min(1).default(1),
++  pageSize: z.coerce.number().int().min(1).max(100).default(20),
++  sort: z.enum(['name', 'price', 'createdAt']).default('name'),
++  direction: z.enum(['asc', 'desc']).default('asc'),
++  search: z.string().trim().max(200).optional(),
++}).strict();
++```
++
++Mapping:
++
++```ts
++function searchParamsToRecord(params: URLSearchParams) {
++  return {
++    page: params.get('page') ?? undefined,
++    pageSize: params.get('pageSize') ?? undefined,
++    sort: params.get('sort') ?? undefined,
++    direction: params.get('direction') ?? undefined,
++    search: params.get('search') ?? undefined,
++  };
++}
++```
++
++### 21.1. Unknown field policy
++
++Ajánlott API esetén `.strict()`:
++
++```text
++ismeretlen query paraméter
++→ 400
++```
++
++HTML keresőoldalnál egyes analytics paraméterek ignorálhatók, de ne kerüljenek application inputba.
++
++### 21.2. Nested query
++
++A `filter[name]=...` jellegű formátum nem automatikus Web API objektum. Válassz dokumentált encodingot:
++
++- ismételt kulcs;
++- pontozott kulcs;
++- JSON egy query mezőben;
++- külön filter DSL.
++
++Komplex filterhez méret-, mélység- és operátor-limit szükséges.
++
++### 21.3. Query DTO
++
++A schema outputja legyen az application query inputja vagy abból explicit mapperrel készüljön. Ne add át az egész `URLSearchParams` példányt.
++
++---
++
++## 22. Route paraméterek leképezése
++
++Route paraméter továbbra is user input.
++
++```ts
++const productIdSchema = z
++  .string()
++  .uuid()
++  .brand<'ProductId'>();
++```
++
++### 22.1. Branded ID
++
++```ts
++export type ProductId = z.infer<typeof productIdSchema>;
++```
++
++Az application layer így nem kap tetszőleges stringet.
++
++### 22.2. Slug
++
++```ts
++const slugSchema = z
++  .string()
++  .min(1)
++  .max(120)
++  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
++```
++
++### 22.3. Catch-all
++
++Catch-all paraméter listaként kezelendő:
++
++```ts
++const hierarchySchema = z
++  .array(z.string().min(1).max(80))
++  .min(1)
++  .max(8);
++```
++
++Ne fűzd össze filesystem pathként.
++
++### 22.4. Paraméter → entity automatikus mapping
++
++Winzardban nem támogatott:
++
++```text
++route param
++→ implicit ORM query
++→ entity injection
++```
++
++Helyette:
++
++```text
++route param
++→ schema
++→ ProductId
++→ GetProduct query
++→ repository port
++→ DTO/result
++```
++
++---
++
++## 23. JSON request payload leképezése
++
++### 23.1. Content-Type ellenőrzés
++
++```ts
++function isJsonContentType(value: string | null): boolean {
++  if (value === null) return false;
++  const mediaType = value.split(';', 1)[0]?.trim().toLowerCase();
++  return mediaType === 'application/json'
++    || mediaType?.endsWith('+json') === true;
++}
++```
++
++Nem támogatott médiatípus:
++
++```text
++415 Unsupported Media Type
++```
++
++### 23.2. Malformed JSON
++
++```ts
++let raw: unknown;
++
++try {
++  raw = await request.json();
++} catch {
++  return problem({
++    type: 'https://example.invalid/problems/malformed-json',
++    title: 'Malformed JSON',
++    status: 400,
++  });
++}
++```
++
++### 23.3. Schema-validáció
++
++```ts
++const createProductPayloadSchema = z.object({
++  name: z.string().trim().min(1).max(200),
++  priceMinor: z.number().int().min(0),
++  currency: z.enum(['HUF', 'EUR', 'USD']),
++}).strict();
++
++const parsed = createProductPayloadSchema.safeParse(raw);
++
++if (!parsed.success) {
++  return validationProblem(parsed.error);
++}
++```
++
++Szemantikailag hibás, jól formált JSON tipikusan **422**.
++
++### 23.4. Tömeg-hozzárendelés
++
++Tilos:
++
++```ts
++await prisma.product.update({
++  data: await request.json(),
++});
++```
++
++A payload csak explicit engedélyezett mezőket tartalmazhat.
++
++### 23.5. Discriminator
++
++Polimorf payloadhoz explicit diszkriminált union használható, maximális változatszámmal és stabil verziózással.
++
++---
++
++## 24. FormData és HTML form mapping
++
++### 24.1. Server Action
++
++```ts
++const schema = z.object({
++  name: z.string().trim().min(1),
++  priceMinor: z.coerce.number().int().min(0),
++});
++
++const parsed = schema.safeParse({
++  name: formData.get('name'),
++  priceMinor: formData.get('priceMinor'),
++});
++```
++
++### 24. 
