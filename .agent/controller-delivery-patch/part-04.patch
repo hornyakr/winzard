@@ -1,0 +1,382 @@
+T**: csak explicit trade-off és review mellett használható;
++- **OPCIONÁLIS / MAY**: a projekt igénye szerint bevezethető.
++
++A normatív jelentés csak a nagybetűs alakhoz tartozik.
++
++### 1.2. Alapfogalmak
++
++| Fogalom | Winzard-jelentés |
++| --- | --- |
++| **Controller-szerep** | Egy bejövő felhasználói vagy HTTP interakció delivery oldali koordinációja. |
++| **Delivery adapter** | Next.js-specifikus belépési pont, amely inputot olvas, validál, application műveletet hív és választ képez. |
++| **Page** | `page.tsx` által megvalósított HTML/UI entrypoint. |
++| **Route Handler** | `route.ts` fájlban exportált HTTP metódusfüggvény Web `Request`/`Response` API-val. |
++| **Server Action / Server Function** | `"use server"` határ mögött futó, Reactből meghívható szerveroldali mutation entrypoint. |
++| **Request mapper** | Bizalmatlan delivery inputot normalizált, validált műveleti inputtá alakító tiszta függvény vagy adapter. |
++| **Presenter** | Application outputból explicit UI- vagy HTTP DTO-t készítő komponens. |
++| **Application query** | Olvasási művelet; nem módosít üzleti állapotot. |
++| **Application command** | Állapotváltoztató use case; a tranzakció és üzleti invariáns application/domain felelősség. |
++| **Actor** | Az authentikált vagy anonim végrehajtó explicit, minimális security-identitása. |
++| **Composition root** | Szerveroldali wiring réteg, amely a portokat konkrét adapterekkel köti össze. |
++| **Expected failure** | Validációs, not-found, conflict vagy authorization jellegű, előre modellezett kimenet. |
++| **Unexpected failure** | Programhiba vagy infrastruktúrahiba, amelyet központi hibahatár és observability kezel. |
++| **Problem Details** | Gépileg stabil HTTP hibadokumentum az `application/problem+json` médiatípus körül. |
++| **Flash message** | Egyszer fogyasztható, következő requestben megjelenő felhasználói értesítés. |
++| **Streaming response** | Olyan HTTP-válasz, amelynek body-ja részletekben érkezik. |
++| **SSE** | Egyirányú, hosszan nyitva tartott HTTP event stream `text/event-stream` formátumban. |
++
++### 1.3. Symfony és Winzard terminológiai megfeleltetés
++
++```text
++Symfony route + controller method + Response
++    ↓
++Next.js App Router route + page/route/action entrypoint + UI/Response
++    ↓
++Winzard delivery adapter + application operation + explicit output mapping
++```
++
++A Symfony controller általánosan `Request`-ből `Response`-t készít. Winzardban a kimeneti forma entrypointonként eltér:
++
++- a **Page** React UI-t ad vissza;
++- a **Route Handler** Web `Response`-ot ad vissza;
++- a **Server Action** szerializálható action state-et ad vissza, redirectet indít vagy hibát jelez;
++- a **Proxy** cross-cutting előfeldolgozó, nem üzleti controller;
++- az **error/not-found boundary** hibafelület, nem use case.
++
++---
++
++## 2. Hatókör, előfeltételek és technikai baseline
++
++### 2.1. Előfeltételek
++
++A fejezet alkalmazásához szükséges:
++
++```text
++Node.js 24.x
++pnpm 11.x
++Next.js 16.2.10
++React 19.2.x
++TypeScript 5.9.x
++App Router
++src/ könyvtár
++strict TypeScript
++```
++
++Ajánlott ellenőrzés:
++
++```bash
++pnpm install --frozen-lockfile
++pnpm typegen
++pnpm typecheck
++pnpm lint
++pnpm test
++pnpm forge check --project <PROJECT>
++pnpm build
++```
++
++### 2.2. Lefedett entrypointok
++
++A dokumentum részletesen tárgyalja:
++
++```text
++src/app/**/page.tsx
++src/app/**/route.ts
++src/app/**/actions.ts
++src/app/**/not-found.tsx
++src/app/**/error.tsx
++src/app/**/loading.tsx
++src/proxy.ts
++```
++
++A Proxy csak ott szerepel, ahol requestelőfeldolgozás, redirect vagy rewrite indokolt. Üzleti műveletet nem birtokolhat.
++
++### 2.3. Nem része ennek a fejezetnek
++
++Nem teljes körű témája:
++
++- a teljes routing contract — lásd a routing dokumentumot;
++- a form komponenskönyvtár;
++- a teljes authentication recipe;
++- ORM- vagy adatbázisrészletek;
++- queue/worker platform;
++- teljes observability implementáció;
++- provider-specifikus objektumtároló;
++- valós idejű pub/sub szolgáltatás;
++- Edge-runtime szolgáltatói korlátok teljes katalógusa.
++
++Ezekre a controller contract portokon és capability-határokon keresztül hivatkozik.
++
++---
++
++## 3. Mi számít controllernek Winzardban?
++
++### 3.1. Nem egyetlen osztály
++
++Winzardban a „controller” nem feltétlenül `SomethingController` nevű osztály. Controller-szerepet több framework entrypoint tölt be.
++
++| Interakció | Elsődleges entrypoint | Tipikus kimenet |
++| --- | --- | --- |
++| HTML GET | `page.tsx` | React Server Component UI |
++| Külső/belső HTTP API | `route.ts` | `Response` |
++| React form mutation | Server Action | action state, redirect vagy throw |
++| Statikus redirect/rewrite | `next.config.ts` | konfigurált routing eredmény |
++| Requestfüggő cross-cutting logika | `proxy.ts` | `NextResponse` |
++| Várt 404 UI | `notFound()` + `not-found.tsx` | route-szegmens hiba UI |
++| Váratlan renderelési hiba | `error.tsx` | hibahatár |
++| Fájl/SSE/stream | `route.ts` | streaming `Response` |
++
++### 3.2. Vékony adapter definíció
++
++Egy delivery adapter elfogadható felelőssége:
++
++1. request context beolvasása;
++2. input normalizálása;
++3. schema-validáció;
++4. actor/session feloldása;
++5. application query vagy command meghívása;
++6. application result leképezése UI-ra vagy HTTP-válaszra;
++7. cache/revalidation/redirect delivery döntés;
++8. request ID és observability context átadása.
++
++Nem elfogadható felelősség:
++
++- üzleti invariáns;
++- Prisma/SQL query;
++- több repository manuális tranzakciós koordinációja;
++- domain entity szerializálása;
++- titkos konfiguráció közvetlen beolvasása;
++- belső saját `/api` végpont HTTP-n történő meghívása;
++- tetszőleges exceptionüzenet visszaküldése a kliensnek;
++- globális service locator használata.
++
++### 3.3. Controller complexity budget
++
++Ajánlott cél:
++
++```text
++request mapping
+++ actor resolution
+++ egy application operation
+++ response mapping
++```
++
++Ha az entrypointban több egymást követő üzleti döntés, több repository vagy több külső side effect jelenik meg, a logikát application service-be kell áthelyezni.
++
++---
++
++## 4. A három elsődleges delivery entrypoint
++
++### 4.1. Page
++
++A Page HTML/UI kérés belépési pontja.
++
++Tulajdonságai:
++
++- alapértelmezetten Server Component;
++- `params` és `searchParams` aszinkron prop;
++- React UI-t ad vissza, nem `Response`-ot;
++- használhat `notFound()` és `redirect()` interruptot;
++- request API olvasása dinamikus renderelést okozhat;
++- cookie-t nem módosíthat renderelés közben.
++
++### 4.2. Route Handler
++
++A Route Handler explicit HTTP endpoint.
++
++Tulajdonságai:
++
++- a Web `Request` és `Response` API-t használja;
++- támogatott metódusok: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `OPTIONS`;
++- explicit státusz-, header-, cookie- és body-kezelésre alkalmas;
++- JSON, XML, fájl, webhook, stream és SSE entrypoint lehet;
++- minden mutation endpointot publikus támadási felületként kell kezelni.
++
++### 4.3. Server Action
++
++A Server Action React UI-ból meghívható szerveroldali mutation entrypoint.
++
++Tulajdonságai:
++
++- tipikusan `FormData`-t kap;
++- nyers kliensinputot kap, ezért validáció kötelező;
++- ugyanúgy authentikációt és authorizációt igényel, mint egy publikus HTTP endpoint;
++- nem `Response`-ot ad vissza;
++- redirect esetén a `redirect()` interruptot használja;
++- cache érvénytelenítését a sikeres command után végezheti;
++- nagy fájl feltöltésére az alapértelmezett request limit miatt rendszerint nem alkalmas.
++
++### 4.4. Döntési tábla
++
++| Követelmény | Page | Route Handler | Server Action |
++| --- | --- | --- | --- |
++| SEO/HTML render | elsődleges | nem | nem |
++| Külső API fogyasztó | nem | elsődleges | nem |
++| React form mutation | lehetséges wrapper | lehetséges | elsődleges |
++| Egyedi HTTP status/header | korlátozott | teljes | nem közvetlen |
++| SSE/stream | nem | elsődleges | nem |
++| Webhook | nem | elsődleges | nem |
++| Cookie írás | nem | igen | igen |
++| Progresszív enhancement | igen | kézi | igen |
++| Kliensfüggetlen contract | nem | igen | nem |
++
++---
++
++## 5. Egy alap Page mint controller
++
++A következő page vékony delivery adapter.
++
++```tsx
++// src/app/products/[productId]/page.tsx
++import { notFound } from 'next/navigation';
++
++import { catalogModule } from '@/composition/catalog';
++import { ProductView } from '@/modules/catalog/product/presentation/product-view';
++import { productIdSchema } from '@/modules/catalog/product/presentation/product.schemas';
++
++export default async function ProductPage({
++  params,
++}: PageProps<'/products/[productId]'>) {
++  const routeParams = await params;
++  const parsed = productIdSchema.safeParse(routeParams.productId);
++
++  if (!parsed.success) {
++    notFound();
++  }
++
++  const result = await catalogModule.queries.getProduct.execute({
++    productId: parsed.data,
++  });
++
++  if (result.kind === 'not_found') {
++    notFound();
++  }
++
++  return <ProductView product={result.product} />;
++}
++```
++
++### 5.1. Mi történik itt?
++
++```text
++raw route param
++→ presentation schema
++→ application query input
++→ explicit application result
++→ not-found interrupt vagy view DTO
++→ React view
++```
++
++### 5.2. Mi nem történhet itt?
++
++Tilos:
++
++```tsx
++import { prisma } from '@/platform/database/client';
++
++export default async function Page({ params }) {
++  const product = await prisma.product.findUnique(/* ... */);
++  // ...
++}
++```
++
++Tilos saját HTTP API hívása:
++
++```tsx
++const response = await fetch('http://localhost:3000/api/products/123');
++```
++
++A page ugyanabban a processben közvetlenül a composition rooton keresztül hívja az application műveletet.
++
++---
++
++## 6. Egy alap Route Handler mint controller
++
++```ts
++// src/app/api/products/[productId]/route.ts
++import { catalogModule } from '@/composition/catalog';
++import { productIdSchema } from '@/modules/catalog/product/presentation/product.schemas';
++import { problem } from '@/platform/http/problem';
++
++export async function GET(
++  _request: Request,
++  context: RouteContext<'/api/products/[productId]'>,
++): Promise<Response> {
++  const params = await context.params;
++  const parsed = productIdSchema.safeParse(params.productId);
++
++  if (!parsed.success) {
++    return problem({
++      type: 'https://example.invalid/problems/invalid-product-id',
++      title: 'Invalid product identifier',
++      status: 400,
++    });
++  }
++
++  const result = await catalogModule.queries.getProduct.execute({
++    productId: parsed.data,
++  });
++
++  if (result.kind === 'not_found') {
++    return problem({
++      type: 'https://example.invalid/problems/product-not-found',
++      title: 'Product not found',
++      status: 404,
++    });
++  }
++
++  return Response.json(result.product, {
++    status: 200,
++    headers: {
++      'Cache-Control': 'private, no-store',
++    },
++  });
++}
++```
++
++### 6.1. Route Handler contract
++
++A Route Handler:
++
++- explicit HTTP státuszt ad;
++- explicit output DTO-t ad;
++- nem ad vissza domain entityt vagy ORM rekordot;
++- expected failure-t stabil error bodyvá alakít;
++- nem nyeli el az unexpected failure-t;
++- nem használ globális, implicit serialization hookot.
++
++### 6.2. `Request` vagy `NextRequest`?
++
++Alapértelmezésben a szabványos `Request` ajánlott.
++
++`NextRequest` akkor indokolt, ha szükséges:
++
++- `nextUrl`;
++- Next-specifikus cookie helper;
++- Proxyval közös Next API.
++
++A platformfüggetlen request mapper lehetőleg Web API típusokra épüljön.
++
++---
++
++## 7. Server Action mint mutation controller
++
++```ts
++// src/modules/catalog/product/presentation/product.actions.ts
++'use server';
++
++import { revalidatePath } from 'next/cache';
++import { redirect } from 'next/navigation';
++
++import { catalogModule } from '@/composition/catalog';
++import { getActor } from '@/platform/auth/get-actor.server';
++import { updateProductFormSchema } from './product.schemas';
++
++export type UpdateProductActionState = Readonly<{
++  ok: boolean;
++  fieldErrors?: Readonly<Record<string, readonly string[]>>;
++  formError?: string;
++}>;
++
++export async function updateProductAction(
++  _previousState: UpdateProductActionState,
++  formD
