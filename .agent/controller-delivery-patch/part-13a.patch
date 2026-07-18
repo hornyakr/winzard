@@ -1,0 +1,185 @@
+rn uniquePlans([
++        portFile(target, 'query'),
++        infrastructureAdapterFile(target, 'query'),
++        queryOperationFile(target),
++        schemaFile(target),
++        presenterFile(target),
++        compositionFile(target, 'query'),
++        routeHandlerFile(target),
++        queryTestFile(target),
++        adapterTestFile(target, 'route-handler'),
++      ]);
++    case 'action':
++      return uniquePlans([
++        portFile(target, 'command'),
++        infrastructureAdapterFile(target, 'command'),
++        policyFile(target),
++        commandOperationFile(target),
++        actorResolverFile(target),
++        actionStateFile(target),
++        schemaFile(target),
++        compositionFile(target, 'command'),
++        actionFile(target),
++        commandTestFile(target),
++        adapterTestFile(target, 'action'),
++      ]);
++    case 'vertical-slice':
++      return uniquePlans([
++        portFile(target, 'both'),
++        infrastructureAdapterFile(target, 'both'),
++        queryOperationFile(target),
++        policyFile(target),
++        commandOperationFile(target),
++        actorResolverFile(target),
++        actionStateFile(target),
++        schemaFile(target),
++        presenterFile(target),
++        viewFile(target),
++        compositionFile(target, 'both'),
++        pageFile(target),
++        routeHandlerFile(target),
++        actionFile(target),
++        queryTestFile(target),
++        commandTestFile(target),
++        adapterTestFile(target, 'page'),
++        adapterTestFile(target, 'route-handler'),
++        adapterTestFile(target, 'action'),
++      ]);
++  }
++}
++
++async function readOptional(filePath: string): Promise<string | null> {
++  try {
++    await access(filePath);
++    return await readFile(filePath, 'utf8');
++  } catch (error) {
++    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
++    throw error;
++  }
++}
++
++export async function generateDeliverySlice(
++  kind: DeliveryGenerationKind,
++  targetValue: string,
++  options: DeliveryGenerationOptions = {},
++): Promise<DeliveryGenerationResult> {
++  const root = path.resolve(options.root ?? process.cwd());
++  const target = parseTarget(targetValue);
++  const plans = plan(kind, target);
++  const created: string[] = [];
++  const skipped: string[] = [];
++  const overwritten: string[] = [];
++  const conflicts: string[] = [];
++
++  for (const item of plans) {
++    const absolute = path.join(root, item.file);
++    const current = await readOptional(absolute);
++    if (current === item.content) {
++      skipped.push(item.file);
++    } else if (current !== null && !options.force) {
++      conflicts.push(item.file);
++    } else if (current === null) {
++      created.push(item.file);
++    } else {
++      overwritten.push(item.file);
++    }
++  }
++
++  if (conflicts.length > 0) {
++    throw new DocumentationCommandError(
++      'DELIVERY_GENERATOR_CONFLICT',
++      `A generátor nem ír felül kézi vagy eltérő fájlt: ${conflicts.join(', ')}`,
++      conflicts[0],
++    );
++  }
++
++  if (!options.dryRun) {
++    for (const item of plans) {
++      if (skipped.includes(item.file)) continue;
++      const absolute = path.join(root, item.file);
++      await mkdir(path.dirname(absolute), { recursive: true });
++      await writeFile(absolute, item.content, 'utf8');
++    }
++  }
++
++  return {
++    kind,
++    target: targetValue,
++    dryRun: options.dryRun ?? false,
++    created,
++    skipped,
++    overwritten,
++  };
++}
+diff --git a/packages/forge/src/delivery/inventory.ts b/packages/forge/src/delivery/inventory.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..1e4203ed1a5e582802d034bd02914945090315ca
+--- /dev/null
++++ b/packages/forge/src/delivery/inventory.ts
+@@ -0,0 +1,483 @@
++import { access, readFile, readdir } from 'node:fs/promises';
++import path from 'node:path';
++
++import ts from 'typescript';
++
++import { HTTP_METHODS, type HttpMethod, type RouteRuntime } from '../routing/types';
++import type {
++  DeliveryInventory,
++  DeliveryIssue,
++  DeliveryKind,
++  DeliveryOutputKind,
++  DeliveryRecord,
++} from './types';
++
++const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs']);
++const IGNORED_DIRECTORIES = new Set(['.git', '.next', 'node_modules', 'generated']);
++const ROUTE_ENTRYPOINT_PATTERN = /^(page|route)\.(?:ts|tsx|js|jsx|mjs|cjs)$/u;
++const INTERCEPTING_PREFIXES = ['(..)(..)', '(...)', '(..)', '(.)'] as const;
++
++function toProjectPath(root: string, filePath: string): string {
++  return path.relative(root, filePath).split(path.sep).join('/');
++}
++
++async function exists(filePath: string): Promise<boolean> {
++  try {
++    await access(filePath);
++    return true;
++  } catch {
++    return false;
++  }
++}
++
++function scriptKind(filePath: string): ts.ScriptKind {
++  if (filePath.endsWith('.tsx')) return ts.ScriptKind.TSX;
++  if (filePath.endsWith('.jsx')) return ts.ScriptKind.JSX;
++  if (filePath.endsWith('.js') || filePath.endsWith('.mjs') || filePath.endsWith('.cjs')) return ts.ScriptKind.JS;
++  return ts.ScriptKind.TS;
++}
++
++async function collectSourceFiles(directory: string): Promise<readonly string[]> {
++  let entries;
++  try {
++    entries = await readdir(directory, { withFileTypes: true });
++  } catch (error) {
++    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
++    throw error;
++  }
++
++  const files: string[] = [];
++  for (const entry of entries) {
++    const entryPath = path.join(directory, entry.name);
++    if (entry.isDirectory()) {
++      if (!IGNORED_DIRECTORIES.has(entry.name) && !entry.name.startsWith('_')) {
++        files.push(...(await collectSourceFiles(entryPath)));
++      }
++      continue;
++    }
++    if (entry.isFile() && SOURCE_EXTENSIONS.has(path.extname(entry.name))) files.push(entryPath);
++  }
++  return files.sort();
++}
++
++
++function isExported(node: ts.Node): boolean {
++  return ts.canHaveModifiers(node) &&
++    (ts.getModifiers(node)?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) ?? false
