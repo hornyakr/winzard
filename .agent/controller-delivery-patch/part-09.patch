@@ -1,0 +1,589 @@
++Tilos:
++
++```text
++Access-Control-Allow-Origin: *
+++ credentials
++```
++
++Origin allowlist:
++
++- normalizált;
++- exact vagy kontrollált wildcard;
++- nem user input;
++- Vary: Origin;
++- preflight tesztelt.
++
++### 41.4. Server Action `allowedOrigins`
++
++Csak tényleges reverse proxy/origin topológia miatt bővítsd. Túl széles wildcard növeli a támadási felületet.
++
++### 41.5. Webhook
++
++Webhook nem CSRF-flow. Használj provider signature-t, timestampet, replay protectiont, raw bodyt és idempotenciát.
++
++---
++
++## 42. Idempotencia és HTTP metódusok
++
++### 42.1. GET/HEAD
++
++GET és HEAD nem módosíthat üzleti állapotot.
++
++Tilos:
++
++```text
++GET /orders/123/approve
++```
++
++Link prefetcher, crawler vagy preview bot meghívhatja.
++
++### 42.2. PUT/PATCH/DELETE
++
++A metódus szemantikája contract:
++
++- PUT: teljes replace vagy dokumentált upsert;
++- PATCH: részleges változtatás;
++- DELETE: idempotens törlési szándék;
++- POST: command vagy collection create.
++
++### 42.3. Idempotency-Key
++
++Külső mutation API-hoz:
++
++```text
++Idempotency-Key
++actor/tenant scope
++request fingerprint
++result replay
++TTL
++concurrent lock
++```
++
++A key nem globális secret, de érzékeny lehet.
++
++### 42.4. Retry
++
++A kliens/network retry biztonságát tesztelni kell. A controller nem indíthat nem idempotens side effectet a tartós idempotency rekord előtt.
++
++### 42.5. Optimistic concurrency
++
++Használható:
++
++- version mező;
++- ETag + If-Match;
++- domain revision.
++
++Conflict explicit 409/412 result legyen.
++
++---
++
++## 43. Cache, revalidation és controller output
++
++### 43.1. Page cache
++
++A Page cache/rendering contractja függ:
++
++- request API használattól;
++- data fetch cache-től;
++- `connection()`-től;
++- cache directive-ektől;
++- route segment configtól.
++
++A controller documentation ne feltételezze automatikusan, hogy minden Page request-time.
++
++### 43.2. Route Handler cache
++
++Explicit header ajánlott:
++
++```text
++public, max-age=...
++private, no-store
++no-cache
++s-maxage
++stale-while-revalidate
++```
++
++User/tenant válasznál public shared cache tilos megfelelő scope nélkül.
++
++### 43.3. Vary
++
++Ha a response nyelv, origin vagy encoding szerint változik, `Vary` szükséges. Cookie/Authorization szerinti shared cache rendszerint kerülendő.
++
++### 43.4. Mutation után
++
++Server Action vagy Route Handler siker után:
++
++- `revalidatePath`;
++- `revalidateTag`;
++- `updateTag`;
++- redirect/refresh
++
++alkalmazható a dokumentált cachemodell szerint.
++
++Cache invalidation ne fusson a command sikere előtt.
++
++### 43.5. ETag
++
++ETag lehet version alapú. User-specifikus response esetén ne okozz cross-user cache keveredést.
++
++### 43.6. Error cache
++
++401/403/500 rendszerint `no-store`. 404 negative caching csak publikus, stabil erőforrásnál és tudatos TTL-lel.
++
++---
++
++## 44. Tranzakció, side effect és controller ownership
++
++### 44.1. Application command birtokolja a tranzakciót
++
++Tilos:
++
++```ts
++await repositoryA.save(...);
++await repositoryB.save(...);
++await email.send(...);
++```
++
++közvetlenül a Route Handlerben.
++
++Helyette:
++
++```ts
++await updateProduct.execute({ actor, input });
++```
++
++### 44.2. Command lifecycle
++
++```text
++authorize
++→ load aggregate/current state
++→ domain decision
++→ persist transactionally
++→ outbox event
++→ return result
++```
++
++### 44.3. Külső side effect
++
++Email/webhook/search index:
++
++- outbox + worker;
++- vagy explicit compensating workflow.
++
++A controller ne tartson adatbázis-tranzakciót külső network call alatt.
++
++### 44.4. Read query
++
++Olvasási controller hívhat több read portot egy application queryn keresztül. A page ne koordináljon több repositoryt.
++
++### 44.5. Audit
++
++Üzleti audit a command eredményével együtt tartós. Request log és üzleti audit külön adat.
++
++---
++
++## 45. Controller frameworkfüggetlenítése
++
++A Symfony controller-decoupling célja Winzardban alapértelmezett architekturális elv.
++
++### 45.1. Mi marad framework-specifikus?
++
++```text
++page.tsx
++route.ts
++Server Action
++notFound/redirect
++cookies/headers
++Response
++React view
++cache revalidation
++```
++
++### 45.2. Mi frameworkfüggetlen?
++
++```text
++application input/result
++query/command class
++domain
++portok
++policy
++DTO
++presenter mapping nagy része
++transaction contract
++idempotency contract
++```
++
++### 45.3. Pure request mapper
++
++```ts
++export function parsePageNumber(
++  value: string | null,
++): ParseResult<number> {
++  // pure
++}
++```
++
++### 45.4. Delivery context
++
++A framework inputból minimális context készül:
++
++```ts
++export type RequestContext = Readonly<{
++  requestId: string;
++  actor: Actor;
++  locale: Locale;
++  tenantId: TenantId;
++}>;
++```
++
++Ne add át:
++
++```text
++Request
++Headers
++CookieStore
++NextRequest
++NextResponse
++```
++
++application rétegbe.
++
++### 45.5. Controller forwarding
++
++Egy controller ne „forwardoljon” egy másik controllerre processen belül. Hívd ugyanazt az application operationt. Ha a kliens URL-jének változnia kell, redirectelj. Ha transport proxy kell, rewrite vagy explicit upstream adapter használható.
++
++---
++
++## 46. Delivery adapterek projektstruktúrája
++
++Ajánlott szerkezet:
++
++```text
++src/
++  app/
++    products/
++      page.tsx
++      [productId]/
++        page.tsx
++        edit/
++          page.tsx
++    api/
++      products/
++        route.ts
++        [productId]/
++          route.ts
++
++  modules/
++    catalog/
++      product/
++        domain/
++        application/
++          commands/
++          queries/
++          dto/
++          ports/
++        infrastructure/
++          persistence/
++          storage/
++        presentation/
++          product.schemas.ts
++          product.actions.ts
++          product.presenter.ts
++          product-view.tsx
++          http/
++            product-request.mapper.ts
++            product-response.mapper.ts
++        index.server.ts
++
++  composition/
++    catalog.ts
++
++  platform/
++    auth/
++    config/
++    http/
++      problem.ts
++      request-context.ts
++    session/
++    flash/
++    observability/
++```
++
++### 46.1. `presentation/http`
++
++Transport-specifikus request/response mapper helye lehet.
++
++### 46.2. `presentation` és application DTO
++
++A presentation importálhat application DTO-t. Az application nem importál presentationt.
++
++### 46.3. `index.server.ts`
++
++Szerveroldali publikus modul-export boundary. Client Component ne importálja.
++
++### 46.4. Shared platform helper
++
++Csak valóban általános HTTP concern kerüljön `platform/http` alá. Domain-specifikus hiba mapping maradjon a modul presentation rétegében.
++
++---
++
++## 47. Controller és delivery architecture checkek
++
++A Forge architecture check ajánlott szabályai:
++
++```text
++APP_DIRECT_ORM_IMPORT
++APP_INTERNAL_HTTP_CALL
++APPLICATION_FRAMEWORK_IMPORT
++APPLICATION_OUTWARD_IMPORT
++APPLICATION_ORM_IMPORT
++CLIENT_SERVER_IMPORT
++COMPOSITION_MISSING_SERVER_ONLY
++NODE_ADAPTER_MISSING_SERVER_ONLY
++```
++
++Controller-specifikus implementált checkek:
++
++```text
++DELIVERY_PROCESS_ENV_ACCESS
++DELIVERY_UNSAFE_REDIRECT
++DELIVERY_RAW_ERROR_RESPONSE
++DELIVERY_UNVALIDATED_BODY
++DELIVERY_DOMAIN_ENTITY_RESPONSE
++DELIVERY_GET_MUTATION
++DELIVERY_UNSCOPED_TENANT_INPUT
++DELIVERY_SESSION_WRITE_DURING_RENDER
++DELIVERY_STREAM_BEFORE_AUTH
++```
++
++Framework-konformitási kiegészítő check:
++
++```text
++DELIVERY_SERVER_ACTION_EXPORT_INVALID
++```
++
++### 47.1. Statikus check korlátja
++
++AST check nem bizonyít teljes securityt. Runtime-, contract- és E2E tesztek is szükségesek.
++
++### 47.2. Waiver
++
++Hamis pozitív eltéréshez:
++
++- stabil waiver ID;
++- owner;
++- indok;
++- scope;
++- expiry/review_due;
++- security review.
++
++Inline disable komment önmagában nem elegendő kritikus szabálynál.
++
++---
++
++## 48. Tesztelési stratégia
++
++### 48.1. Schema unit teszt
++
++```ts
++it('elutasítja a túl nagy pageSize értéket', () => {
++  const result = productListQuerySchema.safeParse({
++    pageSize: '1000',
++  });
++  expect(result.success).toBe(false);
++});
++```
++
++### 48.2. Application unit teszt
++
++Fake portokkal, Next.js nélkül.
++
++### 48.3. Request mapper teszt
++
++Valós `URL`, `Headers`, `FormData`, `File` Web API objektumokkal.
++
++### 48.4. Route Handler teszt
++
++```ts
++const request = new Request('http://local.test/api/products', {
++  method: 'POST',
++  headers: { 'Content-Type': 'application/json' },
++  body: JSON.stringify(payload),
++});
++
++const response = await POST(request);
++expect(response.status).toBe(201);
++```
++
++### 48.5. Page teszt
++
++Pure presentation komponens unit tesztelhető. Async Server Component és Next interrupt viselkedéshez integráció/E2E ajánlott.
++
++### 48.6. Server Action teszt
++
++A mapper és application command külön unit teszt. Az action wiring integrációs tesztet kaphat; form submit és redirect E2E-ben mérvadó.
++
++### 48.7. Security negatív esetek
++
++- auth nélkül;
++- más tenant;
++- forbidden actor;
++- malformed JSON;
++- unsupported media;
++- túl nagy body;
++- duplicate idempotency key;
++- stale version;
++- open redirect payload;
++- path traversal filename;
++- header injection;
++- SSE reconnect manipulation.
++
++### 48.8. Streaming teszt
++
++Ellenőrizd:
++
++- header;
++- első chunk;
++- sorrend;
++- abort;
++- cleanup;
++- heartbeat;
++- timeout;
++- proxy buffering production közelében.
++
++### 48.9. Contract teszt
++
++Response schema és Problem Details shape géppel ellenőrizhető legyen.
++
++### 48.10. Production E2E
++
++A dev server nem elég. `next build` + production server mellett teszteld redirectet, cookie-t, streamet, cache headert és runtime-specifikus adaptert.
++
++---
++
++## 49. Diagnosztika és célparancsok
++
++### 49.1. Jelenlegi upstream és Winzard parancsok
++
++```bash
++pnpm typegen
++pnpm typecheck
++pnpm lint
++pnpm test
++pnpm forge check --project <PROJECT>
++pnpm build
++```
++
++### 49.2. Route-diagnosztika
++
++A routing dokumentumban definiált célfelület:
++
++```bash
++pnpm forge route:list
++pnpm forge route:inspect "/products/[productId]"
++pnpm forge route:match "/products/123"
++pnpm forge route:check
++```
++
++### 49.3. Controller/delivery célfelület
++
++```bash
++pnpm forge delivery:list
++pnpm forge delivery:inspect \
++  "src/app/api/products/[productId]/route.ts"
++pnpm forge delivery:check
++pnpm forge http:contracts
++```
++
++Az implementált diagnosztikai kimenet:
++
++```text
++entrypoint
++route
++method
++runtime
++input schema
++application operation
++auth policy
++output DTO
++cache policy
++streaming
++tests
++```
++
++### 49.4. Build diagnosztika
++
++```bash
++pnpm next build --debug
++```
++
++A build route és framework hibát tár fel, de application authorizációt nem bizonyít.
++
++### 49.5. Observability
++
++Controller metrika:
++
++- request count;
++- latency;
++- status family;
++- validation failure;
++- auth failure;
++- application result;
++- stream connection count;
++- payload size bucket.
++
++Ne használj high-cardinality raw URL/user ID labelt kontroll nélkül.
++
++---
++
++## 50. Biztonsági ellenőrzőlista
++
++Minden delivery entrypointhoz ellenőrizd:
++
++### 50.1. Input
++
++- [ ] minden route/query/body/form/header/file validált;
++- [ ] unknown field policy explicit;
++- [ ] size/depth/count limit van;
++- [ ] body csak egyszer olvasott;
++- [ ] Content-Type ellenőrzött;
++- [ ] filename/path nem megbízható.
++
++### 50.2. Identity
++
++- [ ] actor minden mutationnél újra feloldott;
++- [ ] erőforrás-szintű authorizáció megtörtént;
++- [ ] tenant scope explicit;
++- [ ] existence concealment döntés dokumentált.
++
++### 50.3. Mutation
++
++- [ ] GET nem mutál;
++- [ ] CSRF/origin/CORS contract megfelelő;
++- [ ] idempotencia/retry kezelve;
++- [ ] optimistic concurrency kezelve;
++- [ ] tranzakció application oldalon;
++- [ ] durable side effect outbox/queue.
++
++### 50.4. Output
++
++- [ ] explicit DTO;
++- [ ] nincs domain/ORM object;
++- [ ] nincs secret/PII fölöslegesen;
++- [ ] hibakód stabil;
++- [ ] cache policy explicit;
++- [ ] header injection kizárt;
++- [ ] redirect destination validált.
++
++### 50.5. Stream/file
++
++- [ ] auth és validáció stream előtt;
++- [ ] abort/cleanup;
++- [ ] proxy timeout/buffering;
++- [ ] memory limit;
++- [ ] Range vagy object storage stratégia;
++- [ ] Content-Disposition biztonságos.
++
++---
++
++## 5
