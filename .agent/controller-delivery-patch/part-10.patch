@@ -1,0 +1,288 @@
+1. Implementációs elfogadási kritériumok
++
++Egy controller/delivery szelet akkor tekinthető Winzard-kompatibilisnek, ha:
++
++1. az entrypoint csak delivery felelősséget tartalmaz;
++2. nincs közvetlen ORM vagy SQL import az `src/app` entrypointban;
++3. nincs saját belső `/api` HTTP-hívás Server Componentből;
++4. az input operation-specifikus schemával validált;
++5. actor/tenant context explicit;
++6. az application operation frameworkfüggetlen;
++7. az application output explicit result/DTO;
++8. az expected failure dokumentált mappinget kap;
++9. az unexpected failure nem szivárog a klienshez;
++10. a response status/header/cache contract tesztelt;
++11. mutationnél authorizáció, CSRF/origin és idempotencia mérlegelt;
++12. cookie/session írás nem renderelés közben történik;
++13. file/stream endpoint erőforrás- és proxyhatára dokumentált;
++14. unit-, adapter- és production E2E bizonyíték létezik;
++15. `pnpm forge check`, typecheck, lint, teszt és build sikeres;
++16. publikus API változásnál specification és upgrade hatás frissült.
++
++### 51.1. Definition of Done példa
++
++```text
++application tests
++request mapper tests
++Route Handler tests
++page/action E2E
++architecture checks
++security negative cases
++build
++documentation impact
++handoff/evidence
++```
++
++### 51.2. Nem elfogadható „kész” állítás
++
++Nem elegendő:
++
++```text
++„A route működik a böngészőben.”
++```
++
++Bizonyítani kell a hibás inputot, auth negatív esetet, response contractot és layer boundaryt is.
++
++---
++
++## 52. Gyakori hibák és hibaelhárítás
++
++### 52.1. `redirect()` nem működik
++
++Lehetséges ok:
++
++- általános catch blokk elnyeli;
++- render után próbál cookie-t írni;
++- unsafe abszolút URL;
++- action state és redirect egyszerre.
++
++### 52.2. `notFound()` 200-at mutat streamelt válasznál
++
++A stream már elindult. Kritikus gépi API-statushoz Route Handlert használj.
++
++### 52.3. `request.json()` hibát dob
++
++- malformed JSON;
++- üres body;
++- rossz Content-Type;
++- body már olvasott;
++- body limit/proxy limit.
++
++### 52.4. `File` nem érkezik
++
++- form `enctype`;
++- rossz mezőnév;
++- body limit;
++- Proxy/CDN limit;
++- Server Action 1 MB baseline;
++- runtime FormData támogatás.
++
++### 52.5. Cookie nem áll be
++
++- Server Component renderből próbálod;
++- stream már indult;
++- Secure cookie HTTP-n;
++- Domain/Path eltérés;
++- SameSite;
++- browser policy.
++
++### 52.6. Server Action CSRF/origin hiba
++
++- reverse proxy host eltér;
++- `allowedOrigins` hiányos;
++- forwarded host rossz;
++- protokoll mismatch;
++- túl széles vagy hibás wildcard.
++
++### 52.7. SSE nem streamel productionben
++
++- proxy buffering;
++- platform timeout;
++- CDN compression/transformation;
++- serverless limit;
++- hiányzó heartbeat;
++- connection cap;
++- runtime nem támogatja a használt adaptert.
++
++### 52.8. Memória nő fájlletöltésnél
++
++Az egész fájlt bufferbe olvasod. Használj streamet vagy object storage redirectet.
++
++### 52.9. Dupla mutation
++
++- kliens retry;
++- dupla submit;
++- nincs idempotency key;
++- gomb nincs pending alatt tiltva;
++- action többször bindolt;
++- transaction/result record hiányzik.
++
++### 52.10. Controller túl nagy
++
++Jelek:
++
++- 100+ sor;
++- több repository;
++- több nested branch üzleti nyelven;
++- transaction kezelés;
++- email/webhook közvetlenül;
++- több application command sorrendjének kézi koordinációja.
++
++Megoldás: új application orchestrator/command.
++
++---
++
++## 53. Symfony–Winzard megfeleltetés
++
++| Symfony controller fogalom | Winzard megfelelő |
++| --- | --- |
++| Controller method | Page, Route Handler vagy Server Action |
++| `Request` argument | Page props + `headers()`/`cookies()`, illetve Route Handler `Request` |
++| `Response` | Route Handler Web `Response`; Page React UI |
++| `AbstractController` | Nincs base class; explicit framework function és helper |
++| `generateUrl()` | Pure route builder + optional typed routes |
++| `redirectToRoute()` | Route builder + `redirect()`/`permanentRedirect()` |
++| `redirect()` | Validált internal/external redirect |
++| `render()` | React Server Component + presentation DTO |
++| Service autowiring | Explicit composition root és konstruktoros DI |
++| `getParameter()` | Capability-specifikus config parser és config service |
++| `make:controller` | Implementált `forge make:page` / `make:route-handler` |
++| `make:crud` | Resource metadata alapú későbbi vertical-slice generálás |
++| `createNotFoundException()` | `notFound()` vagy explicit 404 problem |
++| Request query bag | `URLSearchParams` + Zod mapper |
++| `MapQueryParameter` | Operation schema egyedi mezőkkel |
++| `MapQueryString` | Teljes query schema |
++| `MapRequestPayload` | `request.json()`/`formData()` + operation schema |
++| `mapWhenEmpty` | Explicit empty-payload contract |
++| `MapUploadedFile` | `FormData` `File` + file validation/storage adapter |
++| `MapRequestHeader` | `Headers.get()` + header-specifikus schema |
++| Session service | Session port/adapter és cookie/store capability |
++| Flash bag | Egyszer fogyasztható flash message port |
++| `json()` | `Response.json(explicitDto)` |
++| `#[Serialize]` | Tudatosan explicit presenter/response mapper |
++| Binary file response | Object storage redirect vagy streaming Route Handler |
++| Early Hints | Next/React preload + deployment 103 capability |
++| EventStreamResponse | `ReadableStream` alapú SSE Route Handler |
++| ControllerHelper decoupling | Frameworkfüggetlen application layer alapértelmezés |
++| Controller forwarding | Közös use case hívása vagy kliens redirect; controller-to-controller nem |
++
++---
++
++## 54. Források és attribúció
++
++A dokumentum funkcionális témakészletének elsődleges referenciája:
++
++- [Symfony Controller](https://symfony.com/doc/current/controller.html)
++
++A Next.js baseline és API-k elsődleges forrásai:
++
++- [Next.js Route Handlers](https://nextjs.org/docs/app/api-reference/file-conventions/route)
++- [Next.js Forms and Server Actions](https://nextjs.org/docs/app/guides/forms)
++- [Next.js Data Security](https://nextjs.org/docs/app/guides/data-security)
++- [Next.js Authentication](https://nextjs.org/docs/app/guides/authentication)
++- [Next.js `redirect`](https://nextjs.org/docs/app/api-reference/functions/redirect)
++- [Next.js `permanentRedirect`](https://nextjs.org/docs/app/api-reference/functions/permanentRedirect)
++- [Next.js `notFound`](https://nextjs.org/docs/app/api-reference/functions/not-found)
++- [Next.js `cookies`](https://nextjs.org/docs/app/api-reference/functions/cookies)
++- [Next.js `headers`](https://nextjs.org/docs/app/api-reference/functions/headers)
++- [Next.js `after`](https://nextjs.org/docs/app/api-reference/functions/after)
++- [Next.js Server Actions configuration](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverActions)
++- [Next.js typed routes](https://nextjs.org/docs/app/api-reference/config/next-config-js/typedRoutes)
++
++Web- és HTTP-szabványreferenciák:
++
++- [MDN Request](https://developer.mozilla.org/docs/Web/API/Request)
++- [MDN Response](https://developer.mozilla.org/docs/Web/API/Response)
++- [MDN ReadableStream](https://developer.mozilla.org/docs/Web/API/ReadableStream)
++- [MDN Server-sent events](https://developer.mozilla.org/docs/Web/API/Server-sent_events)
++- [RFC 9457 — Problem Details for HTTP APIs](https://www.rfc-editor.org/rfc/rfc9457)
++- [RFC 9110 — HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110)
++- [WHATWG Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html)
++
++### Ellenőrzési dátum
++
++```text
++2026-07-17
++```
++
++A Next.js request API-k, Server Action limitek, experimental auth interruptok, streaming és deployment adapterek változhatnak. Frissítéskor újra ellenőrizni kell legalább:
++
++- a Next.js aktuális stabil verzióját;
++- `params`, `searchParams`, `headers()` és `cookies()` async contractját;
++- Server Action `allowedOrigins` és `bodySizeLimit` beállítását;
++- Route Handler cache és runtime viselkedését;
++- `unauthorized()`/`forbidden()` stabilitását;
++- `after()` execution és duration contractját;
++- streaming/SSE deployment támogatást;
++- a Winzard Forge delivery- és route-parancsainak tényleges elérhetőségét.
++diff --git a/package.json b/package.json
++index 34ca210fefde55dbf3d924eb44e5b4664d5f501e..feb542db83df30e6c3b75579d549cf8fa636a373 100644
++--- a/package.json
+++++ b/package.json
++@@ -25,9 +25,10 @@
++     "db:validate:webapp": "prisma validate --config templates/webapp/prisma.config.ts",
++     "db:generate:webapp": "prisma generate --config templates/webapp/prisma.config.ts",
++     "db:migrate:deploy:webapp": "prisma migrate deploy --config templates/webapp/prisma.config.ts",
++-    "verify:core": "pnpm typegen && pnpm typecheck && pnpm lint && pnpm test && pnpm verify:documentation && pnpm verify:routing && pnpm forge check --project apps/reference && pnpm build && pnpm test:e2e:reference",
+++    "verify:core": "pnpm typegen && pnpm typecheck && pnpm lint && pnpm test && pnpm verify:documentation && pnpm verify:routing && pnpm verify:delivery && pnpm forge check --project apps/reference && pnpm build && pnpm test:e2e:reference",
++     "verify:database": "pnpm forge check --project templates/webapp && pnpm forge env:check --project templates/webapp && pnpm db:validate:webapp && pnpm db:generate:webapp && pnpm db:migrate:deploy:webapp",
++-    "verify": "pnpm verify:core"
+++    "verify": "pnpm verify:core",
+++    "verify:delivery": "pnpm forge delivery:check --project apps/reference && pnpm forge http:contracts --check --project apps/reference"
++   },
++   "winzard": {
++     "schemaVersion": 1,
++diff --git a/packages/forge/src/delivery/checks.ts b/packages/forge/src/delivery/checks.ts
++new file mode 100644
++index 0000000000000000000000000000000000000000..ede595b9a0677888d821ae04ac649601fb179e96
++--- /dev/null
+++++ b/packages/forge/src/delivery/checks.ts
++@@ -0,0 +1,6 @@
+++import { buildDeliveryInventory } from './inventory';
+++import type { DeliveryIssue } from './types';
+++
+++export async function runDeliveryChecks(root = process.cwd()): Promise<readonly DeliveryIssue[]> {
+++  return (await buildDeliveryInventory(root)).issues;
+++}
++diff --git a/packages/forge/src/delivery/docs.ts b/packages/forge/src/delivery/docs.ts
++new file mode 100644
++index 0000000000000000000000000000000000000000..77840a1d794972886ac1805172c2d37aa21b08b8
++--- /dev/null
+++++ b/packages/forge/src/delivery/docs.ts
++@@ -0,0 +1,96 @@
+++import { createHash } from 'node:crypto';
+++import { mkdir, readFile, writeFile } from 'node:fs/promises';
+++import path from 'node:path';
+++
+++import { buildDeliveryInventory } from './inventory';
+++import type { DeliveryInventory, DeliveryIssue } from './types';
+++
+++const GENERATED_HEADER = [
+++  '<!-- Generated by Winzard Forge. -->',
+++  '<!-- Source: Next.js delivery entrypoints and static TypeScript inspection. -->',
+++  '<!-- Do not edit directly. -->',
+++].join('\n');
+++
+++function hashInventory(inventory: DeliveryInventory): string {
+++  return createHash('sha256').update(JSON.stringify(inventory)).digest('hex');
+++}
+++
+++function escapeCell(value: string): string {
+++  return value.replaceAll('|', '\\|').replaceAll('\n', ' ');
+++}
+++
+++function valueList(values: readonly string[]): string {
+++  return values.length === 0 ? '-' : values.map((value) => `\`${escapeCell(value)}\``).join('<br>');
+++}
+++
+++function deliveryMap(inventory: DeliveryInventory): string {
+++  const rows = inventory.records.map((record) =>
+++    `| ${record.kind} | ${record.methods.join(',') || '-'} | \`${escapeCell(record.route ?? '-')}\` | \`${escapeCell(record.entrypoint)}\` | ${record.runtime} | ${record.streaming ? 'yes' : 'no'} |`,
+++  );
+++  return `${GENERATED_HEADER}\n\n# Delivery map\n\nInventory SHA-256: \`${hashInventory(inventory)}\`\n\n| Kind | Method | Route | Entrypoint | Runtime | Streaming |\n| --- | --- | --- | --- | --- | --- |\n${rows.join('\n') || '| - | - | - | - | - | - |'}\n`;
+++}
+++
+++function httpContracts(inventory: DeliveryInventory): string {
+++  const records = inventory.records;
+++  const rows = records.map((record) =>
+++    `| \`${escapeCell(record.entrypoint)}\` | ${valueList(record.inp
