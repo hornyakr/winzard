@@ -48,6 +48,9 @@ jobs:
       - name: Verify routing inventory and generated route documentation
         run: pnpm verify:routing
 
+      - name: Verify controller and delivery contracts
+        run: pnpm verify:delivery
+
       - name: Run reference capability and architecture checks
         run: pnpm forge check --project apps/reference
 

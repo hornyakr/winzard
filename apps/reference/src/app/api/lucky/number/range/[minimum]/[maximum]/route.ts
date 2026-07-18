@@ -1,5 +1,7 @@
 import { demoModule } from '@/composition/demo';
+import { toLuckyNumberResponse } from '@/modules/demo/lucky-number/index.server';
 import { luckyNumberRangeParamsSchema } from '@/modules/demo/lucky-number/presentation/lucky-number.schemas';
+import { validationProblem } from '@/platform/http/problem';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,13 +15,15 @@ type RouteContext = Readonly<{
 export async function GET(_request: Request, context: RouteContext): Promise<Response> {
   const parsed = luckyNumberRangeParamsSchema.safeParse(await context.params);
   if (!parsed.success) {
-    return Response.json({ code: 'INVALID_RANGE', issues: parsed.error.issues }, {
+    return validationProblem(parsed.error, {
+      type: 'https://winzard.invalid/problems/invalid-lucky-number-range',
+      title: 'Invalid lucky-number range',
       status: 400,
-      headers: noStoreHeaders,
+      code: 'INVALID_RANGE',
     });
   }
 
-  return Response.json(demoModule.queries.getLuckyNumber.execute(parsed.data), {
+  return Response.json(toLuckyNumberResponse(demoModule.queries.getLuckyNumber.execute(parsed.data)), {
     status: 200,
     headers: noStoreHeaders,
   });

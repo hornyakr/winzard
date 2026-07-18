@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import type { LuckyNumberDto } from '../application/dto/lucky-number.dto';
+import { LuckyNumberForm } from './lucky-number-form';
 import { luckyNumberRoutes } from './lucky-number.routes';
 
 type LuckyNumberViewProps = Readonly<{
@@ -22,6 +23,8 @@ export function LuckyNumberView({ result }: LuckyNumberViewProps) {
       <p className="text-zinc-300">
         A szám a {result.minimum}–{result.maximum} tartományból származik.
       </p>
+
+      <LuckyNumberForm />
 
       <nav aria-label="Szerencseszám műveletek" className="flex flex-wrap gap-4">
         <Link className="underline" href={luckyNumberRoutes.index()}>

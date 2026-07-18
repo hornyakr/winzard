@@ -18,16 +18,17 @@
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
     "test:e2e:reference": "tsx apps/reference/tests/e2e/lucky-number.smoke.ts",
-    "forge": "tsx packages/forge/src/cli.ts",
+    "forge": "tsx packages/forge/src/cli-router.ts",
     "doctor": "pnpm forge doctor --project apps/reference",
     "verify:documentation": "pnpm forge check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:generate --check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:sync --check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:adapters --check --project packages/forge/tests/fixtures/documented-project && pnpm forge context:check ATLAS-TASK-0001 --project packages/forge/tests/fixtures/documented-project",
     "verify:routing": "pnpm forge route:check --project apps/reference && pnpm forge route:docs --check --project apps/reference",
     "db:validate:webapp": "prisma validate --config templates/webapp/prisma.config.ts",
     "db:generate:webapp": "prisma generate --config templates/webapp/prisma.config.ts",
     "db:migrate:deploy:webapp": "prisma migrate deploy --config templates/webapp/prisma.config.ts",
-    "verify:core": "pnpm typegen && pnpm typecheck && pnpm lint && pnpm test && pnpm verify:documentation && pnpm verify:routing && pnpm forge check --project apps/reference && pnpm build && pnpm test:e2e:reference",
+    "verify:core": "pnpm typegen && pnpm typecheck && pnpm lint && pnpm test && pnpm verify:documentation && pnpm verify:routing && pnpm verify:delivery && pnpm forge check --project apps/reference && pnpm build && pnpm test:e2e:reference",
     "verify:database": "pnpm forge check --project templates/webapp && pnpm forge env:check --project templates/webapp && pnpm db:validate:webapp && pnpm db:generate:webapp && pnpm db:migrate:deploy:webapp",
-    "verify": "pnpm verify:core"
+    "verify": "pnpm verify:core",
+    "verify:delivery": "pnpm forge delivery:check --project apps/reference && pnpm forge http:contracts --check --project apps/reference"
   },
   "winzard": {
     "schemaVersion": 1,
