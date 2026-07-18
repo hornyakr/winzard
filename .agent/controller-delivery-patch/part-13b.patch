@@ -1,0 +1,142 @@
+);
++}
++
++function fileHasDirective(sourceFile: ts.SourceFile, directive: string): boolean {
++  for (const statement of sourceFile.statements) {
++    if (!ts.isExpressionStatement(statement) || !ts.isStringLiteral(statement.expression)) return false;
++    if (statement.expression.text === directive) return true;
++  }
++  return false;
++}
++
++function exportedConst(sourceFile: ts.SourceFile, name: string): ts.Expression | null {
++  for (const statement of sourceFile.statements) {
++    if (!ts.isVariableStatement(statement)) continue;
++    if (!statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)) continue;
++    for (const declaration of statement.declarationList.declarations) {
++      if (ts.isIdentifier(declaration.name) && declaration.name.text === name) return declaration.initializer ?? null;
++    }
++  }
++  return null;
++}
++
++function expressionText(expression: ts.Expression | null, sourceFile: ts.SourceFile): string | null {
++  if (!expression) return null;
++  if (ts.isStringLiteralLike(expression)) return expression.text;
++  return expression.getText(sourceFile);
++}
++
++function runtimeValue(sourceFile: ts.SourceFile): RouteRuntime {
++  const value = expressionText(exportedConst(sourceFile, 'runtime'), sourceFile);
++  return value === 'nodejs' || value === 'edge' ? value : 'unknown';
++}
++
++function routePattern(appRoot: string, entrypoint: string): string {
++  const relative = path.relative(appRoot, path.dirname(entrypoint));
++  if (relative === '') return '/';
++  const visible: string[] = [];
++  for (const rawSegment of relative.split(path.sep)) {
++    if (rawSegment.startsWith('@') || /^\([^/]+\)$/u.test(rawSegment)) continue;
++    let segment = rawSegment;
++    for (const prefix of INTERCEPTING_PREFIXES) {
++      if (segment.startsWith(prefix) && segment.length > prefix.length) {
++        segment = segment.slice(prefix.length);
++        break;
++      }
++    }
++    visible.push(segment);
++  }
++  return visible.length === 0 ? '/' : `/${visible.join('/')}`;
++}
++
++function collectHttpMethods(sourceFile: ts.SourceFile): readonly HttpMethod[] {
++  const methods = new Set<HttpMethod>();
++  for (const statement of sourceFile.statements) {
++    const exported = isExported(statement);
++    if (!exported) continue;
++    if (ts.isFunctionDeclaration(statement) && statement.name && HTTP_METHODS.includes(statement.name.text as HttpMethod)) {
++      methods.add(statement.name.text as HttpMethod);
++    }
++    if (ts.isVariableStatement(statement)) {
++      for (const declaration of statement.declarationList.declarations) {
++        if (ts.isIdentifier(declaration.name) && HTTP_METHODS.includes(declaration.name.text as HttpMethod)) {
++          methods.add(declaration.name.text as HttpMethod);
++        }
++      }
++    }
++  }
++  return HTTP_METHODS.filter((method) => methods.has(method));
++}
++
++function collectExportedActions(sourceFile: ts.SourceFile): readonly string[] {
++  const actions = new Set<string>();
++  for (const statement of sourceFile.statements) {
++    const exported = isExported(statement);
++    if (!exported) continue;
++    if (ts.isFunctionDeclaration(statement) && statement.name) actions.add(statement.name.text);
++    if (ts.isVariableStatement(statement)) {
++      for (const declaration of statement.declarationList.declarations) {
++        const callable = declaration.initializer &&
++          (ts.isArrowFunction(declaration.initializer) || ts.isFunctionExpression(declaration.initializer));
++        if (ts.isIdentifier(declaration.name) && callable) actions.add(declaration.name.text);
++      }
++    }
++  }
++  return [...actions].sort();
++}
++
++function hasModifier(node: ts.Node, kind: ts.SyntaxKind): boolean {
++  return ts.canHaveModifiers(node) &&
++    (ts.getModifiers(node)?.some((modifier) => modifier.kind === kind) ?? false);
++}
++
++function invalidServerActionExports(sourceFile: ts.SourceFile): readonly string[] {
++  const invalid = new Set<string>();
++  for (const statement of sourceFile.statements) {
++    if (ts.isTypeAliasDeclaration(statement) || ts.isInterfaceDeclaration(statement)) continue;
++    if (ts.isExportDeclaration(statement)) {
++      if (!statement.isTypeOnly) {
++        if (statement.exportClause === undefined) {
++          invalid.add('*');
++        } else if (ts.isNamespaceExport(statement.exportClause)) {
++          invalid.add(statement.exportClause.name.text);
++        } else if (ts.isNamedExports(statement.exportClause)) {
++          for (const element of statement.exportClause.elements) {
++            if (!element.isTypeOnly) invalid.add(element.name.text);
++          }
++        }
++      }
++      continue;
++    }
++    if (ts.isExportAssignment(statement)) {
++      const expression = statement.expression;
++      const asyncCallable = (ts.isArrowFunction(expression) || ts.isFunctionExpression(expression)) &&
++        hasModifier(expression, ts.SyntaxKind.AsyncKeyword);
++      if (!asyncCallable) invalid.add('default');
++      continue;
++    }
++    if (!isExported(statement)) continue;
++    if (ts.isFunctionDeclaration(statement)) {
++      if (!hasModifier(statement, ts.SyntaxKind.AsyncKeyword)) {
++        invalid.add(statement.name?.text ?? 'default');
++      }
++      continue;
++    }
++    if (ts.isVariableStatement(statement)) {
++      for (const declaration of statement.declarationList.declarations) {
++        const name = ts.isIdentifier(declaration.name) ? declaration.name.text : declaration.name.getText(sourceFile);
++        const initializer = declaration.initializer;
++        const asyncCallable = initializer &&
++          (ts.isArrowFunction(initializer) || ts.isFunctionExpression(initializer)) &&
++          hasModifier(initializer, ts.SyntaxKind.AsyncKeyword);
++        if (!asyncCallable) invalid.add(name);
++      }
++      continue;
++    }
++    invalid.add(statement.getText(sourceFile).split(/\s+/u, 4).join(' '));
++  }
++  return [...invalid].sort();
++}
++
++function callName(node: ts.CallExpression): string {
++  return 
