@@ -1,0 +1,480 @@
++```
++
++### 33.4. Standard mapper engedhető
++
++Közös response mapper használható:
++
++```ts
++mapApplicationResultToHttp(result)
++```
++
++de csak zárt, explicit result unionokra. Tetszőleges object reflection-alapú serialization nem kanonikus.
++
++### 33.5. API verziózás
++
++Presenter lehet verzióspecifikus:
++
++```text
++toProductResponseV1
++toProductResponseV2
++```
++
++Az application DTO nem feltétlenül publikus API DTO.
++
++---
++
++## 34. Problem Details és validációs hiba
++
++### 34.1. Contract
++
++```ts
++export type HttpProblem = Readonly<{
++  type: string;
++  title: string;
++  status: number;
++  detail?: string;
++  instance?: string;
++  code?: string;
++  errors?: readonly Readonly<{
++    path: string;
++    code: string;
++    message: string;
++  }>[];
++}>;
++```
++
++### 34.2. Response helper
++
++```ts
++export function problem(input: HttpProblem): Response {
++  return Response.json(input, {
++    status: input.status,
++    headers: {
++      'Content-Type': 'application/problem+json',
++      'Cache-Control': 'no-store',
++    },
++  });
++}
++```
++
++### 34.3. Zod error mapping
++
++Ne add vissza nyersen a teljes Zod issue objektumot. Stabil mezőket válassz:
++
++```ts
++function mapIssues(error: z.ZodError) {
++  return error.issues.map((issue) => ({
++    path: issue.path.join('.'),
++    code: issue.code,
++    message: localizeValidationIssue(issue),
++  }));
++}
++```
++
++### 34.4. `detail`
++
++A detail user-safe. Belső diagnosztikához correlation ID és log kell.
++
++### 34.5. HTML form error
++
++Server Action state és JSON problem külön output contract. Ne kényszeríts minden UI flow-t HTTP Problem Details formába.
++
++---
++
++## 35. Fájlletöltés
++
++### 35.1. Elsődleges stratégia
++
++Nagy vagy tartós fájlnál ajánlott:
++
++```text
++authorization
++→ rövid életű object-storage download URL
++→ 303/307 redirect
++→ storage/CDN kezeli a byte streamet és Range requestet
++```
++
++### 35.2. Lokális stream Route Handlerből
++
++```ts
++import { createReadStream } from 'node:fs';
++import { stat } from 'node:fs/promises';
++import { Readable } from 'node:stream';
++
++export const runtime = 'nodejs';
++
++export async function GET(): Promise<Response> {
++  const filePath = await resolveAuthorizedExportPath();
++  const fileStat = await stat(filePath);
++  const nodeStream = createReadStream(filePath);
++  const webStream = Readable.toWeb(nodeStream) as ReadableStream;
++
++  return new Response(webStream, {
++    status: 200,
++    headers: {
++      'Content-Type': 'application/pdf',
++      'Content-Length': String(fileStat.size),
++      'Content-Disposition':
++        'attachment; filename="export.pdf"',
++      'Cache-Control': 'private, no-store',
++    },
++  });
++}
++```
++
++### 35.3. Path security
++
++A user ne adhasson filesystem pathot. Az application query adjon opaque file ID-t vagy authorized storage descriptor-t.
++
++### 35.4. Content-Disposition
++
++- filename legyen sanitized;
++- CR/LF tiltott;
++- nem ASCII névhez szabványos `filename*` stratégia;
++- inline csak biztonságos médiatípusnál;
++- user-supplied HTML/SVG inline megjelenítése külön XSS threat model.
++
++### 35.5. Range request
++
++Videó/nagy fájl esetén:
++
++- `Range`;
++- `If-Range`;
++- 206;
++- `Content-Range`;
++- 416;
++- ETag/Last-Modified
++
++kezelés szükséges. Ha lehet, bízd object storage/CDN-re.
++
++### 35.6. Cache
++
++Személyes export:
++
++```text
++Cache-Control: private, no-store
++```
++
++Publikus immutable asset más contract.
++
++---
++
++## 36. Általános streaming response
++
++### 36.1. Web ReadableStream
++
++```ts
++const encoder = new TextEncoder();
++
++export async function GET(request: Request): Promise<Response> {
++  const stream = new ReadableStream<Uint8Array>({
++    async start(controller) {
++      try {
++        for await (const chunk of generateReportChunks({
++          signal: request.signal,
++        })) {
++          controller.enqueue(encoder.encode(chunk));
++        }
++        controller.close();
++      } catch (error) {
++        controller.error(error);
++      }
++    },
++    cancel() {
++      // release adapter resources
++    },
++  });
++
++  return new Response(stream, {
++    headers: {
++      'Content-Type': 'text/plain; charset=utf-8',
++      'Cache-Control': 'no-store',
++    },
++  });
++}
++```
++
++### 36.2. Stream előtt validálj
++
++A státusz és header a stream indulása után már nem módosítható. Ezért:
++
++1. authentikáció;
++2. authorizáció;
++3. inputvalidáció;
++4. erőforráslétezés;
++5. stream descriptor;
++
++a stream létrehozása előtt történjen.
++
++### 36.3. Tranzakció
++
++Ne tarts adatbázis-tranzakciót nyitva a teljes stream alatt.
++
++### 36.4. Backpressure
++
++Nagy streamnél a producer ne termeljen korlátlanul gyorsabban a consumerénél. Használj stream-kompatibilis adaptert és teszteld a runtime viselkedést.
++
++### 36.5. Hiba a stream közben
++
++Már elküldött status után nem lehet szabványos problem response-ra váltani. A stream formátumának kell hibajelet vagy megszakítást kezelnie.
++
++### 36.6. Timeout és deployment
++
++Ellenőrizd:
++
++- route `maxDuration`;
++- reverse proxy timeout;
++- CDN buffering;
++- serverless execution limit;
++- platform cold start;
++- Node/Edge stream támogatás.
++
++---
++
++## 37. Early Hints és resource hintok
++
++A Symfony controller 103 Early Hints válaszra mutat. A Winzard controller contractban nincs általános, stabil, alkalmazásszintű `sendEarlyHints()` helper.
++
++### 37.1. Használandó Next/React mechanizmusok
++
++- `next/font`;
++- `next/image`;
++- `<Link>` prefetch;
++- metadata/resource hint;
++- React `preload`, `preconnect`, `prefetchDNS`;
++- statikus `Link` headerek deployment/CDN rétegen;
++- streaming/Suspense.
++
++### 37.2. Infrastruktúra Early Hints
++
++103 csak akkor tekinthető támogatottnak, ha:
++
++- a deployment adapter dokumentálja;
++- reverse proxy/CDN átengedi;
++- browser és protocol viselkedés tesztelt;
++- asset URL stabil;
++- nem tartalmaz user-specifikus secretet.
++
++### 37.3. Nem ekvivalens fogalmak
++
++```text
++HTTP 103 Early Hints
++≠ HTML <link rel=preload>
++≠ Next Link prefetch
++≠ React Server Component streaming
++```
++
++Mindegyik más lifecycle és cache tulajdonság.
++
++### 37.4. Biztonság
++
++Ne preloadolj olyan privát URL-t, amelynek puszta megjelenése érzékeny információt árul el.
++
++---
++
++## 38. Server-Sent Events
++
++### 38.1. Route Handler példa
++
++```ts
++export const runtime = 'nodejs';
++export const dynamic = 'force-dynamic';
++
++const encoder = new TextEncoder();
++
++function encodeEvent(input: {
++  data?: string;
++  event?: string;
++  id?: string;
++  retry?: number;
++  comment?: string;
++}): Uint8Array {
++  const lines: string[] = [];
++
++  if (input.comment !== undefined) {
++    lines.push(`: ${input.comment}`);
++  }
++  if (input.id !== undefined) lines.push(`id: ${input.id}`);
++  if (input.event !== undefined) lines.push(`event: ${input.event}`);
++  if (input.retry !== undefined) lines.push(`retry: ${input.retry}`);
++
++  for (const line of (input.data ?? '').split(/\r?\n/u)) {
++    lines.push(`data: ${line}`);
++  }
++
++  return encoder.encode(`${lines.join('\n')}\n\n`);
++}
++
++export async function GET(request: Request): Promise<Response> {
++  const actor = await requireActor();
++  await authorizeNotifications(actor);
++
++  const stream = new ReadableStream<Uint8Array>({
++    async start(controller) {
++      const heartbeat = setInterval(() => {
++        controller.enqueue(encodeEvent({ comment: 'keep-alive' }));
++      }, 15_000);
++
++      try {
++        for await (const event of notificationSource.subscribe({
++          actor,
++          lastEventId: request.headers.get('last-event-id'),
++          signal: request.signal,
++        })) {
++          controller.enqueue(encodeEvent({
++            id: event.id,
++            event: event.type,
++            data: JSON.stringify(event.payload),
++          }));
++        }
++      } finally {
++        clearInterval(heartbeat);
++        controller.close();
++      }
++    },
++    cancel() {
++      // subscription cleanup
++    },
++  });
++
++  return new Response(stream, {
++    headers: {
++      'Content-Type': 'text/event-stream; charset=utf-8',
++      'Cache-Control': 'no-cache, no-transform',
++      'X-Accel-Buffering': 'no',
++    },
++  });
++}
++```
++
++### 38.2. Event contract
++
++- `id`: stabil cursor;
++- `event`: versionált event type;
++- `data`: JSON vagy dokumentált text;
++- `retry`: kliens reconnect hint;
++- comment: heartbeat.
++
++### 38.3. Resume
++
++`Last-Event-ID` csak trusted, validált cursor után használható. A subscription adapter dönti el, hogy replay lehetséges-e.
++
++### 38.4. Auth
++
++Az EventSource API custom header támogatása korlátozott. Cookie auth, rövid életű token vagy same-origin endpoint trade-offját dokumentálni kell. Token query stringben csak magas kockázati review mellett, rövid TTL-lel és log-redakcióval.
++
++### 38.5. Skálázás
++
++Sok tartós kapcsolatnál dedikált realtime hub vagy managed service ajánlott. A web app processben tartott SSE kapcsolat memória-, connection- és deploy-drain költséget okoz.
++
++### 38.6. Proxy
++
++Tiltsd a bufferinget, állíts timeoutot, és tesztelj production topológiában. Dev server sikere nem bizonyít production támogatást.
++
++---
++
++## 39. Válasz utáni munka és `after()`
++
++A Next.js `after()` válasz vagy prerender befejezése után futó callbacket ütemezhet.
++
++### 39.1. Jó használat
++
++- request logging;
++- analytics;
++- nem kritikus metric;
++- best-effort cleanup;
++- audit transport kiegészítése, ha a tartós audit már commitolva van.
++
++### 39.2. Nem jó használat
++
++- payment;
++- email, amelynek garantáltan ki kell mennie;
++- inventory reservation;
++- webhook delivery;
++- outbox helyettesítése;
++- hosszú job;
++- tranzakció commit.
++
++Kritikus side effect durable queue/outbox feladata.
++
++### 39.3. Hibák és redirect
++
++Az `after()` callback hibás/redirect/not-found befejezésnél is lefuthat. A callback ne feltételezzen automatikus sikert; explicit outcome adatot kapjon.
++
++### 39.4. Request API
++
++A request API elérhetősége attól függ, hol regisztrálod az `after()` callbacket. A szükséges minimális értéket inkább előre másold immutable contextbe.
++
++### 39.5. Prerender
++
++`after()` statikus route esetén build/revalidation időben is futhat. Request auditot ne regisztrálj olyan helyen, ahol prerender eseményként futna.
++
++---
++
++## 40. Authentikáció és authorizáció
++
++### 40.1. Minden entrypoint publikus felület
++
++A Route Handler és Server Action ugyanúgy támadható, mint bármely endpoint. A Page UI elrejtése nem authorizáció.
++
++### 40.2. Actor feloldás
++
++```ts
++const actor = await getActor();
++
++if (actor === null) {
++  // page: login redirect vagy auth UI
++  // API: 401 problem
++}
++```
++
++### 40.3. Secure check
++
++Érzékeny műveletnél database/current-state alapú ellenőrzés szükséges, nem csak cookie role.
++
++```ts
++const result = await command.execute({
++  actor,
++  productId,
++  input,
++});
++```
++
++A command/policy ellenőrzi az erőforrás-szintű jogosultságot.
++
++### 40.4. 401 vs 403
++
++- 401: nincs érvényes authentikáció;
++- 403: az actor ismert, de a művelet tiltott;
++- 404: existence concealment policy esetén használható, dokumentáltan.
++
++### 40.5. Next auth interrupts
++
++A jelenlegi Next baseline `unauthorized()` és `forbidden()` API-ja experimental konfigurációhoz kötött. Winzard production baseline ne függjön tőlük automatikusan. Page-nél stabil login redirect/explicit UI, Route Handlernél explicit 401/403 response használható.
++
++### 40.6. Tenant
++
++Tenant ID nem származhat kizárólag request bodyból. Host/path/session feloldás után a policy és repository query is tenant scope-olt legyen.
++
++---
++
++## 41. CSRF, CORS és Origin
++
++### 41.1. Server Action
++
++A Next Server Action origin–host ellenőrzést alkalmaz, és extra origin allowlist konfigurálható. Ez nem old meg minden üzleti authorizációt.
++
++### 41.2. Cookie-auth mutation Route Handler
++
++Same-origin browser mutationnél mérlegeld:
++
++- `SameSite`;
++- CSRF token;
++- Origin/Referer ellenőrzés;
++- double-submit vagy synchronizer token;
++- unsafe GET tiltása.
++
++### 41.3. CORS
++
++Route Handlerhez explicit CORS contract szükséges, ha cross-origin kliens támogatott.
++
