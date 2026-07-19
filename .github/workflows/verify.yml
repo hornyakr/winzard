@@ -23,7 +23,7 @@ jobs:
           ref: agent/configuration-platform
           fetch-depth: 0
 
-      - name: Reconstruct and apply verified patch
+      - name: Reconstruct and stage verified implementation
         shell: bash
         run: |
           set -euo pipefail
@@ -64,11 +64,7 @@ jobs:
           git apply --index --whitespace=error-all \
             /tmp/winzard-configuration-platform.patch
 
-          rm -rf .winzard-transfer
-          rm -f .github/workflows/apply-configuration-platform.yml
-          rm -f .github/workflows/export-agent-source.yml
-
-          git add -A
+          git checkout HEAD -- .github/workflows/verify.yml
           git diff --cached --check
 
       - name: Commit implementation
@@ -78,4 +74,9 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'feat: implement configuration platform'
+
+      - name: Push implementation
+        shell: bash
+        run: |
+          set -euo pipefail
           git push origin 'HEAD:agent/configuration-platform'
