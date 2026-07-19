@@ -1,82 +1,144 @@
-name: Apply configuration platform implementation
+name: Verify
 
 on:
   push:
-    branches:
-      - agent/configuration-platform
   pull_request:
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  apply:
+  core:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    env:
+      APP_URL: http://localhost:3000
+      APP_NAME: Winzard Reference
+      APP_STAGE: local
+      LOG_LEVEL: error
+      NEXT_PUBLIC_APP_NAME: Winzard Reference
 
     steps:
-      - name: Checkout branch with full history
+      - name: Checkout
         uses: actions/checkout@v6
         with:
-          ref: agent/configuration-platform
           fetch-depth: 0
 
-      - name: Reconstruct and stage verified implementation
-        shell: bash
-        run: |
-          set -euo pipefail
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
 
-          cat \
-            .winzard-transfer/b64-00 \
-            .winzard-transfer/b64-01 \
-            .winzard-transfer/b64-02 \
-            | base64 --decode > /tmp/winzard-configuration-platform.patch.xz
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
 
-          cat \
-            .winzard-transfer/bin-03-00 \
-            .winzard-transfer/bin-03-01 \
-            .winzard-transfer/bin-03-02 \
-            >> /tmp/winzard-configuration-platform.patch.xz
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-          cat \
-            .winzard-transfer/hex-03-03-0 \
-            .winzard-transfer/hex-03-03-1 \
-            | xxd -r -p >> /tmp/winzard-configuration-platform.patch.xz
+      - name: Generate reference route types
+        run: pnpm typegen
 
-          cat .winzard-transfer/bin-04 \
-            >> /tmp/winzard-configuration-platform.patch.xz
+      - name: Type-check
+        run: pnpm typecheck
 
-          cat .winzard-transfer/hex-05-* \
-            | xxd -r -p >> /tmp/winzard-configuration-platform.patch.xz
+      - name: Lint
+        run: pnpm lint
 
-          cat .winzard-transfer/hex-06-* \
-            | xxd -r -p >> /tmp/winzard-configuration-platform.patch.xz
+      - name: Run unit tests
+        run: pnpm test
 
-          echo '44666b47baa0d5dcf1363a653107ea89f5bd0fa13977c3383967985e92fa7358  /tmp/winzard-configuration-platform.patch.xz' \
-            | sha256sum --check --strict
+      - name: Verify deployed project documentation contract
+        run: pnpm verify:documentation
 
-          xz -dc /tmp/winzard-configuration-platform.patch.xz \
-            > /tmp/winzard-configuration-platform.patch
+      - name: Verify routing inventory and generated route documentation
+        run: pnpm verify:routing
 
-          git checkout origin/main -- .github/workflows/verify.yml
-          git apply --index --whitespace=error-all \
-            /tmp/winzard-configuration-platform.patch
+      - name: Verify controller and delivery contracts
+        run: pnpm verify:delivery
 
-          git checkout HEAD -- .github/workflows/verify.yml
-          git diff --cached --check
+      - name: Verify template, view and presentation contracts
+        run: pnpm verify:views
 
-      - name: Commit implementation
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'feat: implement configuration platform'
+      - name: Verify configuration contracts and secret hygiene
+        run: pnpm verify:configuration
 
-      - name: Push implementation
-        shell: bash
-        run: |
-          set -euo pipefail
-          git push origin 'HEAD:agent/configuration-platform'
+      - name: Run reference capability and architecture checks
+        run: pnpm forge check --project apps/reference
+
+      - name: Build minimal template without optional infrastructure
+        run: pnpm verify:minimal-template
+
+      - name: Build reference application
+        run: pnpm build
+
+      - name: Run reference E2E smoke tests
+        run: pnpm test:e2e:reference
+
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_DB: winzard
+          POSTGRES_USER: winzard
+          POSTGRES_PASSWORD: winzard_dev_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U winzard -d winzard"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      APP_URL: http://localhost:3000
+      APP_NAME: Winzard Webapp CI
+      APP_STAGE: local
+      LOG_LEVEL: error
+      NEXT_PUBLIC_APP_NAME: Winzard Webapp CI
+      DATABASE_URL: postgresql://winzard:winzard_dev_only@127.0.0.1:5432/winzard?schema=public
+      DATABASE_POOL_MAX: 10
+      DATABASE_CONNECTION_TIMEOUT_MS: 5000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check webapp capabilities
+        run: pnpm forge check --project templates/webapp
+
+      - name: Validate database environment
+        run: pnpm forge env:check --project templates/webapp
+
+      - name: Validate Prisma schema
+        run: pnpm db:validate:webapp
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate:webapp
+
+      - name: Type-check and build webapp template
+        run: pnpm verify:webapp-template
+
+      - name: Deploy database migrations
+        run: pnpm db:migrate:deploy:webapp
