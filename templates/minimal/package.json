@@ -15,7 +15,11 @@
   "winzard": {
     "schemaVersion": 1,
     "profile": "minimal",
-    "capabilities": ["next-app", "forge"]
+    "capabilities": [
+      "next-app",
+      "forge",
+      "presentation-contract"
+    ]
   },
   "dependencies": {
     "next": "16.2.10",

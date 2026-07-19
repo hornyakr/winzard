@@ -27,6 +27,19 @@ A referenciaalkalmazás útvonalai:
 /api/health/live
 ```
 
+## Template- és presentation-diagnosztika
+
+```bash
+pnpm forge view:list --project apps/reference
+pnpm forge view:inspect LuckyNumberView --project apps/reference
+pnpm forge view:check --project apps/reference
+pnpm forge view:contracts --check --project apps/reference
+pnpm forge view:assets --check --project apps/reference
+pnpm forge make:view catalog/product/product-card --dry-run --project apps/reference
+```
+
+A `presentation-contract` capability explicit view modelleket, minimális Server/Client határt, biztonságos asset- és URL-kezelést, valamint generált view-contract bizonyítékot tesz ellenőrizhetővé.
+
 ## Kitelepített projekt-dokumentáció
 
 A `project-documentation` és `ai-delivery` recipe a generált alkalmazás saját Project Vaultját, publikus Winzard consumer contractját, dokumentációs ellenőrzéseit és AI-delivery adaptereit biztosítja.
@@ -62,6 +75,7 @@ A root `build` kizárólag a referenciaalkalmazás Next.js buildjét futtatja. P
 - [Oldalkészítési dokumentáció](docs/public_documentation/winzard-page-creation.md)
 - [Routing és URL-kezelés Winzardban](docs/public_documentation/winzard-routing.md)
 - [Controller- és delivery adapterek](docs/public_documentation/winzard-controller.md)
+- [Sablonok, nézetek és UI-kompozíció](docs/public_documentation/winzard-templates.md)
 - [Winzard alkalmazásplatform Next.js fölött](docs/public_documentation/winzard-application-platform.md)
 - [Humán és AI dokumentáció Winzard projektekben](docs/public_documentation/winzard-human-ai-documentation.md)
 - [Kitelepített projekt-dokumentációs CLI referencia](docs/public_documentation/winzard-project-documentation-cli.md)

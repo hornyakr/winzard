@@ -2,8 +2,8 @@
 title: "Winzard termékhatárok, profilok és opcionális capability-k"
 description: "A Winzard setup dokumentáció normatív kiegészítése a Forge, a template-ek, a referenciaalkalmazás és az opcionális infrastruktúrák szétválasztásához."
 status: "accepted-specification"
-document_version: "0.2.0"
-last_verified: "2026-07-17"
+document_version: "0.3.0"
+last_verified: "2026-07-19"
 supersedes:
   - "winzard-setup.md azon részei, amelyek a PostgreSQL-t, a Prismát vagy az AUTH_SECRET változót minden projektre kötelezőként kezelik"
 architecture_decision: "ADR-0001"
@@ -169,7 +169,8 @@ A projektnek pontosan egy értelmezhető, támogatott szerződést kell adnia.
   "profile": "minimal",
   "capabilities": [
     "next-app",
-    "forge"
+    "forge",
+    "presentation-contract"
   ]
 }
 ```
@@ -183,6 +184,7 @@ A projektnek pontosan egy értelmezhető, támogatott szerződést kell adnia.
   "capabilities": [
     "next-app",
     "forge",
+    "presentation-contract",
     "modular-application",
     "liveness",
     "prisma-postgresql",
@@ -213,6 +215,7 @@ A capability sorrendje nem hordoz üzleti jelentést. A generátor stabil, deter
 |---|---|---|
 | `next-app` | Next.js App Router alkalmazás | `src/app`, Next.js és TypeScript konfiguráció. |
 | `forge` | Forge-kompatibilis projekt | Érvényes Winzard manifest. |
+| `presentation-contract` | Nézeti és UI-kompozíciós szerződés | View inventory, presentation architecture check és generált view-contract bizonyíték. |
 | `modular-application` | Elkülönített application architektúra | `src/modules` és `src/composition`. |
 | `liveness` | Folyamat-életjelzés | `no-store` liveness Route Handler. |
 | `prisma-postgresql` | Prisma 7 és PostgreSQL adapter | Prisma schema/config, database env, database adapter. |
@@ -222,6 +225,10 @@ A capability sorrendje nem hordoz üzleti jelentést. A generátor stabil, deter
 ### 5.1. Capability-függőségek
 
 ```text
+presentation-contract
+  -> next-app
+  -> forge
+
 database-readiness
   -> prisma-postgresql
 
@@ -243,6 +250,8 @@ A `prisma-postgresql` nem engedi meg, hogy:
 
 Az `authentication` nem jelenti azt, hogy minden route automatikusan védett. Az auth adapter mellett külön policy és use-case szintű authorizáció szükséges.
 
+A `presentation-contract` nem teszi a statikus elemzést runtime biztonsági kontrollá. A `view:check` a forrásszintű veszélyes mintákat, a view modellek és a Server/Client határ szerződését ellenőrzi; a production CSP, authorizáció, sanitizer review, accessibility és visual-regression kapuk továbbra is külön release-bizonyítékot igényelnek.
+
 ---
 
 ## 6. Application profile-ok
@@ -255,7 +264,8 @@ Tartalmazza:
 - TypeScript;
 - `src/app`;
 - ESLint;
-- Forge manifest.
+- Forge manifest;
+- `presentation-contract` capability és Forge view-diagnosztika.
 
 Nem tartalmaz alapértelmezetten:
 
@@ -308,6 +318,7 @@ A referenciaalkalmazás manifestje jelenleg:
   "capabilities": [
     "next-app",
     "forge",
+    "presentation-contract",
     "modular-application",
     "liveness"
   ]
@@ -604,6 +615,19 @@ pnpm forge env:check --project templates/webapp
 
 A parancs csak az aktív capability-k változóit kéri számon.
 
+### 10.5. Presentation-contract parancsok
+
+```bash
+pnpm forge view:list --project apps/reference
+pnpm forge view:inspect LuckyNumberView --project apps/reference
+pnpm forge view:check --project apps/reference
+pnpm forge view:contracts --check --project apps/reference
+pnpm forge view:assets --check --project apps/reference
+pnpm forge make:view catalog/product/product-card --dry-run --project apps/reference
+```
+
+A `view:contracts` és `view:assets` determinisztikus, verziózott bizonyítékot ad a Page, Layout, `template.tsx`, loading/error/not-found boundaryk, Server/Client komponensek, view modellek, route builderek, assetek és kapcsolódó tesztek állapotáról.
+
 ---
 
 ## 11. Template- és recipe-határok
@@ -692,6 +716,7 @@ typegen
 typecheck
 lint
 unit tests
+routing, delivery és view contract ellenőrzés
 forge reference check
 reference build
 reference E2E
@@ -701,6 +726,7 @@ A core job bizonyítja, hogy:
 
 - a reference app adatbázis nélkül buildel;
 - a Forge architecture check nem igényel Prismát;
+- a presentation-contract inventory és generált dokumentáció driftmentes;
 - a lucky-number szelet nem szivárogtat infrastruktúrafüggést;
 - nincs rejtett `DATABASE_URL` előfeltétel.
 

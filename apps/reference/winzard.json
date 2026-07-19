@@ -4,6 +4,7 @@
   "capabilities": [
     "next-app",
     "forge",
+    "presentation-contract",
     "modular-application",
     "liveness"
   ]
