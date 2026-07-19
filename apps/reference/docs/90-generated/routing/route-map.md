@@ -4,7 +4,7 @@
 
 # Route map
 
-Inventory SHA-256: `731b1ccb38f7fa5e74a97f82bdc9dcc4ecd03a35073220a91bfd86fd4630c518`
+Inventory SHA-256: `b86e0195dda32684573d8f7de375585d450fcabc7253e4f124a965a5f4f2fae0`
 
 | Method | Kind | Pattern | Entrypoint | Runtime | Owner |
 | --- | --- | --- | --- | --- | --- |

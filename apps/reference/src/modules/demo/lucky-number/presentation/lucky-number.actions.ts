@@ -3,6 +3,7 @@
 import { demoModule } from '@/composition/demo';
 import { getDemoActor } from './lucky-number.actor.server';
 import type { GenerateLuckyNumberActionState } from './lucky-number.action-state';
+import { toLuckyNumberResponse } from './lucky-number.presenter';
 import { luckyNumberRequestSchema } from './lucky-number.schemas';
 
 export async function generateLuckyNumberAction(
@@ -31,5 +32,5 @@ export async function generateLuckyNumberAction(
     };
   }
 
-  return { ok: true, result: result.value };
+  return { ok: true, result: toLuckyNumberResponse(result.value) };
 }

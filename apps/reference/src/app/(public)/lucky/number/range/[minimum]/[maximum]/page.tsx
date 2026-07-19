@@ -3,7 +3,11 @@ import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 
 import { demoModule } from '@/composition/demo';
-import { InvalidLuckyNumberRangeError, LuckyNumberView } from '@/modules/demo/lucky-number/index.server';
+import {
+  InvalidLuckyNumberRangeError,
+  LuckyNumberView,
+  presentLuckyNumber,
+} from '@/modules/demo/lucky-number/index.server';
 import { luckyNumberRangeParamsSchema } from '@/modules/demo/lucky-number/presentation/lucky-number.schemas';
 
 export const runtime = 'nodejs';
@@ -18,9 +22,9 @@ type LuckyNumberRangePageProps = Readonly<{
 }>;
 
 export default async function LuckyNumberRangePage({ params }: LuckyNumberRangePageProps) {
-  await connection();
   const parsed = luckyNumberRangeParamsSchema.safeParse(await params);
   if (!parsed.success) notFound();
+  await connection();
 
   const result = (() => {
     try {
@@ -31,5 +35,5 @@ export default async function LuckyNumberRangePage({ params }: LuckyNumberRangeP
     }
   })();
 
-  return <LuckyNumberView result={result} />;
+  return <LuckyNumberView model={presentLuckyNumber(result)} />;
 }

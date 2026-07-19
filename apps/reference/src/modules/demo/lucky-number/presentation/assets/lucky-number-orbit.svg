@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" role="img" aria-labelledby="title description">
+  <title id="title">Geometrikus pályák</title>
+  <desc id="description">Koncentrikus körök és pontok a szerencseszám körül.</desc>
+  <rect width="320" height="320" rx="48" fill="#18181b"/>
+  <circle cx="160" cy="160" r="104" fill="none" stroke="#52525b" stroke-width="2"/>
+  <circle cx="160" cy="160" r="68" fill="none" stroke="#71717a" stroke-width="2" stroke-dasharray="7 9"/>
+  <circle cx="160" cy="160" r="30" fill="#f4f4f5"/>
+  <circle cx="250" cy="108" r="10" fill="#a1a1aa"/>
+  <circle cx="92" cy="230" r="7" fill="#d4d4d8"/>
+</svg>

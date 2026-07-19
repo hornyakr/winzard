@@ -6,6 +6,7 @@ import ts from 'typescript';
 import { runDocumentationChecks } from '../documentation/checks';
 import { loadProjectManifest, type WinzardCapability, type WinzardManifest } from '../manifest';
 import { runRouteChecks } from '../routing/checks';
+import { runViewChecks } from '../views/checks';
 
 export type CheckFailure = Readonly<{
   code: string;
@@ -33,6 +34,7 @@ const CAPABILITY_REQUIREMENTS: Readonly<Record<WinzardCapability, Readonly<{
     any: [['next.config.ts', 'next.config.mjs', 'next.config.js']],
   },
   forge: {},
+  'presentation-contract': { all: ['src/app'], requires: ['next-app', 'forge'] },
   'modular-application': { all: ['src/modules', 'src/composition'] },
   liveness: { all: ['src/app/api/health/live/route.ts'] },
   'prisma-postgresql': {
@@ -350,6 +352,10 @@ export async function runProjectChecks(root = process.cwd()): Promise<readonly C
   if (enabled.has('next-app')) {
     const routingIssues = await runRouteChecks(root);
     failures.push(...routingIssues.filter(({ severity }) => severity === 'error').map(({ code, file, message }) => ({ code, file, message })));
+  }
+  if (enabled.has('presentation-contract')) {
+    const viewIssues = await runViewChecks(root);
+    failures.push(...viewIssues.filter(({ severity }) => severity === 'error').map(({ code, file, message }) => ({ code, file, message })));
   }
   if (enabled.has('liveness')) {
     failures.push(...(await checkNoStore(root, 'src/app/api/health/live/route.ts', 'LIVENESS_CACHE_POLICY')));

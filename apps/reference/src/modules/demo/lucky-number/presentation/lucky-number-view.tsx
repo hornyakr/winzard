@@ -1,42 +1,52 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
-import type { LuckyNumberDto } from '../application/dto/lucky-number.dto';
+import luckyNumberOrbit from './assets/lucky-number-orbit.svg';
 import { LuckyNumberForm } from './lucky-number-form';
-import { luckyNumberRoutes } from './lucky-number.routes';
+import type { LuckyNumberViewModel } from './lucky-number.view-model';
 
 type LuckyNumberViewProps = Readonly<{
-  result: LuckyNumberDto;
+  model: LuckyNumberViewModel;
 }>;
 
-export function LuckyNumberView({ result }: LuckyNumberViewProps) {
+export function LuckyNumberView({ model }: LuckyNumberViewProps) {
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-8 px-6 py-16">
-      <header className="space-y-3">
-        <p className="font-mono text-sm uppercase tracking-[0.2em] text-zinc-500">
-          Winzard routing referencia
+    <main className="mx-auto grid min-h-screen max-w-5xl items-center gap-10 px-6 py-16 lg:grid-cols-[1fr_20rem]">
+      <div className="flex flex-col gap-8">
+        <header className="space-y-3">
+          <p className="font-mono text-sm uppercase tracking-[0.2em] text-zinc-500">
+            {model.eyebrow}
+          </p>
+          <h1 className="text-4xl font-semibold tracking-tight">
+            {model.heading}
+          </h1>
+        </header>
+
+        <p className="text-zinc-300">
+          {model.rangeLabel}
         </p>
-        <h1 className="text-4xl font-semibold tracking-tight">
-          A szerencseszámod: {result.value}
-        </h1>
-      </header>
 
-      <p className="text-zinc-300">
-        A szám a {result.minimum}–{result.maximum} tartományból származik.
-      </p>
+        <LuckyNumberForm />
 
-      <LuckyNumberForm />
+        <nav aria-label={model.navigationLabel} className="flex flex-wrap gap-4">
+          {model.navigation.map((action) => action.delivery === 'page' ? (
+            <Link className="underline" href={action.href} key={action.id}>
+              {action.label}
+            </Link>
+          ) : (
+            <a className="underline" href={action.href} key={action.id}>
+              {action.label}
+            </a>
+          ))}
+        </nav>
+      </div>
 
-      <nav aria-label="Szerencseszám műveletek" className="flex flex-wrap gap-4">
-        <Link className="underline" href={luckyNumberRoutes.index()}>
-          Másik szám kérése
-        </Link>
-        <Link className="underline" href={luckyNumberRoutes.range(10, 20)}>
-          Dinamikus 10–20 route
-        </Link>
-        <a className="underline" href={luckyNumberRoutes.api()}>
-          JSON-válasz megnyitása
-        </a>
-      </nav>
+      <Image
+        alt="Geometrikus pályák a szerencseszám körül"
+        className="mx-auto h-auto w-full max-w-xs"
+        priority
+        src={luckyNumberOrbit}
+      />
     </main>
   );
 }
