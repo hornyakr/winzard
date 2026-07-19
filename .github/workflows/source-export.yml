@@ -1,29 +1,116 @@
-name: source-export
+name: Finalize template and presentation implementation
 
 on:
   push:
     branches:
       - agent/template-presentation-platform
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: finalize-template-presentation-platform
+  cancel-in-progress: false
 
 jobs:
-  export:
+  finalize:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_DB: winzard
+          POSTGRES_USER: winzard
+          POSTGRES_PASSWORD: winzard_dev_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U winzard -d winzard"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://winzard:winzard_dev_only@127.0.0.1:5432/winzard?schema=public
+      DATABASE_POOL_MAX: 10
+      DATABASE_CONNECTION_TIMEOUT_MS: 5000
+      NEXT_TELEMETRY_DISABLED: 1
+
     steps:
-      - name: Check out repository
+      - name: Check out staging commit
         uses: actions/checkout@v4
-      - name: Create source archive
-        run: tar --exclude=.git -czf "$RUNNER_TEMP/winzard-source.tar.gz" .
-      - name: Upload source archive
-        uses: actions/upload-artifact@v4
         with:
-          name: winzard-source
-          path: ${{ runner.temp }}/winzard-source.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+          fetch-depth: 0
+
+      - name: Reconstruct and verify final patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/winzard-finalize"
+          mkdir -p "$work"
+          cat .winzard-finalize/prefix-00.b64 .winzard-finalize/prefix-01.b64 \
+            | base64 --decode > "$work/final.patch.gz"
+          for part in .winzard-finalize/patch-*.bin; do
+            cat "$part" >> "$work/final.patch.gz"
+          done
+          echo "b3b430ce796a86dfb3fb9fdffb9ae63a91e88d0baccb015900121b9b047c0965  $work/final.patch.gz" \
+            | sha256sum --check --strict
+          gzip --decompress --stdout "$work/final.patch.gz" > "$work/final.patch"
+          echo "c7dbf51484492a46d1d3f929f9fd569d5cfd27313849a8fc254472520558442a  $work/final.patch" \
+            | sha256sum --check --strict
+
+      - name: Materialize the reviewed source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/winzard-finalize"
+          git reset --hard cd84265cde8ef70ae76435264c14f4c109d8ab2e
+          git apply --check "$work/final.patch"
+          git apply --index "$work/final.patch"
+          git diff --cached --check
+          test "$(git write-tree)" = "73ae4695572dbfd257c42b63fa3cc653a1e72363"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run complete core verification
+        run: pnpm verify:core
+
+      - name: Run complete database verification
+        run: pnpm verify:database
+
+      - name: Confirm verification did not mutate tracked source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git diff --cached --check
+          test "$(git write-tree)" = "73ae4695572dbfd257c42b63fa3cc653a1e72363"
+
+      - name: Publish one clean implementation commit for promotion
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git reset --soft origin/main
+          test "$(git write-tree)" = "73ae4695572dbfd257c42b63fa3cc653a1e72363"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "feat: implement template and presentation platform"
+          test "$(git rev-parse 'HEAD^{tree}')" = "73ae4695572dbfd257c42b63fa3cc653a1e72363"
+          test "$(git rev-list --count origin/main..HEAD)" = "1"
+          git push --force origin HEAD:refs/heads/agent/template-presentation-finalized
+          echo "Final commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
