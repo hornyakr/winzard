@@ -22,9 +22,9 @@ type LuckyNumberRangePageProps = Readonly<{
 }>;
 
 export default async function LuckyNumberRangePage({ params }: LuckyNumberRangePageProps) {
-  await connection();
   const parsed = luckyNumberRangeParamsSchema.safeParse(await params);
   if (!parsed.success) notFound();
+  await connection();
 
   const result = (() => {
     try {
