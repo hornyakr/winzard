@@ -6,10 +6,10 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  finalize:
+  diagnose-final-source:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -36,7 +36,7 @@ jobs:
 
     steps:
       - name: Check out staging commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -67,6 +67,15 @@ jobs:
           git apply --index "$work/final.patch"
           git diff --cached --check
           test "$(git write-tree)" = "73ae4695572dbfd257c42b63fa3cc653a1e72363"
+          tar --exclude=.git --exclude=.winzard-finalize -czf "$RUNNER_TEMP/winzard-final-source.tar.gz" .
+
+      - name: Upload materialized final source
+        uses: actions/upload-artifact@v4
+        with:
+          name: winzard-final-source
+          path: ${{ runner.temp }}/winzard-final-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -83,30 +92,40 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run complete core verification
-        run: pnpm verify:core
+        id: core
+        shell: bash
+        run: |
+          set +e
+          pnpm verify:core 2>&1 | tee "$RUNNER_TEMP/verify-core.log"
+          status=${PIPESTATUS[0]}
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
+
+      - name: Upload core verification log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-core-log
+          path: ${{ runner.temp }}/verify-core.log
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Run complete database verification
-        run: pnpm verify:database
-
-      - name: Confirm verification did not mutate tracked source
+        if: always()
+        id: database
         shell: bash
         run: |
-          set -euo pipefail
-          git diff --exit-code
-          git diff --cached --check
-          test "$(git write-tree)" = "73ae4695572dbfd257c42b63fa3cc653a1e72363"
+          set +e
+          pnpm verify:database 2>&1 | tee "$RUNNER_TEMP/verify-database.log"
+          status=${PIPESTATUS[0]}
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
 
-      - name: Publish one clean implementation commit for promotion
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin main
-          git reset --soft origin/main
-          test "$(git write-tree)" = "73ae4695572dbfd257c42b63fa3cc653a1e72363"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "feat: implement template and presentation platform"
-          test "$(git rev-parse 'HEAD^{tree}')" = "73ae4695572dbfd257c42b63fa3cc653a1e72363"
-          test "$(git rev-list --count origin/main..HEAD)" = "1"
-          git push --force origin HEAD:refs/heads/agent/template-presentation-finalized
-          echo "Final commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload database verification log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-database-log
+          path: ${{ runner.temp }}/verify-database.log
+          if-no-files-found: error
+          retention-days: 1
