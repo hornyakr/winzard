@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: finalize-template-presentation-platform-pr-v4
+  group: finalize-template-presentation-platform-pr-v5
   cancel-in-progress: false
 
 jobs:
@@ -106,14 +106,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run complete core verification
-        id: core
         shell: bash
         run: |
-          set +e
+          set -o pipefail
           pnpm verify:core 2>&1 | tee "$RUNNER_TEMP/verify-core.log"
-          status=${PIPESTATUS[0]}
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          exit 0
 
       - name: Upload core verification log
         if: always()
@@ -125,14 +121,11 @@ jobs:
           retention-days: 1
 
       - name: Run complete database verification
-        id: database
+        if: always()
         shell: bash
         run: |
-          set +e
+          set -o pipefail
           pnpm verify:database 2>&1 | tee "$RUNNER_TEMP/verify-database.log"
-          status=${PIPESTATUS[0]}
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          exit 0
 
       - name: Upload database verification log
         if: always()
@@ -143,14 +136,8 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-      - name: Enforce verification results
-        if: steps.core.outputs.status != '0' || steps.database.outputs.status != '0'
-        shell: bash
-        run: |
-          echo "core=${{ steps.core.outputs.status }} database=${{ steps.database.outputs.status }}" >&2
-          exit 1
-
       - name: Confirm verification did not mutate tracked source
+        if: success()
         shell: bash
         run: |
           set -euo pipefail
@@ -159,6 +146,7 @@ jobs:
           test "$(git write-tree)" = "f84f6c80f184a2d5d7a7e46c769f10898c109a1e"
 
       - name: Publish one clean commit
+        if: success()
         shell: bash
         run: |
           set -euo pipefail
