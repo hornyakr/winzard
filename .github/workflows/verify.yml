@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/configuration-platform
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -17,6 +20,7 @@ jobs:
       - name: Checkout branch with full history
         uses: actions/checkout@v6
         with:
+          ref: agent/configuration-platform
           fetch-depth: 0
 
       - name: Reconstruct and apply verified patch
@@ -74,4 +78,4 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'feat: implement configuration platform'
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git push origin 'HEAD:agent/configuration-platform'
