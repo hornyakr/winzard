@@ -1,0 +1,38 @@
+name: Export agent source
+
+on:
+  push:
+    branches:
+      - agent/configuration-platform
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Create source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar \
+            --exclude=.git \
+            --exclude=.github/workflows/export-agent-source.yml \
+            -czf /tmp/winzard-agent-source.tar.gz .
+          sha256sum /tmp/winzard-agent-source.tar.gz > /tmp/winzard-agent-source.tar.gz.sha256
+
+      - name: Upload source archive
+        uses: actions/upload-artifact@v6
+        with:
+          name: winzard-agent-source
+          path: |
+            /tmp/winzard-agent-source.tar.gz
+            /tmp/winzard-agent-source.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 1
