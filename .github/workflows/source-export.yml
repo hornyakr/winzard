@@ -1,16 +1,17 @@
 name: Finalize template and presentation implementation
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
+      - agent/template-presentation-platform
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: finalize-template-presentation-platform
-  cancel-in-progress: false
+  group: finalize-template-presentation-platform-push
+  cancel-in-progress: true
 
 jobs:
   finalize:
