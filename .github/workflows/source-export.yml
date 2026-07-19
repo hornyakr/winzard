@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: finalize-template-presentation-platform-pr-v2
+  group: finalize-template-presentation-platform-pr-v3
   cancel-in-progress: false
 
 jobs:
@@ -61,7 +61,7 @@ jobs:
           echo "c7dbf51484492a46d1d3f929f9fd569d5cfd27313849a8fc254472520558442a  $work/final.patch" \
             | sha256sum --check --strict
 
-          git reset --hard dc7e6fc41588f759925b2290e7d8be7296031a8f
+          git reset --hard cd84265cde8ef70ae76435264c14f4c109d8ab2e
           git apply --check "$work/final.patch"
           git apply --index "$work/final.patch"
 
@@ -123,10 +123,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          git fetch origin main
+          git reset --soft origin/main
+          test "$(git write-tree)" = "f84f6c80f184a2d5d7a7e46c769f10898c109a1e"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "feat: implement template and presentation platform"
           test "$(git rev-parse 'HEAD^{tree}')" = "f84f6c80f184a2d5d7a7e46c769f10898c109a1e"
-          test "$(git rev-list --count dc7e6fc41588f759925b2290e7d8be7296031a8f..HEAD)" = "1"
+          test "$(git rev-list --count origin/main..HEAD)" = "1"
           git push --force origin HEAD:refs/heads/agent/template-presentation-finalized
           echo "Final commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
