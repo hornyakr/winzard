@@ -2,6 +2,12 @@
 import path from 'node:path';
 
 import { runProjectChecks } from './checks/project';
+import { diffConfiguration } from './configuration/diff';
+import { checkConfigurationDrift, findUnusedConfiguration } from './configuration/drift';
+import { buildConfigurationInventory, redactConfigurationRecord } from './configuration/inventory';
+import { checkConfigurationReference, generateConfigurationReference } from './configuration/reference';
+import { renderConfigurationDiff, renderConfigurationInspection, renderConfigurationIssues, renderConfigurationList } from './configuration/render';
+import { scanRepositorySecrets } from './configuration/secrets';
 import { checkDeliveryDocumentation, generateDeliveryDocumentation } from './delivery/docs';
 import { generateDeliverySlice } from './delivery/generator';
 import { buildDeliveryInventory, inspectDelivery } from './delivery/inventory';
@@ -15,16 +21,17 @@ import { renderViewAssets, renderViewInspection, renderViewIssues, renderViewLis
 
 const args = process.argv.slice(2);
 const command = args[0] ?? 'list';
+const OPTIONS_WITH_VALUES = new Set(['--project', '--node-env', '--from', '--to']);
+
 function positionalArguments(values: readonly string[]): readonly string[] {
   const output: string[] = [];
   for (let index = 1; index < values.length; index += 1) {
     const value = values[index] ?? '';
-    if (value === '--project') {
-      index += 1;
+    if (!value.startsWith('--')) {
+      output.push(value);
       continue;
     }
-    if (value.startsWith('--')) continue;
-    output.push(value);
+    if (!value.includes('=') && OPTIONS_WITH_VALUES.has(value)) index += 1;
   }
   return output;
 }
@@ -52,11 +59,16 @@ async function viewCheck(label = 'view:check'): Promise<void> {
   if (inventory.issues.some(({ severity }) => severity === 'error')) process.exitCode = 1;
 }
 
-async function projectCheck(): Promise<void> {
+async function projectCheck(includeSecrets = false): Promise<void> {
   const failures = [...await runProjectChecks(root)];
   const manifest = await loadProjectManifest(root);
   if (manifest.manifest?.capabilities.includes('next-app')) {
     failures.push(...(await buildDeliveryInventory(root)).issues.filter(({ severity }) => severity === 'error'));
+  }
+  if (includeSecrets) {
+    failures.push(...(await scanRepositorySecrets(root))
+      .filter(({ severity }) => severity === 'error')
+      .map(({ code, file, message }) => ({ code, file, message })));
   }
   if (failures.length === 0) {
     console.log(`PASS: ${command} (${projectArgument})`);
@@ -65,6 +77,134 @@ async function projectCheck(): Promise<void> {
   for (const failure of failures) console.error(`[${failure.code}] ${failure.file}: ${failure.message}`);
   console.error(`FAIL: ${command} (${failures.length} hiba)`);
   process.exitCode = 1;
+}
+
+async function configurationManifest() {
+  const result = await loadProjectManifest(root);
+  if (result.manifest) return result.manifest;
+  for (const failure of result.failures) console.error(`[${failure.code}] ${failure.file}: ${failure.message}`);
+  process.exitCode = 1;
+  return null;
+}
+
+function hasErrors(issues: readonly { severity: string }[]): boolean {
+  return issues.some(({ severity }) => severity === 'error');
+}
+
+async function configurationCommand(): Promise<boolean> {
+  if (!command.startsWith('config:') && command !== 'secrets:check') return false;
+
+  if (command === 'secrets:check') {
+    const issues = await scanRepositorySecrets(root);
+    console.log(json ? JSON.stringify({ issues }, null, 2) : renderConfigurationIssues(issues, 'secrets:check'));
+    if (hasErrors(issues)) process.exitCode = 1;
+    return true;
+  }
+
+  const manifest = await configurationManifest();
+  if (!manifest) return true;
+
+  if (command === 'config:list') {
+    const inventory = await buildConfigurationInventory(root, manifest, {
+      ...(option('--node-env') ? { nodeEnv: option('--node-env') ?? undefined } : {}),
+    });
+    console.log(json
+      ? JSON.stringify({
+        nodeEnv: inventory.nodeEnv,
+        loadedFiles: inventory.loadedFiles,
+        records: inventory.records.map(redactConfigurationRecord),
+        issues: inventory.issues,
+      }, null, 2)
+      : renderConfigurationList(inventory));
+    if (hasErrors(inventory.issues)) process.exitCode = 1;
+    return true;
+  }
+
+  if (command === 'config:inspect') {
+    const key = positionals[0]?.trim().toUpperCase();
+    if (!key) throw new Error('A config:inspect parancshoz konfigurációs kulcs szükséges.');
+    const inventory = await buildConfigurationInventory(root, manifest, {
+      ...(option('--node-env') ? { nodeEnv: option('--node-env') ?? undefined } : {}),
+    });
+    const record = inventory.records.find(({ definition }) => definition.key === key);
+    if (!record) {
+      console.error(`[CONFIG_KEY_UNKNOWN] ${key}`);
+      process.exitCode = 1;
+      return true;
+    }
+    const issues = inventory.issues.filter((issue) => issue.key === key);
+    console.log(json
+      ? JSON.stringify({ record: redactConfigurationRecord(record), issues }, null, 2)
+      : [
+        renderConfigurationInspection(record),
+        ...(issues.length > 0 ? [`\n${renderConfigurationIssues(issues, 'config:inspect')}`] : []),
+      ].join(''));
+    if (!record.valid || hasErrors(issues)) process.exitCode = 1;
+    return true;
+  }
+
+  if (command === 'config:reference') {
+    if (flag('--check')) {
+      const issues = await checkConfigurationReference(root, manifest);
+      console.log(json ? JSON.stringify({ issues }, null, 2) : renderConfigurationIssues(issues, 'config:reference --check'));
+      if (hasErrors(issues)) process.exitCode = 1;
+    } else {
+      const file = await generateConfigurationReference(root, manifest);
+      console.log(json ? JSON.stringify({ files: [file] }, null, 2) : `GENERATED: ${file}`);
+    }
+    return true;
+  }
+
+  if (command === 'config:drift') {
+    const issues = await checkConfigurationDrift(root, manifest);
+    console.log(json ? JSON.stringify({ issues }, null, 2) : renderConfigurationIssues(issues, 'config:drift'));
+    if (hasErrors(issues)) process.exitCode = 1;
+    return true;
+  }
+
+  if (command === 'config:unused') {
+    const issues = await findUnusedConfiguration(root, manifest);
+    console.log(json ? JSON.stringify({ issues }, null, 2) : renderConfigurationIssues(issues, 'config:unused'));
+    return true;
+  }
+
+  if (command === 'config:diff') {
+    const from = option('--from');
+    const to = option('--to');
+    if (!from || !to) throw new Error('A config:diff parancshoz --from és --to szükséges.');
+    const result = await diffConfiguration(root, manifest, from, to);
+    console.log(json ? JSON.stringify(result, null, 2) : [
+      renderConfigurationDiff(result.records, from, to),
+      ...(result.issues.length > 0 ? [`\n${renderConfigurationIssues(result.issues, 'config:diff')}`] : []),
+    ].join(''));
+    if (hasErrors(result.issues)) process.exitCode = 1;
+    return true;
+  }
+
+  if (command === 'config:doctor') {
+    const inventory = await buildConfigurationInventory(root, manifest, {
+      ...(option('--node-env') ? { nodeEnv: option('--node-env') ?? undefined } : {}),
+    });
+    const issues = [
+      ...inventory.issues,
+      ...(await checkConfigurationDrift(root, manifest)),
+      ...(await findUnusedConfiguration(root, manifest)),
+      ...(await checkConfigurationReference(root, manifest)),
+      ...(await scanRepositorySecrets(root)),
+    ];
+    console.log(json ? JSON.stringify({
+      records: inventory.records.map(redactConfigurationRecord),
+      issues,
+    }, null, 2) : [
+      renderConfigurationList(inventory),
+      '',
+      renderConfigurationIssues(issues, 'config:doctor'),
+    ].join('\n'));
+    if (hasErrors(issues)) process.exitCode = 1;
+    return true;
+  }
+
+  return false;
 }
 
 async function deliveryCommand(): Promise<boolean> {
@@ -200,6 +340,14 @@ try {
       'view:check',
       'view:contracts',
       'view:assets',
+      'config:list',
+      'config:inspect',
+      'config:reference',
+      'config:diff',
+      'config:drift',
+      'config:unused',
+      'config:doctor',
+      'secrets:check',
       'make:page',
       'make:route-handler',
       'make:action',
@@ -208,8 +356,8 @@ try {
       'make:view',
     ].join('\n'));
   } else if (command === 'check' || command === 'security:check') {
-    await projectCheck();
-  } else if (!await viewCommand() && !await deliveryCommand()) {
+    await projectCheck(command === 'security:check');
+  } else if (!await configurationCommand() && !await viewCommand() && !await deliveryCommand()) {
     await import('./cli');
   }
 } catch (error) {

@@ -1,6 +1,9 @@
 name: Verify
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -9,6 +12,12 @@ jobs:
   core:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      APP_URL: http://localhost:3000
+      APP_NAME: Winzard Reference
+      APP_STAGE: local
+      LOG_LEVEL: error
+      NEXT_PUBLIC_APP_NAME: Winzard Reference
 
     steps:
       - name: Checkout
@@ -54,8 +63,14 @@ jobs:
       - name: Verify template, view and presentation contracts
         run: pnpm verify:views
 
+      - name: Verify configuration contracts and secret hygiene
+        run: pnpm verify:configuration
+
       - name: Run reference capability and architecture checks
         run: pnpm forge check --project apps/reference
+
+      - name: Build minimal template without optional infrastructure
+        run: pnpm verify:minimal-template
 
       - name: Build reference application
         run: pnpm build
@@ -83,6 +98,11 @@ jobs:
           --health-retries 20
 
     env:
+      APP_URL: http://localhost:3000
+      APP_NAME: Winzard Webapp CI
+      APP_STAGE: local
+      LOG_LEVEL: error
+      NEXT_PUBLIC_APP_NAME: Winzard Webapp CI
       DATABASE_URL: postgresql://winzard:winzard_dev_only@127.0.0.1:5432/winzard?schema=public
       DATABASE_POOL_MAX: 10
       DATABASE_CONNECTION_TIMEOUT_MS: 5000
@@ -116,6 +136,9 @@ jobs:
 
       - name: Generate Prisma Client
         run: pnpm db:generate:webapp
+
+      - name: Type-check and build webapp template
+        run: pnpm verify:webapp-template
 
       - name: Deploy database migrations
         run: pnpm db:migrate:deploy:webapp

@@ -1,17 +1,78 @@
 {
   "schemaVersion": 1,
   "name": "prisma-postgresql",
-  "provides": ["prisma-postgresql"],
-  "requires": ["next-app", "forge"],
+  "provides": [
+    "prisma-postgresql"
+  ],
+  "requires": [
+    "next-app",
+    "forge"
+  ],
   "dependencies": {
-    "runtime": ["@prisma/adapter-pg", "@prisma/client", "pg", "server-only", "zod"],
-    "development": ["@types/pg", "dotenv", "prisma", "tsx"]
+    "runtime": [
+      "@prisma/adapter-pg",
+      "@prisma/client",
+      "pg",
+      "server-only",
+      "zod"
+    ],
+    "development": [
+      "@types/pg",
+      "dotenv",
+      "prisma",
+      "tsx"
+    ]
   },
-  "environment": ["DATABASE_URL", "DATABASE_POOL_MAX", "DATABASE_CONNECTION_TIMEOUT_MS"],
+  "environment": [
+    "DATABASE_URL",
+    "DATABASE_POOL_MAX",
+    "DATABASE_CONNECTION_TIMEOUT_MS"
+  ],
   "files": [
     "prisma.config.ts",
     "prisma/schema.prisma",
     "src/platform/database/database-env.server.ts",
     "src/platform/database/client.ts"
+  ],
+  "configuration": [
+    {
+      "key": "DATABASE_URL",
+      "owner": "prisma-postgresql",
+      "required": true,
+      "phase": "process-start",
+      "classification": "secret",
+      "rebuildRequired": false,
+      "restartRequired": true,
+      "type": "PostgreSQL DSN",
+      "example": "postgresql://user:password@localhost:5432/atlas",
+      "description": "A PostgreSQL runtime kapcsolat credentialt is tartalmazó DSN-je.",
+      "introduced": "0.1.0"
+    },
+    {
+      "key": "DATABASE_POOL_MAX",
+      "owner": "prisma-postgresql",
+      "required": true,
+      "phase": "process-start",
+      "classification": "internal",
+      "rebuildRequired": false,
+      "restartRequired": true,
+      "type": "integer[1,100]",
+      "example": "10",
+      "description": "Egy process maximális adatbázis-kapcsolatszáma.",
+      "introduced": "0.1.0"
+    },
+    {
+      "key": "DATABASE_CONNECTION_TIMEOUT_MS",
+      "owner": "prisma-postgresql",
+      "required": true,
+      "phase": "process-start",
+      "classification": "internal",
+      "rebuildRequired": false,
+      "restartRequired": true,
+      "type": "integer[100,60000]",
+      "example": "5000",
+      "description": "Adatbázis-kapcsolódási timeout ezredmásodpercben.",
+      "introduced": "0.1.0"
+    }
   ]
 }

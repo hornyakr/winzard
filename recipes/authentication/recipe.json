@@ -1,8 +1,32 @@
 {
   "schemaVersion": 1,
   "name": "authentication",
-  "provides": ["authentication"],
-  "requires": ["next-app", "forge"],
-  "environment": ["AUTH_SECRET"],
-  "files": ["src/platform/auth/auth-env.server.ts"]
+  "provides": [
+    "authentication"
+  ],
+  "requires": [
+    "next-app",
+    "forge"
+  ],
+  "environment": [
+    "AUTH_SECRET"
+  ],
+  "files": [
+    "src/platform/auth/auth-env.server.ts"
+  ],
+  "configuration": [
+    {
+      "key": "AUTH_SECRET",
+      "owner": "authentication",
+      "required": true,
+      "phase": "process-start",
+      "classification": "secret",
+      "rebuildRequired": false,
+      "restartRequired": true,
+      "type": "secret(min:32)",
+      "example": "<generate-at-least-32-random-characters>",
+      "description": "Az authentication capability nagy entrópiájú szerveroldali signing secretje.",
+      "introduced": "0.1.0"
+    }
+  ]
 }

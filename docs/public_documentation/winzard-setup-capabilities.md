@@ -379,7 +379,7 @@ A repository jelenlegi root buildje:
 next build apps/reference
 ```
 
-Ez PostgreSQL service, `DATABASE_URL`, Prisma Client és auth secret nélkül fut.
+Ez PostgreSQL service, `DATABASE_URL`, Prisma Client és auth secret nélkül fut. Az alkalmazás-shell saját, secretmentes `APP_*` és `NEXT_PUBLIC_APP_NAME` contractját a CI explicit módon megadja.
 
 ### 7.4. Fogyasztói webapp build
 
@@ -399,23 +399,30 @@ A két lépés explicit marad. A `build` script önmagában nem módosul adatbá
 ### 8.1. Általános app env
 
 ```ts
+import 'server-only';
+
 import { z } from 'zod';
 
 export const appEnvironmentSchema = z.object({
   APP_URL: z.url(),
-  APP_NAME: z.string().trim().min(1),
+  APP_NAME: z.string().trim().min(1).max(128),
+  APP_STAGE: z.enum(['local', 'preview', 'staging', 'production']),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']),
-  NEXT_PUBLIC_APP_NAME: z.string().trim().min(1),
 });
 
 export function parseAppEnvironment(
-  input: NodeJS.ProcessEnv | Record<string, string | undefined>,
+  input: NodeJS.ProcessEnv | Readonly<Record<string, string | undefined>>,
 ) {
-  return appEnvironmentSchema.parse(input);
+  return appEnvironmentSchema.parse({
+    APP_URL: input.APP_URL,
+    APP_NAME: input.APP_NAME,
+    APP_STAGE: input.APP_STAGE,
+    LOG_LEVEL: input.LOG_LEVEL,
+  });
 }
 ```
 
-A parser tiszta függvény. Nem parse-olja automatikusan a teljes `process.env` objektumot a modul betöltésekor.
+A publikus `NEXT_PUBLIC_APP_NAME` külön, allowlistelt `public-config.ts` szerződésben marad. A parserek explicit inputtal tesztelhetők, és nem hoznak létre globális, minden capability-t kötelezővé tevő env singletont.
 
 ### 8.2. Database env
 
@@ -426,11 +433,22 @@ import 'server-only';
 
 import { z } from 'zod';
 
+function boundedIntegerEnvironmentValue(
+  minimum: number,
+  maximum: number,
+) {
+  return z.string()
+    .trim()
+    .regex(/^\d+$/u)
+    .transform(Number)
+    .pipe(z.number().int().min(minimum).max(maximum));
+}
+
 export const databaseEnvironmentSchema = z.object({
   DATABASE_URL: z.string().regex(/^postgres(?:ql)?:\/\//u),
-  DATABASE_POOL_MAX: z.coerce.number().int().positive().max(100),
+  DATABASE_POOL_MAX: boundedIntegerEnvironmentValue(1, 100),
   DATABASE_CONNECTION_TIMEOUT_MS:
-    z.coerce.number().int().positive(),
+    boundedIntegerEnvironmentValue(100, 60_000),
 });
 
 export function getDatabaseEnvironment(
@@ -468,13 +486,12 @@ Auth implementáció nélkül az `AUTH_SECRET` nem szerepel a core vagy webapp a
 
 ### 8.4. Példa minimal env
 
-A minimal profilnak nem kötelező `.env` fájl, ha nincs konfigurálható értéke.
-
-Opcionális minta:
+A minimal profil nem igényel infrastruktúra-secretet, de verziózott `.env.example` contractot ad az alkalmazás-shellhez:
 
 ```dotenv
 APP_URL=http://localhost:3000
 APP_NAME=Winzard
+APP_STAGE=local
 LOG_LEVEL=debug
 NEXT_PUBLIC_APP_NAME=Winzard
 ```
@@ -613,7 +630,7 @@ src/app/api/health/ready/route.ts
 pnpm forge env:check --project templates/webapp
 ```
 
-A parancs csak az aktív capability-k változóit kéri számon.
+A parancs az alkalmazás-shell és kizárólag az aktív capability-k változóit kéri számon, a Next.js `.env*` precedenciájával és redaktált hibákkal.
 
 ### 10.5. Presentation-contract parancsok
 

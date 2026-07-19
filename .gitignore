@@ -3,7 +3,8 @@
 /out/
 /coverage/
 .env*
-!templates/**/.env.example
+!**/.env.example
+!**/.env.test
 **/src/generated/prisma/
 *.tsbuildinfo
 **/next-env.d.ts
