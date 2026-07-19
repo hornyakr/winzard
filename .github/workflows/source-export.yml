@@ -1,22 +1,42 @@
-name: Publish clean template and presentation branch
+name: Finalize template and presentation implementation
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/template-presentation-platform
-  workflow_dispatch:
+      - main
 
 permissions:
   contents: write
 
 concurrency:
-  group: publish-template-presentation-platform
-  cancel-in-progress: true
+  group: finalize-template-presentation-platform-pr-v2
+  cancel-in-progress: false
 
 jobs:
-  publish:
+  finalize:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_DB: winzard
+          POSTGRES_USER: winzard
+          POSTGRES_PASSWORD: winzard_dev_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U winzard -d winzard"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://winzard:winzard_dev_only@127.0.0.1:5432/winzard?schema=public
+      DATABASE_POOL_MAX: 10
+      DATABASE_CONNECTION_TIMEOUT_MS: 5000
+      NEXT_TELEMETRY_DISABLED: 1
 
     steps:
       - name: Check out staging commit
@@ -71,6 +91,34 @@ jobs:
           git diff --cached --check
           test "$(git write-tree)" = "f84f6c80f184a2d5d7a7e46c769f10898c109a1e"
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run complete core verification
+        run: pnpm verify:core
+
+      - name: Run complete database verification
+        run: pnpm verify:database
+
+      - name: Confirm verification did not mutate tracked source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          git diff --cached --check
+          test "$(git write-tree)" = "f84f6c80f184a2d5d7a7e46c769f10898c109a1e"
+
       - name: Publish one clean commit
         shell: bash
         run: |
@@ -81,3 +129,4 @@ jobs:
           test "$(git rev-parse 'HEAD^{tree}')" = "f84f6c80f184a2d5d7a7e46c769f10898c109a1e"
           test "$(git rev-list --count dc7e6fc41588f759925b2290e7d8be7296031a8f..HEAD)" = "1"
           git push --force origin HEAD:refs/heads/agent/template-presentation-finalized
+          echo "Final commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
