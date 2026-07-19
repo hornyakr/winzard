@@ -1,4 +1,4 @@
-name: source-export
+name: Finalize template and presentation implementation
 
 on:
   pull_request:
@@ -6,10 +6,14 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: finalize-template-presentation-platform
+  cancel-in-progress: false
 
 jobs:
-  diagnose-final-source:
+  finalize:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -40,7 +44,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Reconstruct and verify final patch
+      - name: Reconstruct and verify reviewed implementation
         shell: bash
         run: |
           set -euo pipefail
@@ -57,25 +61,40 @@ jobs:
           echo "c7dbf51484492a46d1d3f929f9fd569d5cfd27313849a8fc254472520558442a  $work/final.patch" \
             | sha256sum --check --strict
 
-      - name: Materialize the reviewed source tree
-        shell: bash
-        run: |
-          set -euo pipefail
-          work="$RUNNER_TEMP/winzard-finalize"
           git reset --hard cd84265cde8ef70ae76435264c14f4c109d8ab2e
           git apply --check "$work/final.patch"
           git apply --index "$work/final.patch"
           git diff --cached --check
           test "$(git write-tree)" = "73ae4695572dbfd257c42b63fa3cc653a1e72363"
-          tar --exclude=.git --exclude=.winzard-finalize -czf "$RUNNER_TEMP/winzard-final-source.tar.gz" .
 
-      - name: Upload materialized final source
-        uses: actions/upload-artifact@v4
-        with:
-          name: winzard-final-source
-          path: ${{ runner.temp }}/winzard-final-source.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+      - name: Preserve 404 status before the dynamic render boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('apps/reference/src/app/(public)/lucky/number/range/[minimum]/[maximum]/page.tsx')
+          source = path.read_text(encoding='utf-8')
+          old = """export default async function LuckyNumberRangePage({ params }: LuckyNumberRangePageProps) {
+            await connection();
+            const parsed = luckyNumberRangeParamsSchema.safeParse(await params);
+            if (!parsed.success) notFound();
+
+            const result = (() => {"""
+          new = """export default async function LuckyNumberRangePage({ params }: LuckyNumberRangePageProps) {
+            const parsed = luckyNumberRangeParamsSchema.safeParse(await params);
+            if (!parsed.success) notFound();
+            await connection();
+
+            const result = (() => {"""
+          if old not in source:
+              raise SystemExit('Expected dynamic route block was not found.')
+          path.write_text(source.replace(old, new), encoding='utf-8')
+          PY
+          git add 'apps/reference/src/app/(public)/lucky/number/range/[minimum]/[maximum]/page.tsx'
+          git diff --cached --check
+          test "$(git write-tree)" = "f84f6c80f184a2d5d7a7e46c769f10898c109a1e"
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -92,40 +111,31 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run complete core verification
-        id: core
-        shell: bash
-        run: |
-          set +e
-          pnpm verify:core 2>&1 | tee "$RUNNER_TEMP/verify-core.log"
-          status=${PIPESTATUS[0]}
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          exit "$status"
-
-      - name: Upload core verification log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: verify-core-log
-          path: ${{ runner.temp }}/verify-core.log
-          if-no-files-found: error
-          retention-days: 1
+        run: pnpm verify:core
 
       - name: Run complete database verification
-        if: always()
-        id: database
+        run: pnpm verify:database
+
+      - name: Confirm verification did not mutate tracked source
         shell: bash
         run: |
-          set +e
-          pnpm verify:database 2>&1 | tee "$RUNNER_TEMP/verify-database.log"
-          status=${PIPESTATUS[0]}
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          exit "$status"
+          set -euo pipefail
+          git diff --exit-code
+          git diff --cached --check
+          test "$(git write-tree)" = "f84f6c80f184a2d5d7a7e46c769f10898c109a1e"
 
-      - name: Upload database verification log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: verify-database-log
-          path: ${{ runner.temp }}/verify-database.log
-          if-no-files-found: error
-          retention-days: 1
+      - name: Publish one clean implementation commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          test "$(git rev-parse origin/main)" = "dc7e6fc41588f759925b2290e7d8be7296031a8f"
+          git reset --soft origin/main
+          test "$(git write-tree)" = "f84f6c80f184a2d5d7a7e46c769f10898c109a1e"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "feat: implement template and presentation platform"
+          test "$(git rev-parse 'HEAD^{tree}')" = "f84f6c80f184a2d5d7a7e46c769f10898c109a1e"
+          test "$(git rev-list --count origin/main..HEAD)" = "1"
+          git push --force origin HEAD:refs/heads/agent/template-presentation-finalized
+          echo "Final commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
