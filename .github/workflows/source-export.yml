@@ -1,19 +1,12 @@
 name: source-export
 
 on:
-  push:
-    branches:
-      - agent/template-presentation-platform
   pull_request:
     branches:
       - main
 
 permissions:
   contents: write
-
-concurrency:
-  group: finalize-template-presentation-platform
-  cancel-in-progress: false
 
 jobs:
   finalize:
