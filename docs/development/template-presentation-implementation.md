@@ -59,6 +59,8 @@ VIEW_UNSAFE_MDX_SOURCE
 VIEW_NAMESPACE_SHADOWING
 VIEW_GENERIC_UI_DATA_ACCESS
 VIEW_MODEL_MISSING
+VIEW_DOC_MISSING
+VIEW_DOC_DRIFT
 ```
 
 ## Generált bizonyíték
@@ -73,6 +75,16 @@ apps/reference/docs/90-generated/views/security-status.md
 ```
 
 A fájlok inventory SHA-256 értéket tartalmaznak. A `view:contracts --check` hiány vagy drift esetén hibával áll le.
+
+## Normatív dokumentum integritása
+
+A teljes, 58 fejezetes specifikáció ellenőrzött SHA-256 értéke:
+
+```text
+9c8a6e82c4a4a2b938d749b1ce060b91fb7ff9cdd68f34450689feb3d6630ca3
+```
+
+Az ellenőrzés kiterjed a YAML front matterre, a folyamatos fejezetszámozásra, a tartalomjegyzék anchorjaira, a kódfence-ek párosságára, a JSON-példák szintaxisára és a trailing whitespace hiányára.
 
 ## Statikus diagnosztika határa
 
