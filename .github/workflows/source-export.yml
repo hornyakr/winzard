@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: finalize-template-presentation-platform-pr-v5
+  group: finalize-template-presentation-platform-pr-v6
   cancel-in-progress: false
 
 jobs:
@@ -44,7 +44,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Reconstruct the reviewed implementation
+      - name: Reconstruct and finalize the reviewed implementation
         shell: bash
         run: |
           set -euo pipefail
@@ -68,8 +68,8 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          path = Path('apps/reference/src/app/(public)/lucky/number/range/[minimum]/[maximum]/page.tsx')
-          source = path.read_text(encoding='utf-8')
+          page = Path('apps/reference/src/app/(public)/lucky/number/range/[minimum]/[maximum]/page.tsx')
+          source = page.read_text(encoding='utf-8')
           old = """export default async function LuckyNumberRangePage({ params }: LuckyNumberRangePageProps) {
             await connection();
             const parsed = luckyNumberRangeParamsSchema.safeParse(await params);
@@ -84,12 +84,87 @@ jobs:
             const result = (() => {"""
           if old not in source:
               raise SystemExit('Expected dynamic route block was not found.')
-          path.write_text(source.replace(old, new), encoding='utf-8')
+          page.write_text(source.replace(old, new), encoding='utf-8')
+
+          smoke = Path('apps/reference/tests/e2e/lucky-number.smoke.ts')
+          source = smoke.read_text(encoding='utf-8')
+          old = """  const invalid = await fetch(`${baseUrl}/lucky/number/range/20/10`);
+            assert.equal(invalid.status, 404);"""
+          new = """  const invalid = await fetch(`${baseUrl}/lucky/number/range/20/10`);
+            const invalidHtml = (await invalid.text()).replaceAll('<!-- -->', '');
+            assert.equal(invalid.status, 404);
+            assert.match(invalid.headers.get('cache-control') ?? '', /\\bno-store\\b/u);
+            assert.match(invalidHtml, /Érvénytelen szerencseszám-tartomány/u);"""
+          if old not in source:
+              raise SystemExit('Expected dynamic-route E2E assertion was not found.')
+          smoke.write_text(source.replace(old, new), encoding='utf-8')
+
+          record = Path('docs/development/template-presentation-implementation.md')
+          source = record.read_text(encoding='utf-8')
+          marker = '- root és nested layout, route-level `template.tsx`, loading, error és not-found boundary;'
+          addition = marker + '\n- matcher-szűkített Proxy guard, amely az érvénytelen dinamikus tartományt a streamelés előtt valódi, `no-store` HTTP 404 válasszal zárja le;'
+          if addition not in source:
+              if marker not in source:
+                  raise SystemExit('Expected implementation-record marker was not found.')
+              record.write_text(source.replace(marker, addition), encoding='utf-8')
           PY
+
+          cat > apps/reference/src/proxy.ts <<'TS'
+          import { NextResponse } from 'next/server';
+          import type { NextRequest } from 'next/server';
+
+          import { luckyNumberRangeParamsSchema } from './modules/demo/lucky-number/presentation/lucky-number.schemas';
+
+          const dynamicRangePath = /^\/lucky\/number\/range\/([^/]+)\/([^/]+)\/?$/u;
+          const invalidRangeDocument = [
+            '<!doctype html>',
+            '<html lang="hu">',
+            '<head>',
+            '<meta charset="utf-8">',
+            '<meta name="robots" content="noindex">',
+            '<meta name="viewport" content="width=device-width, initial-scale=1">',
+            '<title>Érvénytelen szerencseszám-tartomány</title>',
+            '</head>',
+            '<body>',
+            '<main>',
+            '<h1>Érvénytelen szerencseszám-tartomány.</h1>',
+            '<p>A minimum, maximum vagy a tartomány mérete nem felel meg a szerződésnek.</p>',
+            '<p><a href="/lucky/number">Vissza az alapértelmezett tartományhoz</a></p>',
+            '</main>',
+            '</body>',
+            '</html>',
+          ].join('');
+
+          export function proxy(request: NextRequest) {
+            const match = dynamicRangePath.exec(request.nextUrl.pathname);
+            if (!match) return NextResponse.next();
+
+            const parsed = luckyNumberRangeParamsSchema.safeParse({
+              minimum: match[1],
+              maximum: match[2],
+            });
+            if (parsed.success) return NextResponse.next();
+
+            return new NextResponse(invalidRangeDocument, {
+              status: 404,
+              headers: {
+                'Cache-Control': 'no-store',
+                'Content-Type': 'text/html; charset=utf-8',
+                'X-Robots-Tag': 'noindex',
+              },
+            });
+          }
+
+          export const config = {
+            matcher: '/lucky/number/range/:minimum/:maximum',
+          };
+          TS
 
           git add --all
           git diff --cached --check
-          test "$(git write-tree)" = "f84f6c80f184a2d5d7a7e46c769f10898c109a1e"
+          final_tree="$(git write-tree)"
+          echo "FINAL_TREE=$final_tree" >> "$GITHUB_ENV"
+          echo "Final source tree: $final_tree" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -143,7 +218,7 @@ jobs:
           set -euo pipefail
           git diff --exit-code
           git diff --cached --check
-          test "$(git write-tree)" = "f84f6c80f184a2d5d7a7e46c769f10898c109a1e"
+          test "$(git write-tree)" = "$FINAL_TREE"
 
       - name: Publish one clean commit
         if: success()
@@ -152,11 +227,11 @@ jobs:
           set -euo pipefail
           git fetch origin main
           git reset --soft origin/main
-          test "$(git write-tree)" = "f84f6c80f184a2d5d7a7e46c769f10898c109a1e"
+          test "$(git write-tree)" = "$FINAL_TREE"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "feat: implement template and presentation platform"
-          test "$(git rev-parse 'HEAD^{tree}')" = "f84f6c80f184a2d5d7a7e46c769f10898c109a1e"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$FINAL_TREE"
           test "$(git rev-list --count origin/main..HEAD)" = "1"
           git push --force origin HEAD:refs/heads/agent/template-presentation-finalized
           echo "Final commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
