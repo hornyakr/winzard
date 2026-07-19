@@ -9,6 +9,28 @@ permissions:
   contents: read
 
 jobs:
+  source-export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Upload source checkout
+        uses: actions/upload-artifact@v4
+        with:
+          name: winzard-source-export
+          path: |
+            .
+            !.git
+            !node_modules
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
   core:
     runs-on: ubuntu-latest
     timeout-minutes: 20
