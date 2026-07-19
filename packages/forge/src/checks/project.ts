@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import ts from 'typescript';
 
+import { checkConfigurationDrift } from '../configuration/drift';
 import { runDocumentationChecks } from '../documentation/checks';
 import { loadProjectManifest, type WinzardCapability, type WinzardManifest } from '../manifest';
 import { runRouteChecks } from '../routing/checks';
@@ -135,6 +136,72 @@ function collectStaticFetchUrls(sourceFile: ts.SourceFile): readonly string[] {
   return [...urls].sort();
 }
 
+function collectDirectEnvironmentKeys(sourceFile: ts.SourceFile): readonly string[] {
+  const keys = new Set<string>();
+  const visit = (node: ts.Node): void => {
+    if (
+      ts.isPropertyAccessExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      ts.isIdentifier(node.expression.expression) &&
+      node.expression.expression.text === 'process' &&
+      node.expression.name.text === 'env'
+    ) {
+      keys.add(node.name.text);
+    }
+    if (
+      ts.isElementAccessExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      ts.isIdentifier(node.expression.expression) &&
+      node.expression.expression.text === 'process' &&
+      node.expression.name.text === 'env' &&
+      node.argumentExpression &&
+      ts.isStringLiteral(node.argumentExpression)
+    ) {
+      keys.add(node.argumentExpression.text);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return [...keys].sort();
+}
+
+function isProcessEnvironmentExpression(node: ts.Node): node is ts.PropertyAccessExpression {
+  return ts.isPropertyAccessExpression(node) &&
+    ts.isIdentifier(node.expression) &&
+    node.expression.text === 'process' &&
+    node.name.text === 'env';
+}
+
+function hasRawProcessEnvironmentAccess(sourceFile: ts.SourceFile): boolean {
+  let found = false;
+  const visit = (node: ts.Node): void => {
+    if (isProcessEnvironmentExpression(node)) found = true;
+    if (!found) ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return found;
+}
+
+function hasDynamicProcessEnvironmentAccess(sourceFile: ts.SourceFile): boolean {
+  let found = false;
+  const visit = (node: ts.Node): void => {
+    if (isProcessEnvironmentExpression(node)) {
+      const parent = node.parent;
+      const staticallyAddressed =
+        (ts.isPropertyAccessExpression(parent) && parent.expression === node) ||
+        (ts.isElementAccessExpression(parent) &&
+          parent.expression === node &&
+          parent.argumentExpression !== undefined &&
+          (ts.isStringLiteral(parent.argumentExpression) ||
+            ts.isNoSubstitutionTemplateLiteral(parent.argumentExpression)));
+      if (!staticallyAddressed) found = true;
+    }
+    if (!found) ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return found;
+}
+
 function resolveProjectImport(root: string, filePath: string, specifier: string): string | null {
   if (specifier.startsWith('@/')) return toProjectPath(root, path.resolve(root, 'src', specifier.slice(2)));
   if (specifier.startsWith('.')) return toProjectPath(root, path.resolve(path.dirname(filePath), specifier));
@@ -179,6 +246,9 @@ export function inspectSourceFile({ root, filePath, source }: SourceInspectionIn
   const importsServerOnly = imports.some(({ specifier }) => specifier === 'server-only');
   const failures: CheckFailure[] = [];
   const keys = new Set<string>();
+  const environmentKeys = collectDirectEnvironmentKeys(sourceFile);
+  const hasProcessEnvironment = hasRawProcessEnvironmentAccess(sourceFile);
+  const hasDynamicProcessEnvironment = hasDynamicProcessEnvironmentAccess(sourceFile);
   const add = (code: string, message: string): void => {
     const key = `${code}:${message}`;
     if (!keys.has(key)) {
@@ -186,6 +256,40 @@ export function inspectSourceFile({ root, filePath, source }: SourceInspectionIn
       failures.push({ code, file: projectFile, message });
     }
   };
+
+  if ((projectFile.includes('/application/') || projectFile.includes('/domain/')) && hasProcessEnvironment) {
+    add('CONFIG_PROCESS_ENV_FORBIDDEN', 'A domain- és application-réteg nem olvashat közvetlenül process.env értéket.');
+  }
+
+  if (clientComponent) {
+    for (const environmentKey of environmentKeys) {
+      if (!environmentKey.startsWith('NEXT_PUBLIC_')) {
+        add('CONFIG_CLIENT_SERVER_ENV', `A Client Component nem publikus környezeti változót olvas: ${environmentKey}`);
+      }
+    }
+    if (hasDynamicProcessEnvironment) {
+      add('CONFIG_CLIENT_DYNAMIC_ENV', 'A Client Component nem használhat dinamikus vagy teljes process.env hozzáférést.');
+    }
+  }
+
+  if (
+    projectFile.includes('/config/') &&
+    /(?:export\s+)?const\s+(?:environment|config)\s*=.*\.parse\(process\.env\)/su.test(source)
+  ) {
+    add('CONFIG_GLOBAL_BAG_FORBIDDEN', 'A konfigurációs modul globális, mindent parse-oló environment/config singletont hoz létre.');
+  }
+
+  if (
+    (projectFile.includes('.server.') || projectFile.includes('/config/')) &&
+    hasProcessEnvironment &&
+    !importsServerOnly
+  ) {
+    add('CONFIG_SERVER_BOUNDARY_MISSING', 'A szerveroldali konfigurációs modulból hiányzik az explicit server-only határ.');
+  }
+
+  if (/console\.(?:log|debug|info|warn|error)\s*\(\s*process\.env\s*\)/u.test(source)) {
+    add('CONFIG_RAW_ENV_LOG', 'A teljes process.env objektum naplózása tilos.');
+  }
 
   if (projectFile.startsWith('src/app/')) {
     for (const reference of imports) {
@@ -342,6 +446,26 @@ async function checkPrismaConfig(root: string): Promise<readonly CheckFailure[]>
   return failures;
 }
 
+async function checkNextConfiguration(root: string): Promise<readonly CheckFailure[]> {
+  const candidates = ['next.config.ts', 'next.config.mts', 'next.config.mjs', 'next.config.js'];
+  const failures: CheckFailure[] = [];
+  for (const file of candidates) {
+    try {
+      const source = await readFile(path.join(root, file), 'utf8');
+      if (/(?:^|[,\{\n])\s*env\s*:/u.test(source)) {
+        failures.push({
+          code: 'CONFIG_NEXT_ENV_FORBIDDEN',
+          file,
+          message: 'A next.config env opció értékeket emelhet a kliensbundle-be; explicit public konfiguráció szükséges.',
+        });
+      }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+  }
+  return failures;
+}
+
 export async function runProjectChecks(root = process.cwd()): Promise<readonly CheckFailure[]> {
   const manifestResult = await loadProjectManifest(root);
   const failures: CheckFailure[] = [...manifestResult.failures];
@@ -349,7 +473,12 @@ export async function runProjectChecks(root = process.cwd()): Promise<readonly C
 
   failures.push(...(await checkCapabilities(root, manifestResult.manifest)));
   const enabled = new Set(manifestResult.manifest.capabilities);
+  failures.push(...(await checkNextConfiguration(root)));
   if (enabled.has('next-app')) {
+    const configurationIssues = await checkConfigurationDrift(root, manifestResult.manifest);
+    failures.push(...configurationIssues
+      .filter(({ severity }) => severity === 'error')
+      .map(({ code, file, message }) => ({ code, file, message })));
     const routingIssues = await runRouteChecks(root);
     failures.push(...routingIssues.filter(({ severity }) => severity === 'error').map(({ code, file, message }) => ({ code, file, message })));
   }

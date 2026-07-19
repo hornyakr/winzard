@@ -4,7 +4,7 @@
 
 # View assets
 
-Inventory SHA-256: `b8e1c97c562afa00d230c4e790ade996c522d3bc66ad70c63950509e18412319`
+Inventory SHA-256: `b8759fdcc9693db5f6e9656812ba074074e94514333b2fc6e0b770942a428201`
 
 | View | Images | Stylesheets | Fonts | Scripts | Static imports | Public URLs | External URLs |
 | --- | --- | --- | --- | --- | --- | --- | --- |

@@ -17,8 +17,8 @@ classification: public
 ai_access: allowed
 context_priority: relevant
 created: 2026-07-17
-updated: 2026-07-17
-last_verified: 2026-07-17
+updated: 2026-07-19
+last_verified: 2026-07-19
 review_due:
 applies_to:
   - package.json
@@ -40,7 +40,10 @@ tags:
 
 ## Contract
 
-- `forge check` validates declared project capabilities and architecture boundaries.
+- `forge check` validates declared project capabilities, configuration drift and architecture boundaries.
+- `forge env:check` validates only the application shell and installed capability configuration.
+- `forge config:list`, `config:inspect`, `config:reference`, `config:diff`, `config:drift`, `config:unused` and `config:doctor` provide redacted configuration diagnostics.
+- `forge secrets:check` and `security:check` fail closed on committed secret material and unsafe configuration boundaries.
 - `forge docs:init` initializes only deployed-project documentation.
 - `forge docs:check` validates canonical project documents, lifecycle and generated drift.
 - `forge docs:status` reports the three lifecycle dimensions.

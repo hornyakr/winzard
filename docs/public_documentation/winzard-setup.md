@@ -994,11 +994,14 @@ Minimum:
 *.log
 ```
 
-Ha `.env.test.example` fájlt is commitolni kell:
+A verziózott contract- és tesztfájlok explicit kivételek:
 
 ```gitignore
-!.env.test.example
+!**/.env.example
+!**/.env.test
 ```
+
+A `.env.test` kizárólag izolált, nem production credentialt tartalmazhat.
 
 ### 8.3. `.env.example`
 
@@ -1008,6 +1011,7 @@ Példa:
 # Application
 APP_URL=http://localhost:3000
 APP_NAME=Winzard
+APP_STAGE=local
 LOG_LEVEL=debug
 
 # Browser-safe, build-time value
@@ -1051,83 +1055,74 @@ Következmények:
 
 ### 8.5. Környezeti schema
 
-Ajánlott fájl:
+Az alkalmazás-shell és a publikus kliensconfig külön, explicit inputtal tesztelhető szerződés:
 
 ```text
-src/platform/config/env.server.ts
+src/platform/config/app-env.ts
+src/platform/config/public-config.ts
+src/platform/config/validate-server-config.ts
+instrumentation.ts
 ```
 
-Példa:
+A szerveroldali parser csak a saját kulcsait választja ki, majd immutable config objektumot hoz létre. A publikus factory kizárólag allowlistelt DTO-t ad vissza. A domain és az application réteg nem olvashat `process.env` értéket; a composition root kapja a validált contractot.
 
 ```ts
-import "server-only";
+import 'server-only';
 
-import { z } from "zod";
+import { z } from 'zod';
 
-const serverEnvironmentSchema = z.object({
-  APP_URL: z.string().url(),
-  APP_NAME: z.string().min(1),
-  LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]),
-  DATABASE_URL: z.string().min(1),
-  AUTH_SECRET: z.string().min(32),
+const appEnvironmentSchema = z.object({
+  APP_URL: z.url(),
+  APP_NAME: z.string().trim().min(1),
+  APP_STAGE: z.enum(['local', 'preview', 'staging', 'production']),
+  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']),
 });
 
-const parsed = serverEnvironmentSchema.safeParse(process.env);
-
-if (!parsed.success) {
-  throw new Error(`Invalid server environment: ${parsed.error.message}`);
+export function parseAppEnvironment(input: NodeJS.ProcessEnv) {
+  return appEnvironmentSchema.parse({
+    APP_URL: input.APP_URL,
+    APP_NAME: input.APP_NAME,
+    APP_STAGE: input.APP_STAGE,
+    LOG_LEVEL: input.LOG_LEVEL,
+  });
 }
-
-export const serverEnvironment = parsed.data;
 ```
 
-Kliensoldali schema külön fájlban:
-
-```text
-src/platform/config/env.public.ts
-```
-
-```ts
-import { z } from "zod";
-
-const publicEnvironmentSchema = z.object({
-  NEXT_PUBLIC_APP_NAME: z.string().min(1),
-});
-
-export const publicEnvironment = publicEnvironmentSchema.parse({
-  NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
-});
-```
-
-A két schema szétválasztása csökkenti annak kockázatát, hogy szerversecret kliensoldali importláncba kerüljön.
+A teljes normatív szerződést a [Konfiguráció Winzard alkalmazásokban](./winzard-configuration.md) fejezet tartalmazza.
 
 ### 8.6. Konfigurációs prioritás
 
-Ajánlott sorrend:
+A Next.js-kompatibilis feloldás első találatnál megáll:
 
-1. deployment platform által adott runtime environment;
-2. helyi `.env.local` Next.js-felülírás, ahol indokolt;
-3. helyi `.env`;
-4. kódbeli, kizárólag nem érzékeny default.
+1. `process.env`;
+2. `.env.$NODE_ENV.local`;
+3. `.env.local`, kivéve `NODE_ENV=test`;
+4. `.env.$NODE_ENV`;
+5. `.env`;
+6. kizárólag a capability-contractban deklarált, nem érzékeny schema default.
 
-Secretnek nem lehet kódbeli defaultja.
+Secretnek nem lehet kódbeli defaultja. A Forge ugyanezt a sorrendet használja az `env:check`, `config:list`, `config:inspect` és `config:doctor` parancsokban.
 
 ### 8.7. Környezeti drift ellenőrzése
 
-Tervezett parancs:
+Implementált parancsok:
 
 ```bash
-pnpm forge env:check
+pnpm forge env:check --project .
+pnpm forge config:drift --project .
+pnpm forge config:reference --check --project .
+pnpm forge secrets:check --project .
+pnpm forge config:doctor --project .
 ```
 
 Ellenőrzések:
 
 - minden kötelező változó dokumentált-e `.env.example` fájlban;
-- nincs-e ismeretlen változó;
-- nincs-e secret `NEXT_PUBLIC_` névvel;
-- megfelelnek-e az értékek a Zod schemának;
-- nincs-e `.env` staged állapotban;
-- a CI-required és local-only változók külön vannak-e jelölve.
+- nincs-e ismeretlen vagy orphan változó;
+- nincs-e secret `NEXT_PUBLIC_` névvel, kliensimportban, logban vagy generált artifactban;
+- megfelelnek-e az értékek a capability-owned típus- és tartománycontractnak;
+- a recipe metadata, schema, `.env.example`, `.env.test` és generált reference konzisztens-e;
+- a diagnosztika csak forrást, státuszt, hosszt és fingerprintet közöl-e.
 
 ---
 

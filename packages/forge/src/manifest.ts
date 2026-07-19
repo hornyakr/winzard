@@ -28,11 +28,16 @@ export type WinzardDocumentationManifest = Readonly<{
   contextBudgetBytes: number;
 }>;
 
+export type WinzardCapabilityConfiguration = Readonly<
+  Record<string, Readonly<Record<string, unknown>>>
+>;
+
 export type WinzardManifest = Readonly<{
   schemaVersion: 1;
   profile: string;
   capabilities: readonly WinzardCapability[];
   documentation: WinzardDocumentationManifest | null;
+  capabilityConfig?: WinzardCapabilityConfiguration;
 }>;
 
 export type ManifestFailure = Readonly<{
@@ -53,32 +58,188 @@ type ManifestSource = Readonly<{
   rawManifest: Record<string, unknown>;
 }>;
 
+type JsonReadResult = Readonly<{
+  exists: boolean;
+  value: unknown | null;
+  error: ManifestFailure | null;
+}>;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-async function readJson(filePath: string): Promise<unknown | null> {
+async function readJson(filePath: string, projectFile: string): Promise<JsonReadResult> {
+  let source: string;
   try {
-    return JSON.parse(await readFile(filePath, 'utf8')) as unknown;
+    source = await readFile(filePath, 'utf8');
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return { exists: false, value: null, error: null };
+    }
     throw error;
+  }
+  try {
+    return { exists: true, value: JSON.parse(source) as unknown, error: null };
+  } catch (error) {
+    return {
+      exists: true,
+      value: null,
+      error: {
+        code: 'MANIFEST_JSON_INVALID',
+        file: projectFile,
+        message: `A JSON nem parse-olható: ${error instanceof Error ? error.message : String(error)}.`,
+      },
+    };
   }
 }
 
-async function readManifestSource(root: string): Promise<ManifestSource | null> {
-  const dedicated = await readJson(path.join(root, 'winzard.json'));
-  if (isRecord(dedicated)) {
-    return { sourceFile: 'winzard.json', wrapper: dedicated, rawManifest: dedicated };
+async function readManifestSource(
+  root: string,
+): Promise<Readonly<{ source: ManifestSource | null; failures: readonly ManifestFailure[] }>> {
+  const [dedicated, packageJson] = await Promise.all([
+    readJson(path.join(root, 'winzard.json'), 'winzard.json'),
+    readJson(path.join(root, 'package.json'), 'package.json'),
+  ]);
+  const failures: ManifestFailure[] = [dedicated.error, packageJson.error]
+    .filter((value): value is ManifestFailure => value !== null);
+
+  const dedicatedManifest = dedicated.exists && dedicated.error === null
+    ? dedicated.value
+    : null;
+  if (dedicated.exists && dedicated.error === null && !isRecord(dedicatedManifest)) {
+    failures.push({
+      code: 'MANIFEST_INVALID',
+      file: 'winzard.json',
+      message: 'A winzard.json gyökere objektum legyen.',
+    });
   }
 
-  const packageJson = await readJson(path.join(root, 'package.json'));
-  if (!isRecord(packageJson) || !isRecord(packageJson.winzard)) return null;
-  return {
-    sourceFile: 'package.json',
-    wrapper: packageJson,
-    rawManifest: packageJson.winzard,
-  };
+  const packageWrapper = packageJson.exists && packageJson.error === null && isRecord(packageJson.value)
+    ? packageJson.value
+    : null;
+  if (packageJson.exists && packageJson.error === null && !isRecord(packageJson.value)) {
+    failures.push({
+      code: 'MANIFEST_INVALID',
+      file: 'package.json',
+      message: 'A package.json gyökere objektum legyen.',
+    });
+  }
+  const packageManifest = packageWrapper?.winzard;
+  if (packageManifest !== undefined && !isRecord(packageManifest)) {
+    failures.push({
+      code: 'MANIFEST_INVALID',
+      file: 'package.json',
+      message: 'A package.json#winzard értéke objektum legyen.',
+    });
+  }
+
+  const hasDedicated = isRecord(dedicatedManifest);
+  const hasPackage = isRecord(packageManifest);
+  if (hasDedicated && hasPackage) {
+    failures.push({
+      code: 'MANIFEST_AMBIGUOUS',
+      file: 'winzard.json | package.json',
+      message: 'Pontosan egy manifestforrás támogatott; a winzard.json és a package.json#winzard nem használható egyszerre.',
+    });
+  }
+  if (failures.length > 0) return { source: null, failures };
+  if (hasDedicated) {
+    return {
+      source: {
+        sourceFile: 'winzard.json',
+        wrapper: dedicatedManifest,
+        rawManifest: dedicatedManifest,
+      },
+      failures: [],
+    };
+  }
+  if (hasPackage && packageWrapper) {
+    return {
+      source: {
+        sourceFile: 'package.json',
+        wrapper: packageWrapper,
+        rawManifest: packageManifest,
+      },
+      failures: [],
+    };
+  }
+  return { source: null, failures: [] };
+}
+
+function validateUnknownFields(
+  value: Record<string, unknown>,
+  allowed: ReadonlySet<string>,
+  sourceFile: string,
+  code: string,
+  failures: ManifestFailure[],
+): void {
+  for (const key of Object.keys(value)) {
+    if (!allowed.has(key)) {
+      failures.push({
+        code,
+        file: sourceFile,
+        message: `Ismeretlen manifestmező: ${key}.`,
+      });
+    }
+  }
+}
+
+function freezeJsonValue(value: unknown): unknown {
+  if (Array.isArray(value)) return Object.freeze(value.map(freezeJsonValue));
+  if (isRecord(value)) {
+    return Object.freeze(Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, freezeJsonValue(item)]),
+    ));
+  }
+  return value;
+}
+
+function validateCapabilityConfig(
+  raw: unknown,
+  sourceFile: string,
+  capabilities: readonly WinzardCapability[],
+  failures: ManifestFailure[],
+): WinzardCapabilityConfiguration | undefined {
+  if (raw === undefined) return undefined;
+  if (!isRecord(raw)) {
+    failures.push({
+      code: 'MANIFEST_CAPABILITY_CONFIG',
+      file: sourceFile,
+      message: 'A capabilityConfig mező objektum legyen.',
+    });
+    return undefined;
+  }
+
+  const activeCapabilities = new Set(capabilities);
+  const output: Record<string, Readonly<Record<string, unknown>>> = {};
+  for (const [capability, value] of Object.entries(raw)) {
+    if (!knownCapabilities.includes(capability as WinzardCapability)) {
+      failures.push({
+        code: 'MANIFEST_CAPABILITY_CONFIG_UNKNOWN',
+        file: sourceFile,
+        message: `Ismeretlen capabilityConfig blokk: ${capability}.`,
+      });
+      continue;
+    }
+    if (!activeCapabilities.has(capability as WinzardCapability)) {
+      failures.push({
+        code: 'MANIFEST_CAPABILITY_CONFIG_INACTIVE',
+        file: sourceFile,
+        message: `A capabilityConfig csak aktív capability-hez tartozhat: ${capability}.`,
+      });
+      continue;
+    }
+    if (!isRecord(value)) {
+      failures.push({
+        code: 'MANIFEST_CAPABILITY_CONFIG',
+        file: sourceFile,
+        message: `A ${capability} capabilityConfig blokk objektum legyen.`,
+      });
+      continue;
+    }
+    output[capability] = freezeJsonValue(value) as Readonly<Record<string, unknown>>;
+  }
+  return Object.freeze(output);
 }
 
 function validateDocumentation(
@@ -97,6 +258,13 @@ function validateDocumentation(
     }
     return null;
   }
+  validateUnknownFields(
+    raw,
+    new Set(['contractVersion', 'projectPrefix', 'consumerContractVersion', 'contextBudgetBytes']),
+    sourceFile,
+    'DOCUMENTATION_MANIFEST_UNKNOWN_FIELD',
+    failures,
+  );
 
   if (raw.contractVersion !== DOCUMENTATION_CONTRACT_VERSION) {
     failures.push({
@@ -138,7 +306,6 @@ function validateDocumentation(
   }
 
   if (failures.some(({ code }) => code.startsWith('DOCUMENTATION_'))) return null;
-
   return {
     contractVersion: DOCUMENTATION_CONTRACT_VERSION,
     projectPrefix,
@@ -148,7 +315,11 @@ function validateDocumentation(
 }
 
 export async function loadProjectManifest(root: string): Promise<ManifestResult> {
-  const source = await readManifestSource(root);
+  const sourceResult = await readManifestSource(root);
+  if (sourceResult.failures.length > 0) {
+    return { manifest: null, sourceFile: null, failures: sourceResult.failures };
+  }
+  const source = sourceResult.source;
   if (!source) {
     return {
       manifest: null,
@@ -163,6 +334,13 @@ export async function loadProjectManifest(root: string): Promise<ManifestResult>
 
   const { rawManifest: raw, sourceFile } = source;
   const failures: ManifestFailure[] = [];
+  validateUnknownFields(
+    raw,
+    new Set(['schemaVersion', 'profile', 'capabilities', 'documentation', 'capabilityConfig']),
+    sourceFile,
+    'MANIFEST_UNKNOWN_FIELD',
+    failures,
+  );
   if (raw.schemaVersion !== 1) {
     failures.push({ code: 'MANIFEST_SCHEMA_VERSION', file: sourceFile, message: 'Csak az 1-es manifest schema támogatott.' });
   }
@@ -190,17 +368,30 @@ export async function loadProjectManifest(root: string): Promise<ManifestResult>
     }
   }
 
+  const capabilityConfig = validateCapabilityConfig(
+    raw.capabilityConfig,
+    sourceFile,
+    capabilities,
+    failures,
+  );
   const documentationRequired = capabilities.includes('project-documentation') || capabilities.includes('ai-delivery');
   const documentation = validateDocumentation(raw.documentation, sourceFile, documentationRequired, failures);
+  if (raw.documentation !== undefined && !documentationRequired) {
+    failures.push({
+      code: 'DOCUMENTATION_MANIFEST_ORPHAN',
+      file: sourceFile,
+      message: 'A documentation blokk csak project-documentation vagy ai-delivery capability mellett használható.',
+    });
+  }
 
   if (failures.length > 0) return { manifest: null, sourceFile, failures };
-
   return {
     manifest: {
       schemaVersion: 1,
       profile: (raw.profile as string).trim(),
       capabilities: Object.freeze(capabilities),
       documentation,
+      ...(capabilityConfig ? { capabilityConfig } : {}),
     },
     sourceFile,
     failures: [],
@@ -218,7 +409,11 @@ export async function enableDocumentationCapabilities(
   root: string,
   options: EnableDocumentationOptions,
 ): Promise<'winzard.json' | 'package.json'> {
-  const source = await readManifestSource(root);
+  const sourceResult = await readManifestSource(root);
+  if (sourceResult.failures.length > 0) {
+    throw new Error(sourceResult.failures.map(({ message }) => message).join(' '));
+  }
+  const source = sourceResult.source;
   if (!source) {
     throw new Error('A docs:init futtatásához előbb Winzard manifest szükséges.');
   }

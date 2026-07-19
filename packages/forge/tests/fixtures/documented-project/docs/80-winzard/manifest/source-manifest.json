@@ -21,6 +21,10 @@
       "sha256": "sha256:07b46af44dc880ee078ea60986d220bdabc86474e34fb362470fa1e8ebb912fa"
     },
     {
+      "file": "platform-contracts/WZ-CONTRACT-CONFIGURATION-001.md",
+      "sha256": "sha256:0d65fdb6511167c35d5134269e4f1dcd94a853fe0224724d33316fc42880c414"
+    },
+    {
       "file": "platform-contracts/WZ-CONTRACT-DELIVERY-001.md",
       "sha256": "sha256:bd5d93d319380cf9c33b3759de0e38d0bde6ad52977a8f7cd43a587a96e65076"
     },
@@ -30,7 +34,7 @@
     },
     {
       "file": "platform-contracts/WZ-CONTRACT-FORGE-001.md",
-      "sha256": "sha256:e78c437135a7e6b3f44f7270169f592664b5bcf97dc1e5731d590e724161b9c9"
+      "sha256": "sha256:fd1962cd75c8dbac830c940bddaccfb02f81d1e201f77de05e9e23f2632aa4df"
     },
     {
       "file": "platform-contracts/WZ-CONTRACT-GENERATED-001.md",

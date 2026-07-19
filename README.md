@@ -40,6 +40,27 @@ pnpm forge make:view catalog/product/product-card --dry-run --project apps/refer
 
 A `presentation-contract` capability explicit view modelleket, minimális Server/Client határt, biztonságos asset- és URL-kezelést, valamint generált view-contract bizonyítékot tesz ellenőrizhetővé.
 
+## Konfigurációs platform és diagnosztika
+
+A Forge capability-nként tulajdonolt, típusos konfigurációs contractot tart fenn. A nyers envértékek Next.js-kompatibilis precedencia szerint töltődnek, a diagnosztika pedig kizárólag redaktált státuszt, forrást és fingerprintet jelenít meg.
+
+```bash
+pnpm forge env:check --project apps/reference
+pnpm forge config:list --project apps/reference
+pnpm forge config:inspect APP_STAGE --project apps/reference
+pnpm forge config:reference --check --project apps/reference
+pnpm forge config:drift --project templates/webapp
+pnpm forge config:diff --from=staging --to=production --project <PROJECT>
+pnpm forge config:doctor --project <PROJECT>
+pnpm forge secrets:check --project .
+```
+
+A teljes konfigurációs ellenőrzés:
+
+```bash
+pnpm verify:configuration
+```
+
 ## Kitelepített projekt-dokumentáció
 
 A `project-documentation` és `ai-delivery` recipe a generált alkalmazás saját Project Vaultját, publikus Winzard consumer contractját, dokumentációs ellenőrzéseit és AI-delivery adaptereit biztosítja.
@@ -58,6 +79,11 @@ A kitelepített projekt nem kapja meg a Winzard belső roadmapjét, taskjait, ha
 A `templates/webapp` és a `recipes/prisma-postgresql` tartalmazza az opcionális Prisma/PostgreSQL képességet.
 
 ```bash
+export APP_URL='http://localhost:3000'
+export APP_NAME='Winzard Webapp'
+export APP_STAGE='local'
+export LOG_LEVEL='error'
+export NEXT_PUBLIC_APP_NAME='Winzard Webapp'
 export DATABASE_URL='postgresql://winzard:winzard_dev_only@127.0.0.1:5432/winzard?schema=public'
 export DATABASE_POOL_MAX=10
 export DATABASE_CONNECTION_TIMEOUT_MS=5000
@@ -70,6 +96,7 @@ A root `build` kizárólag a referenciaalkalmazás Next.js buildjét futtatja. P
 
 ## Dokumentáció
 
+- [Konfiguráció Winzard alkalmazásokban](docs/public_documentation/winzard-configuration.md)
 - [Normatív capability- és setup-kiegészítés](docs/public_documentation/winzard-setup-capabilities.md)
 - [Setup dokumentáció](docs/public_documentation/winzard-setup.md)
 - [Oldalkészítési dokumentáció](docs/public_documentation/winzard-page-creation.md)

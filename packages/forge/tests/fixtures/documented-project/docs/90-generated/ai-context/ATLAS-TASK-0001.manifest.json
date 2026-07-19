@@ -5,7 +5,7 @@
   "generatedAt": "2026-07-17",
   "documentationContractVersion": 1,
   "generatorVersion": "0.1.0",
-  "contextSha256": "sha256:c129e5830ac94cfd944a2b572b7b1f261e9dccc34f6f4380a2aaa844857ab619",
+  "contextSha256": "sha256:027a0246897ccf641a9840ae730a4158bf24d99f161340fe0e800ef37a286430",
   "sourceDocuments": [
     {
       "id": "ATLAS-TASK-0001",
@@ -18,6 +18,12 @@
       "file": "docs/70-ai/policies/ATLAS-POLICY-AI-001.md",
       "reason": "required",
       "sourceHash": "sha256:a3648a7332e8ce77567ffb4a5d6f3b3e2a576589af44cfb864dfaa983d0a1b1b"
+    },
+    {
+      "id": "WZ-CONTRACT-CONFIGURATION-001",
+      "file": "docs/80-winzard/platform-contracts/WZ-CONTRACT-CONFIGURATION-001.md",
+      "reason": "required",
+      "sourceHash": "sha256:0d65fdb6511167c35d5134269e4f1dcd94a853fe0224724d33316fc42880c414"
     },
     {
       "id": "WZ-CONTRACT-DELIVERY-001",

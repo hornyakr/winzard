@@ -18,6 +18,7 @@ Project prefix: `ATLAS`.
 ## Source contracts
 
 - ATLAS-POLICY-AI-001: AI-assisted Delivery Policy
+- WZ-CONTRACT-CONFIGURATION-001: Winzard configuration and secret boundary contract
 - WZ-CONTRACT-DELIVERY-001: Winzard delivery contract
 - WZ-CONTRACT-DOCUMENTATION-001: Winzard project documentation contract
 - WZ-CONTRACT-GENERATED-001: Generated code and documentation policy
@@ -54,6 +55,39 @@ Hash: `sha256:a3648a7332e8ce77567ffb4a5d6f3b3e2a576589af44cfb864dfaa983d0a1b1b`
 - [ ] AI adapters are generated from accepted project contracts.
 - [ ] Context packages are deterministic and provenance-tracked.
 - [ ] Task, handoff and review remain separately attributable.
+
+---
+
+## WZ-CONTRACT-CONFIGURATION-001 — Winzard configuration and secret boundary contract
+
+Source: `docs/80-winzard/platform-contracts/WZ-CONTRACT-CONFIGURATION-001.md`
+Hash: `sha256:0d65fdb6511167c35d5134269e4f1dcd94a853fe0224724d33316fc42880c414`
+
+## Contract
+
+- Every configuration key has one capability or adapter owner, a validation contract, a security classification and a resolution phase.
+- Raw `process.env` input is selected, validated and converted to an immutable typed object at the platform boundary; domain and application code never read it directly.
+- The supported precedence is `process.env`, `.env.$NODE_ENV.local`, `.env.local` except under test, `.env.$NODE_ENV`, then `.env`.
+- `NODE_ENV` is limited to `development`, `production` and `test`; deployment stages use a separate `APP_STAGE` contract.
+- `NEXT_PUBLIC_*` values are public and may be frozen into the build artifact. A secret never uses that prefix or `next.config.env`.
+- Runtime or local `.env*` files, credentials, private keys and raw configuration dumps are not committed, generated or included in AI context.
+- Diagnostics show only key metadata, source, status, length and a short fingerprint. They never print the raw value.
+- An installed capability alone determines whether its configuration is required. The presence of an env key never activates a capability.
+
+## Constraints and prohibitions
+
+- Do not create a global mutable configuration bag or an import-time schema that requires every optional capability.
+- Do not log `process.env`, complete DSNs, signing keys or provider tokens.
+- Do not use request headers, query parameters or cookies as deployment configuration overrides.
+- Do not give development fallback values to production secrets.
+- Do not edit generated configuration reference documents manually.
+
+## Acceptance criteria
+
+- `forge env:check`, `forge config:drift`, `forge config:reference --check` and `forge secrets:check` pass for the project.
+- The minimal profile builds without database or authentication configuration.
+- Every active key appears in `.env.example`, and generated reference output matches the manifest and recipe metadata.
+- Secret rotation or configuration changes document whether a rebuild, restart or rolling deployment is required.
 
 ---
 
