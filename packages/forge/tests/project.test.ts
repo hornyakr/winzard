@@ -86,6 +86,24 @@ describe('Forge capability checks', () => {
     expect(failures).toContainEqual(expect.objectContaining({ code: 'CAPABILITY_DEPENDENCY_MISSING' }));
   });
 
+  it('a http-kernel capability explicit Next.js/Forge függőséget és platformfájlokat kér', async () => {
+    const root = await fixture({
+      schemaVersion: 1,
+      profile: 'invalid',
+      capabilities: ['http-kernel'],
+    });
+
+    const failures = await runProjectChecks(root);
+    expect(failures).toContainEqual(expect.objectContaining({
+      code: 'CAPABILITY_DEPENDENCY_MISSING',
+      message: expect.stringContaining('next-app'),
+    }));
+    expect(failures).toContainEqual(expect.objectContaining({
+      code: 'CAPABILITY_PATH_MISSING',
+      file: 'src/platform/http/request-context.server.ts',
+    }));
+  });
+
   it('az ai-delivery capabilityhez project-documentation szükséges', async () => {
     const root = await fixture({
       schemaVersion: 1,

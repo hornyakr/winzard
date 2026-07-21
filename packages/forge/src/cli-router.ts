@@ -13,6 +13,10 @@ import { generateDeliverySlice } from './delivery/generator';
 import { buildDeliveryInventory, inspectDelivery } from './delivery/inventory';
 import { renderDeliveryInspection, renderDeliveryIssues, renderDeliveryList } from './delivery/render';
 import type { DeliveryGenerationKind } from './delivery/types';
+import { instrumentationIssues, requestContextIssues, responsePolicyIssues } from './kernel/checks';
+import { checkKernelDocumentation, generateKernelDocumentation } from './kernel/docs';
+import { buildKernelInventory, inspectKernel } from './kernel/inventory';
+import { renderKernelGraph, renderKernelInspection, renderKernelIssues } from './kernel/render';
 import { loadProjectManifest } from './manifest';
 import { checkViewDocumentation, generateViewDocumentation } from './views/docs';
 import { generateView } from './views/generator';
@@ -21,7 +25,7 @@ import { renderViewAssets, renderViewInspection, renderViewIssues, renderViewLis
 
 const args = process.argv.slice(2);
 const command = args[0] ?? 'list';
-const OPTIONS_WITH_VALUES = new Set(['--project', '--node-env', '--from', '--to']);
+const OPTIONS_WITH_VALUES = new Set(['--project', '--node-env', '--from', '--to', '--method', '--changed-from']);
 
 function positionalArguments(values: readonly string[]): readonly string[] {
   const output: string[] = [];
@@ -207,6 +211,61 @@ async function configurationCommand(): Promise<boolean> {
   return false;
 }
 
+
+async function kernelCommand(): Promise<boolean> {
+  const kernelCommands = new Set([
+    'kernel:graph',
+    'kernel:inspect',
+    'kernel:check',
+    'request-context:check',
+    'response-policy:check',
+    'instrumentation:check',
+    'lifecycle:docs',
+  ]);
+  if (!kernelCommands.has(command)) return false;
+
+  const inventoryOptions = option('--changed-from')
+    ? { changedFrom: option('--changed-from') ?? undefined }
+    : {};
+
+  if (command === 'lifecycle:docs') {
+    if (flag('--check')) {
+      const issues = await checkKernelDocumentation(root);
+      console.log(json ? JSON.stringify({ issues }, null, 2) : renderKernelIssues(issues, 'lifecycle:docs --check'));
+      if (hasErrors(issues)) process.exitCode = 1;
+    } else {
+      const files = await generateKernelDocumentation(root);
+      console.log(json ? JSON.stringify({ files }, null, 2) : `GENERATED: ${files.length} HTTP-kernel dokumentum`);
+    }
+    return true;
+  }
+
+  const inventory = await buildKernelInventory(root, inventoryOptions);
+  if (command === 'kernel:graph') {
+    console.log(json ? JSON.stringify(inventory, null, 2) : renderKernelGraph(inventory));
+    return true;
+  }
+  if (command === 'kernel:inspect') {
+    const value = positionals[0];
+    if (!value) throw new Error('A kernel:inspect parancshoz contract ID, entrypoint, action vagy route szükséges.');
+    const records = inspectKernel(inventory, value, option('--method') ?? undefined);
+    if (records.length === 0) process.exitCode = 1;
+    console.log(json ? JSON.stringify({ records }, null, 2) : renderKernelInspection(records));
+    return true;
+  }
+
+  const selected = command === 'request-context:check'
+    ? requestContextIssues(inventory.issues)
+    : command === 'response-policy:check'
+      ? responsePolicyIssues(inventory.issues)
+      : command === 'instrumentation:check'
+        ? instrumentationIssues(inventory.issues)
+        : inventory.issues;
+  console.log(json ? JSON.stringify({ issues: selected }, null, 2) : renderKernelIssues(selected, command));
+  if (hasErrors(selected)) process.exitCode = 1;
+  return true;
+}
+
 async function deliveryCommand(): Promise<boolean> {
   if (command === 'delivery:list') {
     const inventory = await buildDeliveryInventory(root);
@@ -331,6 +390,13 @@ try {
   if (command === 'list') {
     await import('./cli');
     console.log([
+      'kernel:graph',
+      'kernel:inspect',
+      'kernel:check',
+      'request-context:check',
+      'response-policy:check',
+      'instrumentation:check',
+      'lifecycle:docs',
       'delivery:list',
       'delivery:inspect',
       'delivery:check',
@@ -357,7 +423,7 @@ try {
     ].join('\n'));
   } else if (command === 'check' || command === 'security:check') {
     await projectCheck(command === 'security:check');
-  } else if (!await configurationCommand() && !await viewCommand() && !await deliveryCommand()) {
+  } else if (!await configurationCommand() && !await kernelCommand() && !await viewCommand() && !await deliveryCommand()) {
     await import('./cli');
   }
 } catch (error) {

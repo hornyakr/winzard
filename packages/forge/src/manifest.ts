@@ -5,6 +5,7 @@ import { DEFAULT_CONTEXT_BUDGET_BYTES, DOCUMENTATION_CONTRACT_VERSION } from './
 
 export const knownCapabilities = [
   'next-app',
+  'http-kernel',
   'forge',
   'presentation-contract',
   'modular-application',

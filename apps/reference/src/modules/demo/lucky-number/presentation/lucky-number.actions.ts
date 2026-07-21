@@ -1,8 +1,11 @@
 'use server';
 
 import { demoModule } from '@/composition/demo';
-import { getDemoActor } from './lucky-number.actor.server';
+import { enforceServerActionContract } from '@/platform/http/delivery-contract';
+import { createActionRequestContext, toApplicationContext } from '@/composition/request-context.server';
+
 import type { GenerateLuckyNumberActionState } from './lucky-number.action-state';
+import { luckyNumberActionContract } from './lucky-number.actions.contract';
 import { toLuckyNumberResponse } from './lucky-number.presenter';
 import { luckyNumberRequestSchema } from './lucky-number.schemas';
 
@@ -10,6 +13,7 @@ export async function generateLuckyNumberAction(
   _previousState: GenerateLuckyNumberActionState,
   formData: FormData,
 ): Promise<GenerateLuckyNumberActionState> {
+  enforceServerActionContract(luckyNumberActionContract, 'generateLuckyNumberAction');
   const parsed = luckyNumberRequestSchema.safeParse({
     minimum: formData.get('minimum'),
     maximum: formData.get('maximum'),
@@ -21,10 +25,11 @@ export async function generateLuckyNumberAction(
     };
   }
 
-  const result = demoModule.commands.generateLuckyNumber.execute({
-    actor: await getDemoActor(),
-    ...parsed.data,
-  });
+  const requestContext = await createActionRequestContext();
+  const result = demoModule.commands.generateLuckyNumber.execute(
+    parsed.data,
+    toApplicationContext(requestContext),
+  );
   if (result.kind === 'forbidden') {
     return {
       ok: false,

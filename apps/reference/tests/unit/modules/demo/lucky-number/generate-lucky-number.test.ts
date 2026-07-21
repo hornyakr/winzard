@@ -4,6 +4,7 @@ import { GenerateLuckyNumber } from '@/modules/demo/lucky-number/application/com
 import { LuckyNumberPolicy } from '@/modules/demo/lucky-number/application/policies/lucky-number.policy';
 import type { RandomIntegerGenerator } from '@/modules/demo/lucky-number/application/ports/random-integer-generator';
 import { GetLuckyNumber } from '@/modules/demo/lucky-number/application/queries/get-lucky-number';
+import { anonymousApplicationContext, operatorApplicationContext } from '../../../support/application-context';
 
 class FixedRandomIntegerGenerator implements RandomIntegerGenerator {
   betweenInclusive(): number {
@@ -19,18 +20,16 @@ describe('GenerateLuckyNumber', () => {
 
   it('explicit forbidden resultot ad jogosultság nélkül', () => {
     expect(command.execute({
-      actor: { subject: null, roles: [] },
       minimum: 10,
       maximum: 20,
-    })).toEqual({ kind: 'forbidden' });
+    }, anonymousApplicationContext)).toEqual({ kind: 'forbidden' });
   });
 
   it('operator actor számára explicit success DTO-t ad', () => {
     expect(command.execute({
-      actor: { subject: 'demo', roles: ['operator'] },
       minimum: 10,
       maximum: 20,
-    })).toEqual({
+    }, operatorApplicationContext)).toEqual({
       kind: 'success',
       value: { value: 15, minimum: 10, maximum: 20 },
     });

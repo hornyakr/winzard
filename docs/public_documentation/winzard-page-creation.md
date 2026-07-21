@@ -891,7 +891,7 @@ A `index.server.ts` csak stabil, engedélyezett exportszerződést adjon. TILOS 
 Hozd létre:
 
 ```text
-src/app/(public)/lucky/number/page.tsx
+src/app/(public)/lucky/number/(index)/page.tsx
 ```
 
 A `(public)` route group nem jelenik meg az URL-ben.
@@ -1569,7 +1569,7 @@ A zárójelezett mappa:
 szervezési csoport, nem URL-szegmens.
 
 ```text
-src/app/(public)/lucky/number/page.tsx
+src/app/(public)/lucky/number/(index)/page.tsx
 ```
 
 URL-je továbbra is:
@@ -1690,8 +1690,10 @@ redirect(searchParams.returnTo as string);
 Egy route szegmenshez azonnali loading UI adható:
 
 ```text
-src/app/(public)/lucky/number/loading.tsx
+src/app/(public)/lucky/number/(index)/loading.tsx
 ```
+
+Az `(index)` route group itt tudatos streaming-határ. Így a loading UI csak a `/lucky/number` indexoldalt burkolja, és nem commitál `200` státuszt a dinamikus `/lucky/number/range/[minimum]/[maximum]` testvérútvonal `notFound()` döntése előtt.
 
 ```tsx
 export default function LuckyNumberLoading() {
@@ -1987,7 +1989,7 @@ Elvárt emberi kimenet:
 
 ```text
 METHOD  PATH                                      KIND   RUNTIME  SOURCE
-GET     /lucky/number                             page   nodejs   src/app/(public)/lucky/number/page.tsx
+GET     /lucky/number                             page   nodejs   src/app/(public)/lucky/number/(index)/page.tsx
 GET     /api/lucky/number                         route  nodejs   src/app/api/lucky/number/route.ts
 GET     /lucky/number/range/[minimum]/[maximum]  page   nodejs   src/app/(public)/lucky/number/range/[minimum]/[maximum]/page.tsx
 ```
@@ -2009,7 +2011,7 @@ Runtime:          nodejs
 Rendering:        dynamic/request-time
 Layout chain:     src/app/layout.tsx
                   src/app/(public)/lucky/layout.tsx
-Entrypoint:       src/app/(public)/lucky/number/page.tsx
+Entrypoint:       src/app/(public)/lucky/number/(index)/page.tsx
 Composition:      demoModule.queries.getLuckyNumber
 Client boundary:  none
 ```
@@ -2614,7 +2616,7 @@ A fejezet teljes kódszintű megvalósításához szükséges:
 Ellenőrizd:
 
 ```text
-src/app/(public)/lucky/number/page.tsx
+src/app/(public)/lucky/number/(index)/page.tsx
 ```
 
 Gyakori hibák:

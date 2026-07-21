@@ -40,6 +40,21 @@ pnpm forge make:view catalog/product/product-card --dry-run --project apps/refer
 
 A `presentation-contract` capability explicit view modelleket, minimális Server/Client határt, biztonságos asset- és URL-kezelést, valamint generált view-contract bizonyítékot tesz ellenőrizhetővé.
 
+## HTTP-kernel és request–response lifecycle
+
+A Next.js marad az autoritatív delivery kernel. A Winzard típusos adjacent contractokat, immutable request-contextet, explicit Route Handler kernelt, központi response-policyt, abort- és body-limit védelmet, valamint Forge lifecycle-diagnosztikát ad fölé.
+
+```bash
+pnpm forge kernel:graph --project apps/reference
+pnpm forge kernel:inspect /api/lucky/number --method=POST --project apps/reference
+pnpm forge kernel:check --project apps/reference
+pnpm forge request-context:check --project apps/reference
+pnpm forge response-policy:check --project apps/reference
+pnpm forge instrumentation:check --project apps/reference
+pnpm forge lifecycle:docs --check --project apps/reference
+pnpm verify:kernel
+```
+
 ## Konfigurációs platform és diagnosztika
 
 A Forge capability-nként tulajdonolt, típusos konfigurációs contractot tart fenn. A nyers envértékek Next.js-kompatibilis precedencia szerint töltődnek, a diagnosztika pedig kizárólag redaktált státuszt, forrást és fingerprintet jelenít meg.
@@ -96,6 +111,7 @@ A root `build` kizárólag a referenciaalkalmazás Next.js buildjét futtatja. P
 
 ## Dokumentáció
 
+- [HTTP-kernel és request–response lifecycle](docs/public_documentation/winzard-http-kernel.md)
 - [Konfiguráció Winzard alkalmazásokban](docs/public_documentation/winzard-configuration.md)
 - [Normatív capability- és setup-kiegészítés](docs/public_documentation/winzard-setup-capabilities.md)
 - [Setup dokumentáció](docs/public_documentation/winzard-setup.md)

@@ -25,17 +25,17 @@ function valueList(values: readonly string[]): string {
 
 function deliveryMap(inventory: DeliveryInventory): string {
   const rows = inventory.records.map((record) =>
-    `| ${record.kind} | ${record.methods.join(',') || '-'} | \`${escapeCell(record.route ?? '-')}\` | \`${escapeCell(record.entrypoint)}\` | ${record.runtime} | ${record.streaming ? 'yes' : 'no'} |`,
+    `| ${record.kind} | ${record.methods.join(',') || '-'} | \`${escapeCell(record.route ?? '-')}\` | \`${escapeCell(record.entrypoint)}\` | ${record.runtime} | ${record.contractId ? `\`${escapeCell(record.contractId)}\`` : '-'} | ${record.streaming ? 'yes' : 'no'} |`,
   );
-  return `${GENERATED_HEADER}\n\n# Delivery map\n\nInventory SHA-256: \`${hashInventory(inventory)}\`\n\n| Kind | Method | Route | Entrypoint | Runtime | Streaming |\n| --- | --- | --- | --- | --- | --- |\n${rows.join('\n') || '| - | - | - | - | - | - |'}\n`;
+  return `${GENERATED_HEADER}\n\n# Delivery map\n\nInventory SHA-256: \`${hashInventory(inventory)}\`\n\n| Kind | Method | Route | Entrypoint | Runtime | Contract | Streaming |\n| --- | --- | --- | --- | --- | --- | --- |\n${rows.join('\n') || '| - | - | - | - | - | - | - |'}\n`;
 }
 
 function httpContracts(inventory: DeliveryInventory): string {
   const records = inventory.records;
   const rows = records.map((record) =>
-    `| \`${escapeCell(record.entrypoint)}\` | ${valueList(record.inputSchemas)} | ${valueList(record.actorResolvers)} | ${valueList(record.authorizationCalls)} | ${valueList(record.applicationOperations)} | ${valueList(record.outputKinds)} | ${escapeCell(record.cachePolicy ?? '-')} | ${valueList(record.tests)} |`,
+    `| \`${escapeCell(record.entrypoint)}\` | ${record.contractId ? `\`${escapeCell(record.contractId)}\`` : '-'} | ${record.requestContext ?? '-'} | ${record.authentication ?? '-'} | ${record.tenant ?? '-'} | ${valueList(record.inputSchemas)} | ${valueList(record.actorResolvers)} | ${record.authorizationPolicy ?? valueList(record.authorizationCalls)} | ${valueList(record.applicationOperations)} | ${record.presenter ?? '-'} | ${valueList(record.outputKinds)} | ${record.responsePolicy ?? escapeCell(record.cachePolicy ?? '-')} | ${record.csrf ?? '-'} | ${record.idempotency ?? '-'} | ${record.bodyLimitBytes ?? '-'} | ${valueList(record.tests)} |`,
   );
-  return `${GENERATED_HEADER}\n\n# HTTP and UI delivery contracts\n\nInventory SHA-256: \`${hashInventory(inventory)}\`\n\n| Entrypoint | Input schema | Actor | Authorization | Application operation | Output | Cache | Tests |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n${rows.join('\n') || '| - | - | - | - | - | - | - | - |'}\n`;
+  return `${GENERATED_HEADER}\n\n# HTTP and UI delivery contracts\n\nInventory SHA-256: \`${hashInventory(inventory)}\`\n\n| Entrypoint | Contract | Context | Auth | Tenant | Input schema | Actor resolver | Authorization | Application operation | Presenter | Output | Response/cache | CSRF | Idempotency | Body limit | Tests |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${rows.join('\n') || '| - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |'}\n`;
 }
 
 function securityStatus(inventory: DeliveryInventory): string {

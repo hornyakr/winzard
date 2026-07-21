@@ -3,6 +3,7 @@
   "profile": "reference",
   "capabilities": [
     "next-app",
+    "http-kernel",
     "forge",
     "presentation-contract",
     "modular-application",

@@ -4,14 +4,14 @@
 
 # Delivery map
 
-Inventory SHA-256: `940880bf74587379b103e4350d35243e2b01ecc00ab51f2fd9a04b3f262a92ee`
+Inventory SHA-256: `058d2c009bb1ef79668f6fc212ac7158ef64b94f459428b3f4339a50fa16a11f`
 
-| Kind | Method | Route | Entrypoint | Runtime | Streaming |
-| --- | --- | --- | --- | --- | --- |
-| page | GET | `/lucky/number` | `src/app/(public)/lucky/number/page.tsx` | nodejs | no |
-| page | GET | `/lucky/number/range/[minimum]/[maximum]` | `src/app/(public)/lucky/number/range/[minimum]/[maximum]/page.tsx` | nodejs | no |
-| page | GET | `/` | `src/app/page.tsx` | unknown | no |
-| route-handler | GET | `/api/health/live` | `src/app/api/health/live/route.ts` | unknown | no |
-| route-handler | GET | `/api/lucky/number/range/[minimum]/[maximum]` | `src/app/api/lucky/number/range/[minimum]/[maximum]/route.ts` | nodejs | no |
-| route-handler | GET,POST | `/api/lucky/number` | `src/app/api/lucky/number/route.ts` | nodejs | no |
-| server-action | - | `-` | `src/modules/demo/lucky-number/presentation/lucky-number.actions.ts` | unknown | no |
+| Kind | Method | Route | Entrypoint | Runtime | Contract | Streaming |
+| --- | --- | --- | --- | --- | --- | --- |
+| page | GET | `/lucky/number` | `src/app/(public)/lucky/number/(index)/page.tsx` | nodejs | `demo.lucky-number.page` | no |
+| page | GET | `/lucky/number/range/[minimum]/[maximum]` | `src/app/(public)/lucky/number/range/[minimum]/[maximum]/page.tsx` | nodejs | `demo.lucky-number.range.page` | no |
+| page | GET | `/` | `src/app/page.tsx` | nodejs | `reference.home.page` | no |
+| route-handler | GET | `/api/health/live` | `src/app/api/health/live/route.ts` | nodejs | `platform.health.live` | no |
+| route-handler | GET | `/api/lucky/number/range/[minimum]/[maximum]` | `src/app/api/lucky/number/range/[minimum]/[maximum]/route.ts` | nodejs | `demo.lucky-number.range.api` | no |
+| route-handler | GET,POST | `/api/lucky/number` | `src/app/api/lucky/number/route.ts` | nodejs | `demo.lucky-number.api` | no |
+| server-action | - | `-` | `src/modules/demo/lucky-number/presentation/lucky-number.actions.ts` | unknown | `demo.lucky-number.generate.action` | no |

@@ -8,24 +8,60 @@ vi.mock('next/headers', () => ({ headers: headersMock }));
 
 describe('generateLuckyNumberAction', () => {
   beforeEach(() => {
+    headersMock.mockReset();
     headersMock.mockResolvedValue(new Headers());
   });
 
-  it('field errorokat ad invalid FormData esetén', async () => {
+  it('field errorokat ad invalid FormData esetén request-context feloldás nélkül', async () => {
     const formData = new FormData();
     formData.set('minimum', '20');
     formData.set('maximum', '10');
-    const result = await generateLuckyNumberAction(initialGenerateLuckyNumberActionState, formData);
+
+    const result = await generateLuckyNumberAction(
+      initialGenerateLuckyNumberActionState,
+      formData,
+    );
+
     expect(result.ok).toBe(false);
     expect(result.fieldErrors?.maximum).toBeDefined();
+    expect(headersMock).not.toHaveBeenCalled();
   });
 
-  it('minden hívásnál újra feloldja az aktort és tilt jogosultság nélkül', async () => {
+  it('minden érvényes hívásnál újra feloldja az aktort és tilt jogosultság nélkül', async () => {
     const formData = new FormData();
     formData.set('minimum', '10');
     formData.set('maximum', '20');
-    const result = await generateLuckyNumberAction(initialGenerateLuckyNumberActionState, formData);
-    expect(result).toMatchObject({ ok: false, formError: expect.stringContaining('operator') });
+
+    const result = await generateLuckyNumberAction(
+      initialGenerateLuckyNumberActionState,
+      formData,
+    );
+
+    expect(result).toMatchObject({
+      ok: false,
+      formError: expect.stringContaining('operator'),
+    });
+    expect(headersMock).toHaveBeenCalledOnce();
+  });
+
+  it('operator actorral stabil presenter DTO-t ad', async () => {
+    headersMock.mockResolvedValue(new Headers({
+      'x-demo-role': 'operator',
+      'x-demo-subject': 'action-operator',
+    }));
+    const formData = new FormData();
+    formData.set('minimum', '10');
+    formData.set('maximum', '20');
+
+    const result = await generateLuckyNumberAction(
+      initialGenerateLuckyNumberActionState,
+      formData,
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.result).toMatchObject({ minimum: 10, maximum: 20 });
+    expect(result.result?.value).toBeGreaterThanOrEqual(10);
+    expect(result.result?.value).toBeLessThanOrEqual(20);
     expect(headersMock).toHaveBeenCalledOnce();
   });
 });

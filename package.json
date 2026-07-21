@@ -25,14 +25,15 @@
     "db:validate:webapp": "prisma validate --config templates/webapp/prisma.config.ts",
     "db:generate:webapp": "prisma generate --config templates/webapp/prisma.config.ts",
     "db:migrate:deploy:webapp": "prisma migrate deploy --config templates/webapp/prisma.config.ts",
-    "verify:core": "pnpm typegen && pnpm typecheck && pnpm lint && pnpm test && pnpm verify:documentation && pnpm verify:routing && pnpm verify:delivery && pnpm verify:views && pnpm verify:configuration && pnpm forge check --project apps/reference && pnpm verify:minimal-template && pnpm build && pnpm test:e2e:reference",
+    "verify:core": "pnpm typegen && pnpm typecheck && pnpm lint && pnpm test && pnpm verify:documentation && pnpm verify:routing && pnpm verify:delivery && pnpm verify:kernel && pnpm verify:views && pnpm verify:configuration && pnpm forge check --project apps/reference && pnpm verify:minimal-template && pnpm build && pnpm test:e2e:reference",
     "verify:database": "pnpm forge check --project templates/webapp && pnpm forge env:check --project templates/webapp && pnpm db:validate:webapp && pnpm db:generate:webapp && pnpm verify:webapp-template && pnpm db:migrate:deploy:webapp",
     "verify": "pnpm verify:core",
     "verify:delivery": "pnpm forge delivery:check --project apps/reference && pnpm forge http:contracts --check --project apps/reference",
     "verify:views": "pnpm forge view:check --project apps/reference && pnpm forge view:contracts --check --project apps/reference && pnpm forge view:assets --check --project apps/reference",
     "verify:configuration": "pnpm forge config:drift --project . && pnpm forge config:drift --project apps/reference && pnpm forge config:reference --check --project apps/reference && pnpm forge config:drift --project templates/minimal && pnpm forge config:reference --check --project templates/minimal && pnpm forge config:drift --project templates/webapp && pnpm forge config:reference --check --project templates/webapp && pnpm forge secrets:check --project .",
-    "verify:minimal-template": "next typegen templates/minimal && tsc -p templates/minimal/tsconfig.json --noEmit && next build templates/minimal",
-    "verify:webapp-template": "next typegen templates/webapp && tsc -p templates/webapp/tsconfig.json --noEmit && next build templates/webapp"
+    "verify:minimal-template": "pnpm forge check --project templates/minimal && pnpm forge lifecycle:docs --check --project templates/minimal && vitest run --config templates/minimal/vitest.config.ts && next typegen templates/minimal && tsc -p templates/minimal/tsconfig.json --noEmit && next build templates/minimal",
+    "verify:webapp-template": "pnpm forge check --project templates/webapp && pnpm forge lifecycle:docs --check --project templates/webapp && vitest run --config templates/webapp/vitest.config.ts && next typegen templates/webapp && tsc -p templates/webapp/tsconfig.json --noEmit && next build templates/webapp",
+    "verify:kernel": "pnpm forge kernel:check --project apps/reference && pnpm forge request-context:check --project apps/reference && pnpm forge response-policy:check --project apps/reference && pnpm forge instrumentation:check --project apps/reference && pnpm forge lifecycle:docs --check --project apps/reference"
   },
   "winzard": {
     "schemaVersion": 1,

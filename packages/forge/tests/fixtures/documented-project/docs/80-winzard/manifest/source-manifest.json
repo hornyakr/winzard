@@ -41,6 +41,10 @@
       "sha256": "sha256:47938875e69ebfe9e03800f230ed122e647e753386b26e0a87c85c93cdd462db"
     },
     {
+      "file": "platform-contracts/WZ-CONTRACT-HTTP-KERNEL-001.md",
+      "sha256": "sha256:9b476c0407bc17a22775ef905241e3331dfe0117b4929b7a2f9e479f616e08a3"
+    },
+    {
       "file": "platform-contracts/WZ-CONTRACT-MODULES-001.md",
       "sha256": "sha256:8b20a96923ec03e3197f492e2f68a120de4a83e56da171be574171830c8a1faf"
     }

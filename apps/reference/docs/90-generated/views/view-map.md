@@ -4,17 +4,17 @@
 
 # View map
 
-Inventory SHA-256: `b8759fdcc9693db5f6e9656812ba074074e94514333b2fc6e0b770942a428201`
+Inventory SHA-256: `ad2aa7109c851fc130f5857eb1381d94fac34785205b4831708c2da8cf9f6b4f`
 
 | Kind | Boundary | Name | Route | File | Async |
 | --- | --- | --- | --- | --- | --- |
 | layout | server | `LuckyNumberLayout` | `/lucky/number` | `src/app/(public)/lucky/number/layout.tsx` | no |
 | layout | server | `RootLayout` | `/` | `src/app/layout.tsx` | no |
 | template | server | `LuckyNumberTemplate` | `/lucky/number` | `src/app/(public)/lucky/number/template.tsx` | no |
-| page | server | `LuckyNumberPage` | `/lucky/number` | `src/app/(public)/lucky/number/page.tsx` | yes |
+| page | server | `LuckyNumberPage` | `/lucky/number` | `src/app/(public)/lucky/number/(index)/page.tsx` | yes |
 | page | server | `LuckyNumberRangePage` | `/lucky/number/range/[minimum]/[maximum]` | `src/app/(public)/lucky/number/range/[minimum]/[maximum]/page.tsx` | yes |
 | page | server | `Home` | `/` | `src/app/page.tsx` | no |
-| loading | server | `LuckyNumberLoading` | `/lucky/number` | `src/app/(public)/lucky/number/loading.tsx` | no |
+| loading | server | `LuckyNumberLoading` | `/lucky/number` | `src/app/(public)/lucky/number/(index)/loading.tsx` | no |
 | error | client | `LuckyNumberError` | `/lucky/number` | `src/app/(public)/lucky/number/error.tsx` | no |
 | not-found | server | `LuckyNumberNotFound` | `/lucky/number` | `src/app/(public)/lucky/number/not-found.tsx` | no |
 | component | client | `LuckyNumberForm` | `-` | `src/modules/demo/lucky-number/presentation/lucky-number-form.tsx` | no |

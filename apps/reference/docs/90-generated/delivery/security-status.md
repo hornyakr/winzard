@@ -4,7 +4,7 @@
 
 # Delivery security status
 
-Inventory SHA-256: `940880bf74587379b103e4350d35243e2b01ecc00ab51f2fd9a04b3f262a92ee`
+Inventory SHA-256: `058d2c009bb1ef79668f6fc212ac7158ef64b94f459428b3f4339a50fa16a11f`
 
 | Severity | Code | File | Message |
 | --- | --- | --- | --- |

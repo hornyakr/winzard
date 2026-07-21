@@ -4,13 +4,13 @@
 
 # Route map
 
-Inventory SHA-256: `b86e0195dda32684573d8f7de375585d450fcabc7253e4f124a965a5f4f2fae0`
+Inventory SHA-256: `e61f18a0b95bb14db146db41bb72e7a5c8429369a510ef585e53b12bd80713ae`
 
 | Method | Kind | Pattern | Entrypoint | Runtime | Owner |
 | --- | --- | --- | --- | --- | --- |
-| GET | page | `/` | `src/app/page.tsx` | unknown | root |
-| GET | handler | `/api/health/live` | `src/app/api/health/live/route.ts` | unknown | api |
+| GET | page | `/` | `src/app/page.tsx` | nodejs | root |
+| GET | handler | `/api/health/live` | `src/app/api/health/live/route.ts` | nodejs | api |
 | GET,POST | handler | `/api/lucky/number` | `src/app/api/lucky/number/route.ts` | nodejs | api |
 | GET | handler | `/api/lucky/number/range/[minimum]/[maximum]` | `src/app/api/lucky/number/range/[minimum]/[maximum]/route.ts` | nodejs | api |
-| GET | page | `/lucky/number` | `src/app/(public)/lucky/number/page.tsx` | nodejs | lucky |
+| GET | page | `/lucky/number` | `src/app/(public)/lucky/number/(index)/page.tsx` | nodejs | lucky |
 | GET | page | `/lucky/number/range/[minimum]/[maximum]` | `src/app/(public)/lucky/number/range/[minimum]/[maximum]/page.tsx` | nodejs | lucky |

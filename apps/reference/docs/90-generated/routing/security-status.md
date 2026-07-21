@@ -4,7 +4,7 @@
 
 # Routing check status
 
-Inventory SHA-256: `b86e0195dda32684573d8f7de375585d450fcabc7253e4f124a965a5f4f2fae0`
+Inventory SHA-256: `e61f18a0b95bb14db146db41bb72e7a5c8429369a510ef585e53b12bd80713ae`
 
 | Severity | Code | File | Message |
 | --- | --- | --- | --- |

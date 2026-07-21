@@ -4,17 +4,17 @@
 
 # View contracts
 
-Inventory SHA-256: `b8759fdcc9693db5f6e9656812ba074074e94514333b2fc6e0b770942a428201`
+Inventory SHA-256: `ad2aa7109c851fc130f5857eb1381d94fac34785205b4831708c2da8cf9f6b4f`
 
 | View | File | Props type | Props | View models | Route builders | Tests |
 | --- | --- | --- | --- | --- | --- | --- |
 | `LuckyNumberLayout` | `src/app/(public)/lucky/number/layout.tsx` | `LuckyNumberLayoutProps` | `children` | - | - | - |
 | `RootLayout` | `src/app/layout.tsx` | `RootLayoutProps` | `children` | - | - | - |
 | `LuckyNumberTemplate` | `src/app/(public)/lucky/number/template.tsx` | `LuckyNumberTemplateProps` | `children` | - | - | - |
-| `LuckyNumberPage` | `src/app/(public)/lucky/number/page.tsx` | `LuckyNumberPageProps` | `searchParams` | - | - | - |
+| `LuckyNumberPage` | `src/app/(public)/lucky/number/(index)/page.tsx` | `LuckyNumberPageProps` | `searchParams` | - | - | - |
 | `LuckyNumberRangePage` | `src/app/(public)/lucky/number/range/[minimum]/[maximum]/page.tsx` | `LuckyNumberRangePageProps` | `params` | - | - | - |
 | `Home` | `src/app/page.tsx` | `-` | - | - | `@/modules/demo/lucky-number/presentation/lucky-number.routes#luckyNumberRoutes` | - |
-| `LuckyNumberLoading` | `src/app/(public)/lucky/number/loading.tsx` | `-` | - | - | - | - |
+| `LuckyNumberLoading` | `src/app/(public)/lucky/number/(index)/loading.tsx` | `-` | - | - | - | - |
 | `LuckyNumberError` | `src/app/(public)/lucky/number/error.tsx` | `LuckyNumberErrorProps` | `error`<br>`reset` | - | - | - |
 | `LuckyNumberNotFound` | `src/app/(public)/lucky/number/not-found.tsx` | `-` | - | - | `@/modules/demo/lucky-number/presentation/lucky-number.routes#luckyNumberRoutes` | - |
 | `LuckyNumberForm` | `src/modules/demo/lucky-number/presentation/lucky-number-form.tsx` | `-` | - | - | - | - |
