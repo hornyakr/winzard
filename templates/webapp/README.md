@@ -1,6 +1,6 @@
 # Webapp template
 
-A `webapp` profil a minimal alkalmazás `presentation-contract` szerződésére Prisma/PostgreSQL és database readiness képességet telepít. Auth nincs benne; az külön recipe.
+A `webapp` profil a minimal alkalmazás `http-kernel` és `presentation-contract` szerződésére Prisma/PostgreSQL és database readiness képességet telepít. Auth nincs benne; az külön recipe.
 
 ## Konfiguráció
 
@@ -34,3 +34,14 @@ pnpm forge view:check
 pnpm forge view:assets --check
 pnpm forge make:view catalog/product/product-card --dry-run
 ```
+
+## HTTP-kernel contract
+
+```bash
+pnpm forge kernel:graph
+pnpm forge kernel:check
+pnpm forge lifecycle:docs --check
+pnpm test
+```
+
+A liveness és readiness Route Handler typed adjacent contracton, központi RequestContexten és response-policyn keresztül fut.

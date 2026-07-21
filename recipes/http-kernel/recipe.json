@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "name": "http-kernel",
+  "provides": [
+    "http-kernel"
+  ],
+  "requires": [
+    "next-app",
+    "forge"
+  ],
+  "files": [
+    "instrumentation.ts",
+    "src/application/application-context.ts",
+    "src/composition/http-kernel.server.ts",
+    "src/composition/request-context.server.ts",
+    "src/platform/http/after-response.server.ts",
+    "src/platform/http/csrf.server.ts",
+    "src/platform/http/delivery-contract.ts",
+    "src/platform/http/http-kernel.server.ts",
+    "src/platform/http/idempotency.server.ts",
+    "src/platform/http/internal-headers.ts",
+    "src/platform/http/kernel-telemetry.server.ts",
+    "src/platform/http/problem.ts",
+    "src/platform/http/rate-limit.server.ts",
+    "src/platform/http/request-body.server.ts",
+    "src/platform/http/request-context.server.ts",
+    "src/platform/http/request-context.ts",
+    "src/platform/http/response-policy.ts",
+    "src/platform/observability/request-error-reporter.server.ts",
+    "src/proxy.ts",
+    "tests/stubs/server-only.ts",
+    "tests/unit/platform/http/delivery-contract.test.ts",
+    "tests/unit/platform/http/http-kernel.test.ts",
+    "tests/unit/platform/http/proxy.test.ts",
+    "tests/unit/platform/http/request-body.test.ts",
+    "tests/unit/platform/http/request-context-isolation.test.ts",
+    "tests/unit/platform/http/request-context.test.ts",
+    "tests/unit/platform/http/response-policy.test.ts",
+    "vitest.config.ts"
+  ],
+  "generated": [
+    "docs/90-generated/kernel/kernel-contracts.md",
+    "docs/90-generated/kernel/kernel-graph.md",
+    "docs/90-generated/kernel/kernel-security-status.md",
+    "docs/90-generated/kernel/request-lifecycle.md"
+  ],
+  "dependencies": {
+    "runtime": [
+      "server-only",
+      "zod"
+    ],
+    "development": [
+      "vitest"
+    ]
+  }
+}

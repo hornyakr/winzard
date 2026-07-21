@@ -1,3 +1,5 @@
+import type { ApplicationContext } from '@/application/application-context';
+
 import type { LuckyNumberDto } from '../dto/lucky-number.dto';
 import { InvalidLuckyNumberRangeError } from '../errors/invalid-lucky-number-range.error';
 import type { RandomIntegerGenerator } from '../ports/random-integer-generator';
@@ -14,7 +16,8 @@ const MAXIMUM_ALLOWED_SPAN = 10_000;
 export class GetLuckyNumber {
   constructor(private readonly randomIntegerGenerator: RandomIntegerGenerator) {}
 
-  execute(input: GetLuckyNumberInput = {}): LuckyNumberDto {
+  execute(input: GetLuckyNumberInput, context: ApplicationContext): LuckyNumberDto {
+    void context;
     const minimum = input.minimum ?? DEFAULT_MINIMUM;
     const maximum = input.maximum ?? DEFAULT_MAXIMUM;
 

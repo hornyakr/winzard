@@ -1,2 +1,12 @@
+import { withRouteLifecycle } from '@/composition/http-kernel.server';
+
+import { livenessRouteContract } from './route.contract';
+
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export function GET(): Response { return Response.json({ status: 'ok' }, { headers: { 'Cache-Control': 'no-store' } }); }
+
+export const GET = withRouteLifecycle(
+  livenessRouteContract,
+  'GET',
+  () => Response.json({ status: 'ok' }, { status: 200 }),
+);

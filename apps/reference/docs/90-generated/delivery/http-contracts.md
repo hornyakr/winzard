@@ -4,14 +4,14 @@
 
 # HTTP and UI delivery contracts
 
-Inventory SHA-256: `940880bf74587379b103e4350d35243e2b01ecc00ab51f2fd9a04b3f262a92ee`
+Inventory SHA-256: `058d2c009bb1ef79668f6fc212ac7158ef64b94f459428b3f4339a50fa16a11f`
 
-| Entrypoint | Input schema | Actor | Authorization | Application operation | Output | Cache | Tests |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `src/app/(public)/lucky/number/page.tsx` | `luckyNumberRangeQuerySchema` | - | - | `demoModule.queries.getLuckyNumber` | `not-found`<br>`react-ui` | - | - |
-| `src/app/(public)/lucky/number/range/[minimum]/[maximum]/page.tsx` | `luckyNumberRangeParamsSchema` | - | - | `demoModule.queries.getLuckyNumber` | `not-found`<br>`react-ui` | - | - |
-| `src/app/page.tsx` | - | - | - | - | `react-ui` | - | - |
-| `src/app/api/health/live/route.ts` | - | - | - | - | `response` | no-store | - |
-| `src/app/api/lucky/number/range/[minimum]/[maximum]/route.ts` | `luckyNumberRangeParamsSchema` | - | - | `demoModule.queries.getLuckyNumber` | `response` | no-store | `tests/unit/app/api/lucky/number/routing.test.ts` |
-| `src/app/api/lucky/number/route.ts` | `luckyNumberRequestSchema` | `luckyNumberActorFromRequest` | `demoModule.policies.luckyNumber.canGenerateCustomRange` | `demoModule.commands.generateLuckyNumber`<br>`demoModule.queries.getLuckyNumber` | `response` | no-store | `tests/unit/app/api/lucky/number/routing.test.ts` |
-| `src/modules/demo/lucky-number/presentation/lucky-number.actions.ts` | `luckyNumberRequestSchema` | `getDemoActor` | - | `demoModule.commands.generateLuckyNumber` | `action-state` | - | `tests/unit/modules/demo/lucky-number/lucky-number.actions.test.ts` |
+| Entrypoint | Contract | Context | Auth | Tenant | Input schema | Actor resolver | Authorization | Application operation | Presenter | Output | Response/cache | CSRF | Idempotency | Body limit | Tests |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `src/app/(public)/lucky/number/(index)/page.tsx` | `demo.lucky-number.page` | required | optional | none | `luckyNumberRangeQuerySchema` | `createPageRequestContext` | none | `demo.queries.getLuckyNumber` | presentLuckyNumber | `not-found`<br>`react-ui` | private-no-store | - | - | - | `tests/e2e/lucky-number.smoke.ts`<br>`tests/unit/app/api/lucky/number/route.test.ts`<br>`tests/unit/app/api/lucky/number/routing.test.ts`<br>`tests/unit/modules/demo/lucky-number/lucky-number.presenter.test.ts`<br>`tests/unit/modules/demo/lucky-number/routing.test.ts` |
+| `src/app/(public)/lucky/number/range/[minimum]/[maximum]/page.tsx` | `demo.lucky-number.range.page` | required | optional | none | `luckyNumberRangeParamsSchema` | `createPageRequestContext` | none | `demo.queries.getLuckyNumber` | presentLuckyNumber | `not-found`<br>`react-ui` | private-no-store | - | - | - | `tests/unit/app/api/lucky/number/routing.test.ts` |
+| `src/app/page.tsx` | `reference.home.page` | none | public | none | - | - | none | - | - | `react-ui` | public-static | - | - | - | `tests/e2e/lucky-number.smoke.ts` |
+| `src/app/api/health/live/route.ts` | `platform.health.live` | required | public | none | - | - | GET:none | - | - | `response` | health | none | none | - | `tests/e2e/lucky-number.smoke.ts` |
+| `src/app/api/lucky/number/range/[minimum]/[maximum]/route.ts` | `demo.lucky-number.range.api` | required | optional | none | `luckyNumberRangeParamsSchema` | - | GET:none | `demo.queries.getLuckyNumber` | toLuckyNumberResponse | `response` | api-private | none | none | - | `tests/unit/app/api/lucky/number/routing.test.ts` |
+| `src/app/api/lucky/number/route.ts` | `demo.lucky-number.api` | required | optional | none | `luckyNumberRequestSchema` | - | GET:none,POST:demo.lucky-number.generate-custom-range | `demo.commands.generateLuckyNumber`<br>`demo.queries.getLuckyNumber` | toLuckyNumberResponse | `response` | api-private | same-origin | none | 16384 | `tests/e2e/lucky-number.smoke.ts`<br>`tests/unit/app/api/lucky/number/route.test.ts`<br>`tests/unit/app/api/lucky/number/routing.test.ts`<br>`tests/unit/modules/demo/lucky-number/lucky-number.presenter.test.ts` |
+| `src/modules/demo/lucky-number/presentation/lucky-number.actions.ts` | `demo.lucky-number.generate.action` | required | optional | none | `luckyNumberRequestSchema` | `createActionRequestContext` | demo.lucky-number.generate-custom-range | `demo.commands.generateLuckyNumber` | toLuckyNumberResponse | `action-state` | - | framework-origin-plus-session | none | - | `tests/unit/modules/demo/lucky-number/lucky-number.actions.test.ts` |

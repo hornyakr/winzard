@@ -60,6 +60,9 @@ jobs:
       - name: Verify controller and delivery contracts
         run: pnpm verify:delivery
 
+      - name: Verify HTTP-kernel lifecycle contracts
+        run: pnpm verify:kernel
+
       - name: Verify template, view and presentation contracts
         run: pnpm verify:views
 

@@ -27,7 +27,11 @@ describe('lucky-number routing contract', () => {
 
   it('az egyedi tartományt operator szerepkörhöz köti', () => {
     const policy = new LuckyNumberPolicy();
-    expect(policy.canGenerateCustomRange({ subject: null, roles: [] })).toBe(false);
-    expect(policy.canGenerateCustomRange({ subject: 'demo', roles: ['operator'] })).toBe(true);
+    expect(policy.canGenerateCustomRange({ kind: 'anonymous' })).toBe(false);
+    expect(policy.canGenerateCustomRange({
+      kind: 'user',
+      userId: 'demo',
+      roles: ['operator'],
+    })).toBe(true);
   });
 });

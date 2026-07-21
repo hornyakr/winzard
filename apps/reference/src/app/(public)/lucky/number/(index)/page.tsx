@@ -5,8 +5,13 @@ import { connection } from 'next/server';
 import { demoModule } from '@/composition/demo';
 import { LuckyNumberView, presentLuckyNumber } from '@/modules/demo/lucky-number/index.server';
 import { luckyNumberRangeQuerySchema } from '@/modules/demo/lucky-number/presentation/lucky-number.schemas';
+import { enforcePageContract } from '@/platform/http/delivery-contract';
+import { createPageRequestContext, toApplicationContext } from '@/composition/request-context.server';
+
+import { luckyNumberPageContract } from './page.contract';
 
 export const runtime = 'nodejs';
+enforcePageContract(luckyNumberPageContract);
 
 export const metadata: Metadata = {
   title: 'Szerencseszám',
@@ -22,6 +27,10 @@ export default async function LuckyNumberPage({ searchParams }: LuckyNumberPageP
   const parsed = luckyNumberRangeQuerySchema.safeParse(await searchParams);
   if (!parsed.success) notFound();
 
-  const result = demoModule.queries.getLuckyNumber.execute(parsed.data);
+  const requestContext = await createPageRequestContext();
+  const result = demoModule.queries.getLuckyNumber.execute(
+    parsed.data,
+    toApplicationContext(requestContext),
+  );
   return <LuckyNumberView model={presentLuckyNumber(result)} />;
 }

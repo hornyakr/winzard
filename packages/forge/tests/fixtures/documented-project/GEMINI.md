@@ -22,6 +22,7 @@ Project prefix: `ATLAS`.
 - WZ-CONTRACT-DELIVERY-001: Winzard delivery contract
 - WZ-CONTRACT-DOCUMENTATION-001: Winzard project documentation contract
 - WZ-CONTRACT-GENERATED-001: Generated code and documentation policy
+- WZ-CONTRACT-HTTP-KERNEL-001: Winzard HTTP-kernel and request lifecycle contract
 - WZ-CONTRACT-MODULES-001: Winzard module boundaries
 
 ---
@@ -153,6 +154,34 @@ Hash: `sha256:47938875e69ebfe9e03800f230ed122e647e753386b26e0a87c85c93cdd462db`
 ## Acceptance criteria
 
 - `forge docs:adapters --check`, `forge context:check` and `forge docs:sync --check` detect drift.
+
+---
+
+## WZ-CONTRACT-HTTP-KERNEL-001 — Winzard HTTP-kernel and request lifecycle contract
+
+Source: `docs/80-winzard/platform-contracts/WZ-CONTRACT-HTTP-KERNEL-001.md`
+Hash: `sha256:9b476c0407bc17a22775ef905241e3331dfe0117b4929b7a2f9e479f616e08a3`
+
+## Contract
+
+- Next.js App Router is the only runtime HTTP router, rendering kernel and response transport.
+- Every Page, Route Handler and Server Action has an adjacent, statically inspectable delivery contract that is explicitly enforced by the entrypoint.
+- Raw request, header, cookie, body and framework types remain in the delivery layer. Application operations receive an immutable `ApplicationContext` value.
+- Request ID, actor, tenant and locale are resolved per request through explicit resolver ports; mutable request-specific module globals are prohibited.
+- Proxy-owned `x-winzard-*` headers are deleted and regenerated before forwarding. External forwarded headers are not trusted without a configured proxy boundary.
+- Route Handler input has explicit content type, byte limit, schema validation, AbortSignal propagation and cleanup semantics.
+- Expected failures map to stable result or Problem Details contracts. Raw exceptions, ORM records and domain entities are never serialized directly.
+- Status, cache, security headers and cookies are decided before streaming begins.
+- `after()` is best-effort only. Durable email, payment, webhook, indexing, audit or inventory work uses a queue/outbox or another durable adapter.
+- A named rate-limit policy is invalid without an explicit executor. Required idempotency is invalid without an explicit durable executor and replay contract.
+- Instrumentation reports low-cardinality route patterns and redacted error data; full credentials, cookies, bodies and secrets are never logged.
+
+## Acceptance criteria
+
+- `forge kernel:check`, `forge request-context:check`, `forge response-policy:check`, `forge instrumentation:check` and `forge lifecycle:docs --check` pass.
+- Multi-request actor, tenant, locale and request-ID isolation is proven in one process.
+- Body-limit, abort cleanup, internal-header spoofing and unexpected-error redaction have negative tests.
+- Production build and E2E checks pass for the installed template/profile.
 
 ---
 

@@ -4,7 +4,7 @@
 
 # View security and architecture status
 
-Inventory SHA-256: `b8759fdcc9693db5f6e9656812ba074074e94514333b2fc6e0b770942a428201`
+Inventory SHA-256: `ad2aa7109c851fc130f5857eb1381d94fac34785205b4831708c2da8cf9f6b4f`
 
 | Severity | Code | File | Message |
 | --- | --- | --- | --- |

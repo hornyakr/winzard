@@ -1,10 +1,9 @@
-export type LuckyNumberActor = Readonly<{
-  subject: string | null;
-  roles: readonly string[];
-}>;
+import type { ApplicationActor } from '@/application/application-context';
 
 export class LuckyNumberPolicy {
-  canGenerateCustomRange(actor: LuckyNumberActor): boolean {
-    return actor.roles.includes('operator');
+  canGenerateCustomRange(actor: ApplicationActor): boolean {
+    if (actor.kind === 'user') return actor.roles.includes('operator');
+    if (actor.kind === 'service') return actor.scopes.includes('demo:lucky-number:generate');
+    return false;
   }
 }

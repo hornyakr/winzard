@@ -5,6 +5,7 @@ import ts from 'typescript';
 
 import { checkConfigurationDrift } from '../configuration/drift';
 import { runDocumentationChecks } from '../documentation/checks';
+import { runKernelChecks } from '../kernel/checks';
 import { loadProjectManifest, type WinzardCapability, type WinzardManifest } from '../manifest';
 import { runRouteChecks } from '../routing/checks';
 import { runViewChecks } from '../views/checks';
@@ -35,6 +36,22 @@ const CAPABILITY_REQUIREMENTS: Readonly<Record<WinzardCapability, Readonly<{
     any: [['next.config.ts', 'next.config.mjs', 'next.config.js']],
   },
   forge: {},
+  'http-kernel': {
+    all: [
+      'instrumentation.ts',
+      'src/proxy.ts',
+      'src/application/application-context.ts',
+      'src/platform/http/delivery-contract.ts',
+      'src/platform/http/http-kernel.server.ts',
+      'src/platform/http/internal-headers.ts',
+      'src/platform/http/problem.ts',
+      'src/platform/http/rate-limit.server.ts',
+      'src/platform/http/request-body.server.ts',
+      'src/platform/http/request-context.server.ts',
+      'src/platform/http/response-policy.ts',
+    ],
+    requires: ['next-app', 'forge'],
+  },
   'presentation-contract': { all: ['src/app'], requires: ['next-app', 'forge'] },
   'modular-application': { all: ['src/modules', 'src/composition'] },
   liveness: { all: ['src/app/api/health/live/route.ts'] },
@@ -413,9 +430,16 @@ async function checkCapabilities(root: string, manifest: WinzardManifest): Promi
 async function checkNoStore(root: string, file: string, code: string): Promise<readonly CheckFailure[]> {
   try {
     const source = await readFile(path.join(root, file), 'utf8');
-    return source.includes('no-store')
+    const contractFile = path.join(path.dirname(file), 'route.contract.ts');
+    const contractSource = await readFile(path.join(root, contractFile), 'utf8').catch((error: unknown) => {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return '';
+      throw error;
+    });
+    const declaredByContract = /\bcache\s*:\s*['"]no-store['"]/u.test(contractSource) &&
+      /\bresponsePolicy\s*:\s*['"]health['"]/u.test(contractSource);
+    return source.includes('no-store') || declaredByContract
       ? []
-      : [{ code, file, message: 'A health válaszból hiányzik a no-store cache policy.' }];
+      : [{ code, file, message: 'A health válaszból hiányzik a no-store cache policy vagy az adjacent health response contract.' }];
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
     throw error;
@@ -481,6 +505,12 @@ export async function runProjectChecks(root = process.cwd()): Promise<readonly C
       .map(({ code, file, message }) => ({ code, file, message })));
     const routingIssues = await runRouteChecks(root);
     failures.push(...routingIssues.filter(({ severity }) => severity === 'error').map(({ code, file, message }) => ({ code, file, message })));
+  }
+  if (enabled.has('http-kernel')) {
+    const kernelIssues = await runKernelChecks(root);
+    failures.push(...kernelIssues
+      .filter(({ severity }) => severity === 'error')
+      .map(({ code, file, message }) => ({ code, file, message })));
   }
   if (enabled.has('presentation-contract')) {
     const viewIssues = await runViewChecks(root);

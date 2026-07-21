@@ -1,6 +1,6 @@
 # Minimal template
 
-A `minimal` profil Next.js App Routert, Forge-kompatibilis manifestet és `presentation-contract` capability-t tartalmaz. Nem telepít Prisma-, PostgreSQL- vagy auth-függőséget.
+A `minimal` profil Next.js App Routert, Forge-kompatibilis manifestet és `http-kernel` és `presentation-contract` capability-t tartalmaz. Nem telepít Prisma-, PostgreSQL- vagy auth-függőséget.
 
 ## Konfiguráció
 
@@ -23,3 +23,14 @@ pnpm forge view:list
 pnpm forge view:check
 pnpm forge make:view catalog/product/product-card --dry-run
 ```
+
+## HTTP-kernel contract
+
+```bash
+pnpm forge kernel:graph
+pnpm forge kernel:check
+pnpm forge lifecycle:docs --check
+pnpm test
+```
+
+A template Proxy request-ID bridge-et, immutable RequestContextet, typed delivery contractot és redaktált instrumentation hookot tartalmaz.

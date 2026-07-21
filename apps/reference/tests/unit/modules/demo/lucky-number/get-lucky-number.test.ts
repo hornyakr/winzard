@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { InvalidLuckyNumberRangeError } from '@/modules/demo/lucky-number/application/errors/invalid-lucky-number-range.error';
 import type { RandomIntegerGenerator } from '@/modules/demo/lucky-number/application/ports/random-integer-generator';
 import { GetLuckyNumber } from '@/modules/demo/lucky-number/application/queries/get-lucky-number';
+import { anonymousApplicationContext } from '../../../support/application-context';
 
 class RecordingRandomIntegerGenerator implements RandomIntegerGenerator {
   readonly calls: Array<Readonly<{ minimum: number; maximum: number }>> = [];
@@ -20,7 +21,7 @@ describe('GetLuckyNumber', () => {
     const random = new RecordingRandomIntegerGenerator(42);
     const query = new GetLuckyNumber(random);
 
-    const result = query.execute();
+    const result = query.execute({}, anonymousApplicationContext);
 
     expect(result).toEqual({ value: 42, minimum: 0, maximum: 100 });
     expect(Object.isFrozen(result)).toBe(true);
@@ -31,7 +32,7 @@ describe('GetLuckyNumber', () => {
     const random = new RecordingRandomIntegerGenerator(15);
     const query = new GetLuckyNumber(random);
 
-    expect(query.execute({ minimum: 10, maximum: 20 })).toEqual({
+    expect(query.execute({ minimum: 10, maximum: 20 }, anonymousApplicationContext)).toEqual({
       value: 15,
       minimum: 10,
       maximum: 20,
@@ -47,7 +48,7 @@ describe('GetLuckyNumber', () => {
     const random = new RecordingRandomIntegerGenerator(0);
     const query = new GetLuckyNumber(random);
 
-    expect(() => query.execute({ minimum, maximum })).toThrow(InvalidLuckyNumberRangeError);
+    expect(() => query.execute({ minimum, maximum }, anonymousApplicationContext)).toThrow(InvalidLuckyNumberRangeError);
     expect(random.calls).toHaveLength(0);
   });
 
@@ -55,7 +56,7 @@ describe('GetLuckyNumber', () => {
     const query = new GetLuckyNumber(new RecordingRandomIntegerGenerator(0));
 
     try {
-      query.execute({ minimum: 5, maximum: 4 });
+      query.execute({ minimum: 5, maximum: 4 }, anonymousApplicationContext);
       throw new Error('A querynek hibát kellett volna dobnia.');
     } catch (error) {
       expect(error).toBeInstanceOf(InvalidLuckyNumberRangeError);

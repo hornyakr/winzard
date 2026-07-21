@@ -169,6 +169,7 @@ A projektnek pontosan egy értelmezhető, támogatott szerződést kell adnia.
   "profile": "minimal",
   "capabilities": [
     "next-app",
+    "http-kernel",
     "forge",
     "presentation-contract"
   ]
@@ -183,6 +184,7 @@ A projektnek pontosan egy értelmezhető, támogatott szerződést kell adnia.
   "profile": "webapp",
   "capabilities": [
     "next-app",
+    "http-kernel",
     "forge",
     "presentation-contract",
     "modular-application",
@@ -214,6 +216,7 @@ A capability sorrendje nem hordoz üzleti jelentést. A generátor stabil, deter
 | Capability | Jelentés | Kötelező következmény |
 |---|---|---|
 | `next-app` | Next.js App Router alkalmazás | `src/app`, Next.js és TypeScript konfiguráció. |
+| `http-kernel` | Explicit request–response lifecycle contract | Adjacent delivery contractok, RequestContext, response policy, Proxy bridge, instrumentation és Forge kernel evidence. |
 | `forge` | Forge-kompatibilis projekt | Érvényes Winzard manifest. |
 | `presentation-contract` | Nézeti és UI-kompozíciós szerződés | View inventory, presentation architecture check és generált view-contract bizonyíték. |
 | `modular-application` | Elkülönített application architektúra | `src/modules` és `src/composition`. |
@@ -225,6 +228,10 @@ A capability sorrendje nem hordoz üzleti jelentést. A generátor stabil, deter
 ### 5.1. Capability-függőségek
 
 ```text
+http-kernel
+  -> next-app
+  -> forge
+
 presentation-contract
   -> next-app
   -> forge
@@ -250,6 +257,8 @@ A `prisma-postgresql` nem engedi meg, hogy:
 
 Az `authentication` nem jelenti azt, hogy minden route automatikusan védett. Az auth adapter mellett külön policy és use-case szintű authorizáció szükséges.
 
+A `http-kernel` nem hoz létre második runtime routert vagy globális EventDispatchert. A Next.js marad az URL-, rendering- és HTTP transport source of truth; a capability explicit contractot, policyt és statikus/runtime evidence-et ad fölé.
+
 A `presentation-contract` nem teszi a statikus elemzést runtime biztonsági kontrollá. A `view:check` a forrásszintű veszélyes mintákat, a view modellek és a Server/Client határ szerződését ellenőrzi; a production CSP, authorizáció, sanitizer review, accessibility és visual-regression kapuk továbbra is külön release-bizonyítékot igényelnek.
 
 ---
@@ -265,6 +274,7 @@ Tartalmazza:
 - `src/app`;
 - ESLint;
 - Forge manifest;
+- `http-kernel` capability, request-context, Proxy request-ID bridge és lifecycle-diagnosztika;
 - `presentation-contract` capability és Forge view-diagnosztika.
 
 Nem tartalmaz alapértelmezetten:
@@ -317,6 +327,7 @@ A referenciaalkalmazás manifestje jelenleg:
   "profile": "reference",
   "capabilities": [
     "next-app",
+    "http-kernel",
     "forge",
     "presentation-contract",
     "modular-application",
@@ -733,7 +744,7 @@ typegen
 typecheck
 lint
 unit tests
-routing, delivery és view contract ellenőrzés
+routing, delivery, HTTP-kernel és view contract ellenőrzés
 forge reference check
 reference build
 reference E2E
@@ -743,7 +754,7 @@ A core job bizonyítja, hogy:
 
 - a reference app adatbázis nélkül buildel;
 - a Forge architecture check nem igényel Prismát;
-- a presentation-contract inventory és generált dokumentáció driftmentes;
+- a HTTP-kernel és presentation-contract inventory, valamint a generált dokumentáció driftmentes;
 - a lucky-number szelet nem szivárogtat infrastruktúrafüggést;
 - nincs rejtett `DATABASE_URL` előfeltétel.
 
