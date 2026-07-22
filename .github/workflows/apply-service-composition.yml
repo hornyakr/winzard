@@ -1,10 +1,17 @@
-# Activated through a contents commit so the branch push event is emitted.
+# Activated through a pull-request event on the isolated development branch.
 name: Apply service composition development
 
 on:
   push:
     branches:
       - agent/service-composition-platform
+    paths:
+      - .github/workflows/apply-service-composition.yml
+      - tools/apply-service-composition.py.gz.b64.part*
+      - tools/service-doc.gz.b64.part*
+  pull_request:
+    branches:
+      - main
     paths:
       - .github/workflows/apply-service-composition.yml
       - tools/apply-service-composition.py.gz.b64.part*
