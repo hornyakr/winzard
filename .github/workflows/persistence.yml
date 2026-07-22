@@ -52,13 +52,14 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Type-check
+        id: typecheck
         shell: bash
         run: |
           set -o pipefail
           pnpm typecheck 2>&1 | tee /tmp/persistence-typecheck.log
 
       - name: Upload type-check diagnostics
-        if: failure()
+        if: steps.typecheck.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: persistence-typecheck-${{ github.run_id }}
@@ -78,13 +79,14 @@ jobs:
         run: pnpm verify:persistence
 
       - name: Run PostgreSQL integration tests
+        id: integration
         shell: bash
         run: |
           set -o pipefail
           pnpm --dir templates/webapp test:integration 2>&1 | tee /tmp/persistence-integration.log
 
       - name: Upload integration diagnostics
-        if: failure()
+        if: steps.integration.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: persistence-integration-${{ github.run_id }}
