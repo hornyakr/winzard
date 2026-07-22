@@ -1,9 +1,14 @@
 #!/usr/bin/env node
 import { runCompositionCli } from './composition/cli';
+import { runContractCli } from './contracts/cli';
 import { runEventCli } from './events/cli';
 
 try {
-  if (!await runEventCli(process.argv.slice(2)) && !await runCompositionCli(process.argv.slice(2))) {
+  if (
+    !await runContractCli(process.argv.slice(2)) &&
+    !await runEventCli(process.argv.slice(2)) &&
+    !await runCompositionCli(process.argv.slice(2))
+  ) {
     await import('./cli-router-base');
   }
 } catch (error) {

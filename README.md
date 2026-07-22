@@ -133,6 +133,21 @@ pnpm forge outbox:check --project templates/webapp
 pnpm verify:events
 ```
 
+## Contract governance és provider evidence
+
+A contract governance réteg explicit `*.contract.definition.ts` és `*.contract-provider.ts` fájlokból determinisztikus contract inventoryt, provider-mátrixot, compatibility-diagnosztikát, generált registryt és startup-validációt készít. Stable contract csak reference suite-tal és production-közeli providerrel fogadható el.
+
+```bash
+pnpm forge contract:list --project apps/reference
+pnpm forge contract:inspect demo.random-integer-generator --project apps/reference
+pnpm forge contract:providers demo.random-integer-generator --project apps/reference
+pnpm forge contract:check --project apps/reference
+pnpm forge contract:generate --check --project apps/reference
+pnpm forge contract:compat --base HEAD^ --project apps/reference
+pnpm forge deprecation:check --project apps/reference
+pnpm verify:contracts
+```
+
 ## Opcionális PostgreSQL-profil
 
 A `templates/webapp` és a `recipes/prisma-postgresql` tartalmazza az opcionális Prisma/PostgreSQL képességet.
@@ -155,6 +170,7 @@ A root `build` kizárólag a referenciaalkalmazás Next.js buildjét futtatja. P
 
 ## Dokumentáció
 
+- [Szerződések és interoperabilitási határok](docs/public_documentation/winzard-contracts.md)
 - [Service composition és dependency injection](docs/public_documentation/winzard-service-container.md)
 - [Események, handlerek és tartós üzenetkezelés](docs/public_documentation/winzard-event-dispatcher.md)
 - [Kernel-szintű konfiguráció](docs/public_documentation/winzard-kernel-configuration.md)
