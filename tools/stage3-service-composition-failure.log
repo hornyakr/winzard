@@ -11,38 +11,38 @@ $ vitest run
 
 [1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/winzard/winzard[39m
 
- [32m✓[39m apps/reference/tests/unit/platform/kernel-config/kernel-configuration.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 61[2mms[22m[39m
- [32m✓[39m packages/forge/tests/configuration.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 133[2mms[22m[39m
- [32m✓[39m apps/reference/tests/unit/platform/http/http-kernel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 32[2mms[22m[39m
- [32m✓[39m packages/forge/tests/kernel-configuration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 190[2mms[22m[39m
- [32m✓[39m packages/forge/tests/composition.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 124[2mms[22m[39m
- [32m✓[39m packages/forge/tests/project.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 92[2mms[22m[39m
- [32m✓[39m packages/forge/tests/views.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 137[2mms[22m[39m
- [32m✓[39m packages/forge/tests/delivery.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 118[2mms[22m[39m
- [32m✓[39m packages/forge/tests/kernel.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 214[2mms[22m[39m
- [32m✓[39m packages/forge/tests/documentation.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 2834[2mms[22m[39m
- [32m✓[39m packages/forge/tests/routing.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 132[2mms[22m[39m
- [32m✓[39m apps/reference/tests/unit/platform/http/request-context.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 15[2mms[22m[39m
- [32m✓[39m apps/reference/tests/unit/platform/http/proxy.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 18[2mms[22m[39m
- [32m✓[39m apps/reference/tests/unit/platform/http/delivery-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m apps/reference/tests/unit/app/api/lucky/number/routing.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 43[2mms[22m[39m
- [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/get-lucky-number.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 13[2mms[22m[39m
- [32m✓[39m packages/config/tests/app-env.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 16[2mms[22m[39m
- [32m✓[39m apps/reference/tests/unit/platform/http/request-body.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 47[2mms[22m[39m
- [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.actions.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 45[2mms[22m[39m
- [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/routing.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 13[2mms[22m[39m
- [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.presenter.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/composition.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/generate-lucky-number.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m apps/reference/tests/unit/platform/http/response-policy.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 39[2mms[22m[39m
- [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/node-crypto-random-integer-generator.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 49[2mms[22m[39m
- [32m✓[39m apps/reference/tests/unit/app/api/lucky/number/route.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 11[2mms[22m[39m
- [32m✓[39m apps/reference/tests/unit/platform/composition/composition.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/platform/kernel-config/kernel-configuration.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 56[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/configuration.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 115[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/platform/http/http-kernel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 34[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/kernel-configuration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 166[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/composition.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 121[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/project.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 89[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/views.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 101[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/delivery.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 83[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/kernel.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 204[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/documentation.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 2689[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/routing.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 119[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/platform/http/request-context.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/app/api/lucky/number/routing.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/platform/http/proxy.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/platform/http/delivery-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/get-lucky-number.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m packages/config/tests/app-env.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/platform/http/request-body.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.actions.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.presenter.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/routing.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/composition.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/generate-lucky-number.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/platform/http/response-policy.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/node-crypto-random-integer-generator.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/app/api/lucky/number/route.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/platform/composition/composition.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 18[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m27 passed[39m[22m[90m (27)[39m
 [2m      Tests [22m [1m[32m174 passed[39m[22m[90m (174)[39m
-[2m   Start at [22m 11:45:43
-[2m   Duration [22m 4.92s[2m (transform 1.55s, setup 0ms, import 5.47s, tests 4.41s, environment 4ms)[22m
+[2m   Start at [22m 11:48:29
+[2m   Duration [22m 4.61s[2m (transform 1.45s, setup 0ms, import 5.07s, tests 4.10s, environment 3ms)[22m
 
 $ pnpm forge check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:generate --check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:sync --check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:adapters --check --project packages/forge/tests/fixtures/documented-project && pnpm forge context:check ATLAS-TASK-0001 --project packages/forge/tests/fixtures/documented-project
 $ tsx packages/forge/src/cli-router.ts check --project packages/forge/tests/fixtures/documented-project
@@ -56,7 +56,54 @@ PASS: docs:sync --check
 $ tsx packages/forge/src/cli-router.ts docs:adapters --check --project packages/forge/tests/fixtures/documented-project
 PASS: docs:adapters --check
 $ tsx packages/forge/src/cli-router.ts context:check ATLAS-TASK-0001 --project packages/forge/tests/fixtures/documented-project
-[DOC_TASK_BASE_COMMIT_UNVERIFIABLE] docs/40-delivery/tasks/ATLAS-TASK-0001.md: A task base commitja (5906d58b6617439c14dae55817f3e724cd8f32df) nem ellenőrizhető az aktuális Git historyban.
+PASS: context:check (ATLAS-TASK-0001)
+$ pnpm forge route:check --project apps/reference && pnpm forge route:docs --check --project apps/reference
+$ tsx packages/forge/src/cli-router.ts route:check --project apps/reference
+PASS: route:check
+$ tsx packages/forge/src/cli-router.ts route:docs --check --project apps/reference
+PASS: route:check
+$ pnpm forge delivery:check --project apps/reference && pnpm forge http:contracts --check --project apps/reference
+$ tsx packages/forge/src/cli-router.ts delivery:check --project apps/reference
+PASS: delivery:check
+$ tsx packages/forge/src/cli-router.ts http:contracts --check --project apps/reference
+PASS: http:contracts --check
+$ pnpm forge kernel:check --project apps/reference && pnpm forge request-context:check --project apps/reference && pnpm forge response-policy:check --project apps/reference && pnpm forge instrumentation:check --project apps/reference && pnpm forge lifecycle:docs --check --project apps/reference
+$ tsx packages/forge/src/cli-router.ts kernel:check --project apps/reference
+PASS: kernel:check
+$ tsx packages/forge/src/cli-router.ts request-context:check --project apps/reference
+PASS: request-context:check
+$ tsx packages/forge/src/cli-router.ts response-policy:check --project apps/reference
+PASS: response-policy:check
+$ tsx packages/forge/src/cli-router.ts instrumentation:check --project apps/reference
+PASS: instrumentation:check
+$ tsx packages/forge/src/cli-router.ts lifecycle:docs --check --project apps/reference
+PASS: lifecycle:docs --check
+$ pnpm forge kernel-config:check --project apps/reference && pnpm forge runtime:check --project apps/reference --runtime-mode web && pnpm forge proxy:trust --project apps/reference && pnpm forge locale:check --project apps/reference && pnpm forge kernel-config:docs --check --project apps/reference
+$ tsx packages/forge/src/cli-router.ts kernel-config:check --project apps/reference
+PASS: kernel-config:check
+$ tsx packages/forge/src/cli-router.ts runtime:check --project apps/reference --runtime-mode web
+PASS: runtime:check
+$ tsx packages/forge/src/cli-router.ts proxy:trust --project apps/reference
+PASS: proxy:trust
+$ tsx packages/forge/src/cli-router.ts locale:check --project apps/reference
+PASS: locale:check
+$ tsx packages/forge/src/cli-router.ts kernel-config:docs --check --project apps/reference
+PASS: kernel-config:docs --check
+$ pnpm forge composition:generate --check --project apps/reference && pnpm forge composition:check --resolve-config --project apps/reference && pnpm forge composition:docs --check --project apps/reference
+$ tsx packages/forge/src/cli-router.ts composition:generate --check --project apps/reference
+PASS: composition:generate --check
+$ tsx packages/forge/src/cli-router.ts composition:check --resolve-config --project apps/reference
+PASS: composition:check
+$ tsx packages/forge/src/cli-router.ts composition:docs --check --project apps/reference
+PASS: composition:docs --check
+$ pnpm forge view:check --project apps/reference && pnpm forge view:contracts --check --project apps/reference && pnpm forge view:assets --check --project apps/reference
+$ tsx packages/forge/src/cli-router.ts view:check --project apps/reference
+PASS: view:check
+$ tsx packages/forge/src/cli-router.ts view:contracts --check --project apps/reference
+ERROR [VIEW_DOC_DRIFT] docs/90-generated/views/view-map.md: A generált view dokumentum nincs szinkronban a presentation forrásokkal.
+ERROR [VIEW_DOC_DRIFT] docs/90-generated/views/view-contracts.md: A generált view dokumentum nincs szinkronban a presentation forrásokkal.
+ERROR [VIEW_DOC_DRIFT] docs/90-generated/views/view-assets.md: A generált view dokumentum nincs szinkronban a presentation forrásokkal.
+ERROR [VIEW_DOC_DRIFT] docs/90-generated/views/security-status.md: A generált view dokumentum nincs szinkronban a presentation forrásokkal.
 [ELIFECYCLE] Command failed with exit code 1.
 [ELIFECYCLE] Command failed with exit code 1.
 [ELIFECYCLE] Command failed with exit code 1.
