@@ -16,14 +16,15 @@ describe('generateLuckyNumberAction', () => {
     const formData = new FormData();
     formData.set('minimum', '20');
     formData.set('maximum', '10');
+    formData.set('intent', 'generate');
 
     const result = await generateLuckyNumberAction(
       initialGenerateLuckyNumberActionState,
       formData,
     );
 
-    expect(result.ok).toBe(false);
-    expect(result.fieldErrors?.maximum).toBeDefined();
+    expect(result.status).toBe('invalid');
+    expect(result.fieldErrors.maximum).toBeDefined();
     expect(headersMock).not.toHaveBeenCalled();
   });
 
@@ -31,16 +32,17 @@ describe('generateLuckyNumberAction', () => {
     const formData = new FormData();
     formData.set('minimum', '10');
     formData.set('maximum', '20');
+    formData.set('intent', 'generate');
 
     const result = await generateLuckyNumberAction(
       initialGenerateLuckyNumberActionState,
       formData,
     );
 
-    expect(result).toMatchObject({
-      ok: false,
-      formError: expect.stringContaining('operator'),
-    });
+    expect(result.status).toBe('rejected');
+    expect(result.formErrors).toContainEqual(expect.objectContaining({
+      message: expect.stringContaining('operator'),
+    }));
     expect(headersMock).toHaveBeenCalledOnce();
   });
 
@@ -52,16 +54,18 @@ describe('generateLuckyNumberAction', () => {
     const formData = new FormData();
     formData.set('minimum', '10');
     formData.set('maximum', '20');
+    formData.set('intent', 'generate');
 
     const result = await generateLuckyNumberAction(
       initialGenerateLuckyNumberActionState,
       formData,
     );
 
-    expect(result.ok).toBe(true);
+    expect(result.status).toBe('success');
+    if (result.status !== 'success') throw new TypeError('Sikeres action state szükséges.');
     expect(result.result).toMatchObject({ minimum: 10, maximum: 20 });
-    expect(result.result?.value).toBeGreaterThanOrEqual(10);
-    expect(result.result?.value).toBeLessThanOrEqual(20);
+    expect(result.result.value).toBeGreaterThanOrEqual(10);
+    expect(result.result.value).toBeLessThanOrEqual(20);
     expect(headersMock).toHaveBeenCalledOnce();
   });
 });

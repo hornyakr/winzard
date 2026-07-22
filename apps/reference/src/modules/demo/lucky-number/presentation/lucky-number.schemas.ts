@@ -1,20 +1,25 @@
 import { z } from 'zod';
 
 const safeInteger = z.coerce.number().int().refine(Number.isSafeInteger, 'Biztonságos egész szám szükséges.');
-
-export const luckyNumberRangeSchema = z.object({
+const rangeShape = {
   minimum: safeInteger,
   maximum: safeInteger,
-}).superRefine(({ minimum, maximum }, context) => {
-  if (minimum > maximum) {
+} as const;
+
+type RangeValue = Readonly<{ minimum: number; maximum: number }>;
+
+function validateRange(value: RangeValue, context: z.RefinementCtx): void {
+  if (value.minimum > value.maximum) {
     context.addIssue({ code: 'custom', path: ['maximum'], message: 'A maximum nem lehet kisebb a minimumnál.' });
   }
-  if (maximum - minimum > 10_000) {
+  if (value.maximum - value.minimum > 10_000) {
     context.addIssue({ code: 'custom', path: ['maximum'], message: 'A tartomány legfeljebb 10 000 értéket fedhet le.' });
   }
-});
+}
 
+export const luckyNumberRangeSchema = z.object(rangeShape).strict().superRefine(validateRange);
 export const luckyNumberRangeParamsSchema = luckyNumberRangeSchema;
+export const luckyNumberRequestSchema = luckyNumberRangeSchema;
 
 const optionalQueryInteger = z.preprocess(
   (value) => Array.isArray(value) ? value.at(-1) : value,
@@ -24,17 +29,13 @@ const optionalQueryInteger = z.preprocess(
 export const luckyNumberRangeQuerySchema = z.object({
   minimum: optionalQueryInteger,
   maximum: optionalQueryInteger,
-}).superRefine(({ minimum, maximum }, context) => {
-  const resolvedMinimum = minimum ?? 0;
-  const resolvedMaximum = maximum ?? 100;
-  if (resolvedMinimum > resolvedMaximum) {
-    context.addIssue({ code: 'custom', path: ['maximum'], message: 'A maximum nem lehet kisebb a minimumnál.' });
-  }
-  if (resolvedMaximum - resolvedMinimum > 10_000) {
-    context.addIssue({ code: 'custom', path: ['maximum'], message: 'A tartomány legfeljebb 10 000 értéket fedhet le.' });
-  }
+}).strict().superRefine(({ minimum, maximum }, context) => {
+  validateRange({ minimum: minimum ?? 0, maximum: maximum ?? 100 }, context);
 });
 
-export const luckyNumberRequestSchema = luckyNumberRangeSchema;
+export const luckyNumberFormSchema = z.object({
+  ...rangeShape,
+  intent: z.literal('generate'),
+}).strict().superRefine(validateRange);
 
 export type LuckyNumberRange = z.infer<typeof luckyNumberRangeSchema>;
