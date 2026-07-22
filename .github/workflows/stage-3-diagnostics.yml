@@ -42,9 +42,6 @@ env:
   WORKER_VISIBILITY_TIMEOUT_MS: '60000'
   WORKER_SHUTDOWN_GRACE_MS: '30000'
   WORKER_POLL_INTERVAL_MS: '1000'
-  DATABASE_URL: postgresql://winzard:winzard_dev_only@127.0.0.1:5432/winzard?schema=public
-  DATABASE_POOL_MAX: '10'
-  DATABASE_CONNECTION_TIMEOUT_MS: '5000'
 
 jobs:
   diagnostics:
@@ -59,16 +56,22 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Capture unit-test output
-        continue-on-error: true
-        run: pnpm test > unit-tests.log 2>&1
-      - name: Capture webapp architecture output
-        continue-on-error: true
-        run: pnpm forge check --project templates/webapp > webapp-architecture.log 2>&1
+      - name: Capture documentation commands
+        shell: bash
+        run: |
+          set +e
+          project=packages/forge/tests/fixtures/documented-project
+          pnpm forge check --project "$project" > docs-project-check.log 2>&1; echo $? > docs-project-check.status
+          pnpm forge docs:check --project "$project" > docs-check.log 2>&1; echo $? > docs-check.status
+          pnpm forge docs:generate --check --project "$project" > docs-generate.log 2>&1; echo $? > docs-generate.status
+          pnpm forge docs:sync --check --project "$project" > docs-sync.log 2>&1; echo $? > docs-sync.status
+          pnpm forge docs:adapters --check --project "$project" > docs-adapters.log 2>&1; echo $? > docs-adapters.status
+          pnpm forge context:check ATLAS-TASK-0001 --project "$project" > docs-context.log 2>&1; echo $? > docs-context.status
+          exit 0
       - uses: actions/upload-artifact@v4
         with:
-          name: stage-3-diagnostics
+          name: stage-3-documentation-diagnostics
           path: |
-            unit-tests.log
-            webapp-architecture.log
+            docs-*.log
+            docs-*.status
           if-no-files-found: error
