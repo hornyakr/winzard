@@ -36,6 +36,30 @@ function dependencyMap(value: unknown): Record<string, string> {
   return Object.fromEntries(Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string'));
 }
 
+async function nearestPackage(start: string): Promise<Record<string, unknown>> {
+  let current = path.resolve(start);
+  while (true) {
+    try {
+      const value: unknown = JSON.parse(await readFile(path.join(current, 'package.json'), 'utf8'));
+      if (typeof value === 'object' && value !== null && !Array.isArray(value)) return value as Record<string, unknown>;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+    const parent = path.dirname(current);
+    if (parent === current) return {};
+    current = parent;
+  }
+}
+
+function resolvedDependencies(declarations: readonly DependencyDeclaration[], fallback: Readonly<Record<string, string>>): readonly DependencyDeclaration[] {
+  const output = new Map<string, string | null>();
+  for (const declaration of declarations) {
+    const current = output.get(declaration.name) ?? null;
+    output.set(declaration.name, declaration.version ?? current ?? fallback[declaration.name] ?? null);
+  }
+  return Object.freeze([...output].sort(([left], [right]) => left.localeCompare(right)).map(([name, version]) => Object.freeze({ name, version })));
+}
+
 function dependencyOperations(
   declarations: readonly DependencyDeclaration[],
   installed: Readonly<Record<string, string>>,
@@ -122,9 +146,22 @@ export async function planRecipe(projectRoot: string, recipeRoot: string, extens
   for (const capability of recipe.provides) if (!active.has(capability)) operations.push(Object.freeze({ kind: 'add-capability', capability }));
 
   const packageJson = await readPackage(projectRoot);
+  const sourcePackage = await nearestPackage(recipeRoot);
   const recipeFile = path.join(recipeRoot, 'recipe.json');
-  operations.push(...dependencyOperations([...recipe.dependencies.runtime, ...(extension?.packages.runtime ?? [])], dependencyMap(packageJson.dependencies), false, issues, recipeFile));
-  operations.push(...dependencyOperations([...recipe.dependencies.development, ...(extension?.packages.development ?? [])], dependencyMap(packageJson.devDependencies), true, issues, recipeFile));
+  operations.push(...dependencyOperations(
+    resolvedDependencies([...recipe.dependencies.runtime, ...(extension?.packages.runtime ?? [])], dependencyMap(sourcePackage.dependencies)),
+    dependencyMap(packageJson.dependencies),
+    false,
+    issues,
+    recipeFile,
+  ));
+  operations.push(...dependencyOperations(
+    resolvedDependencies([...recipe.dependencies.development, ...(extension?.packages.development ?? [])], dependencyMap(sourcePackage.devDependencies)),
+    dependencyMap(packageJson.devDependencies),
+    true,
+    issues,
+    recipeFile,
+  ));
 
   const name = extension?.name ?? recipe.name;
   const previous = state.extensions.find((item) => item.name === name) ?? null;
