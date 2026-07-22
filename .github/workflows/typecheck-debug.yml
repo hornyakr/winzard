@@ -1,4 +1,4 @@
-name: Typecheck diagnostics
+name: Verification diagnostics
 
 on:
   push:
@@ -11,7 +11,7 @@ env:
   NEXT_TELEMETRY_DISABLED: '1'
 
 jobs:
-  typecheck-diagnostics:
+  verification-diagnostics:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -40,13 +40,23 @@ jobs:
           set -o pipefail
           pnpm typecheck 2>&1 | tee typecheck.log
 
-      - name: Upload typecheck output
+      - name: Capture lint output
+        id: lint
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm lint 2>&1 | tee lint.log
+
+      - name: Upload verification output
         uses: actions/upload-artifact@v4
         with:
-          name: typecheck-diagnostics
-          path: typecheck.log
+          name: verification-diagnostics
+          path: |
+            typecheck.log
+            lint.log
           if-no-files-found: error
 
-      - name: Preserve typecheck result
-        if: steps.typecheck.outcome == 'failure'
+      - name: Preserve verification result
+        if: steps.typecheck.outcome == 'failure' || steps.lint.outcome == 'failure'
         run: exit 1
