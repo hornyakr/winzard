@@ -38,5 +38,24 @@
       "nodejs",
       "edge"
     ]
-  }
+  },
+  "environment": [
+    "COMPOSITION_HASH"
+  ],
+  "configuration": [
+    {
+      "key": "COMPOSITION_HASH",
+      "owner": "service-composition",
+      "required": false,
+      "phase": "process-start",
+      "classification": "internal",
+      "rebuildRequired": false,
+      "restartRequired": true,
+      "type": "string[4,64]",
+      "example": "auto",
+      "description": "Opcionális deployment-elvárás a canonical composition fingerprinthez; auto esetén nincs külső pin.",
+      "introduced": "0.1.0",
+      "defaultValue": "auto"
+    }
+  ]
 }

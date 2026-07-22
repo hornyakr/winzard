@@ -1,8 +1,0 @@
-$ pnpm forge config:drift --project . && pnpm forge config:drift --project apps/reference && pnpm forge config:reference --check --project apps/reference && pnpm forge config:drift --project templates/minimal && pnpm forge config:reference --check --project templates/minimal && pnpm forge config:drift --project templates/webapp && pnpm forge config:reference --check --project templates/webapp && pnpm forge secrets:check --project .
-$ tsx packages/forge/src/cli-router.ts config:drift --project .
-ERROR [CONFIG_REFERENCE_DRIFT] recipes/kernel-configuration/recipe.json: kernel-configuration environment inventory eltér a Forge konfigurációs catalogtól.
-ERROR [CONFIG_REFERENCE_DRIFT] recipes/kernel-configuration/recipe.json (COMPOSITION_HASH): COMPOSITION_HASH recipe metadata nincs a Forge konfigurációs catalogban.
-ERROR [CONFIG_REFERENCE_DRIFT] recipes/service-composition/recipe.json: service-composition environment inventory eltér a Forge konfigurációs catalogtól.
-ERROR [CONFIG_REFERENCE_DRIFT] recipes/service-composition/recipe.json: service-composition recipe nem tartalmaz részletes configuration metadata tömböt.
-[ELIFECYCLE] Command failed with exit code 1.
-[ELIFECYCLE] Command failed with exit code 1.
