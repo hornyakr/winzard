@@ -4,6 +4,7 @@ import graphManifestJson from '@/generated/composition/graph-manifest.json';
 import {
   generatedCompositionFingerprint,
   generatedCompositionRegistry,
+  generatedCompositionRootInstances,
   generatedCompositionRoots,
 } from '@/generated/composition/registry';
 
@@ -107,8 +108,17 @@ export async function validateComposition(
   if (value.fingerprint !== fingerprint || generatedCompositionFingerprint !== fingerprint) {
     throw new CompositionValidationError('COMPOSITION_FINGERPRINT_DRIFT', 'A generated graph és registry fingerprintje eltér.');
   }
-  if (generatedCompositionRegistry.length !== value.services.length || generatedCompositionRoots.length !== value.roots.length) {
+  if (
+    generatedCompositionRegistry.length !== value.services.length ||
+    generatedCompositionRoots.length !== value.roots.length ||
+    generatedCompositionRootInstances.length !== value.roots.length
+  ) {
     throw new CompositionValidationError('COMPOSITION_REGISTRY_DRIFT', 'A generated registry és graph manifest elemszáma eltér.');
+  }
+  for (const [index, root] of value.roots.entries()) {
+    if (generatedCompositionRootInstances[index]?.id !== root.id) {
+      throw new CompositionValidationError('COMPOSITION_ROOT_SMOKE_FAILED', `A generated composition root binding eltér: ${root.id}.`);
+    }
   }
   const expected = input.COMPOSITION_HASH?.trim();
   if (expected && expected !== 'auto' && expected !== fingerprint) {

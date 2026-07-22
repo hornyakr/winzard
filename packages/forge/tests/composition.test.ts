@@ -48,6 +48,14 @@ describe('Forge service composition platform', () => {
     ]);
   });
 
+  it('async function composition exportot is felismer', async () => {
+    const root = await fixture();
+    await file(root, 'src/composition/app.server.ts', "import 'server-only'; export async function application() {}\n");
+    expect((await buildCompositionInventory(root)).issues).not.toContainEqual(expect.objectContaining({
+      code: 'COMPOSITION_ROOT_EXPORT_MISSING',
+    }));
+  });
+
   it('hiányzó bindingot, ciklust és lifetime mismatch-et jelez', async () => {
     const root = await fixture();
     await file(root, 'src/composition/catalog.composition.definition.ts', `

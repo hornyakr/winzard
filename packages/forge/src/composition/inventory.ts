@@ -352,7 +352,7 @@ async function sourceIssues(
     if (!/import\s+['"]server-only['"]/u.test(content)) {
       issues.push(issue('security', 'COMPOSITION_MISSING_SERVER_ONLY', item.source, 'A composition rootból hiányzik az explicit server-only határ.'));
     }
-    const exported = new RegExp(`\\bexport\\s+(?:const|let|var|class|function)\\s+${item.exportName}\\b|\\bexport\\s*\\{[^}]*\\b${item.exportName}\\b`, 'u');
+    const exported = new RegExp(`\\bexport\\s+(?:const|let|var|class|(?:async\\s+)?function)\\s+${item.exportName}\\b|\\bexport\\s*\\{[^}]*\\b${item.exportName}\\b`, 'u');
     if (!exported.test(content)) {
       issues.push(issue('contract', 'COMPOSITION_ROOT_EXPORT_MISSING', item.source, `A composition root exportja nem található: ${item.exportName}.`));
     }
@@ -364,7 +364,7 @@ async function sourceIssues(
       continue;
     }
     if (item.exportName) {
-      const exported = new RegExp(`\\bexport\\s+(?:const|let|var|class|function|interface|type)\\s+${item.exportName}\\b|\\bexport\\s*\\{[^}]*\\b${item.exportName}\\b`, 'u');
+      const exported = new RegExp(`\\bexport\\s+(?:const|let|var|class|(?:async\\s+)?function|interface|type)\\s+${item.exportName}\\b|\\bexport\\s*\\{[^}]*\\b${item.exportName}\\b`, 'u');
       if (!exported.test(content)) {
         issues.push(issue('contract', 'COMPOSITION_SERVICE_EXPORT_MISSING', item.source, `A deklarált service export nem található: ${item.exportName}.`, item.id));
       }

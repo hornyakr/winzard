@@ -8,6 +8,4 @@ Composition SHA-256: `9fe8dfe15cb94e37154fea81b80567a2e0666a898e684a56bab47eebfc
 
 | Severity | Area | Code | File | Message |
 | --- | --- | --- | --- | --- |
-| error | contract | `COMPOSITION_ROOT_EXPORT_MISSING` | `src/composition/request-context.server.ts` | A composition root exportja nem található: createRouteRequestContext. |
-| error | contract | `COMPOSITION_SERVICE_EXPORT_MISSING` | `src/composition/request-context.server.ts` | A deklarált service export nem található: createRouteRequestContext. |
-| error | contract | `COMPOSITION_SERVICE_EXPORT_MISSING` | `src/platform/kernel-config/validate-kernel-config.server.ts` | A deklarált service export nem található: validateKernelConfiguration. |
+| pass | - | - | - | No composition issue detected. |
