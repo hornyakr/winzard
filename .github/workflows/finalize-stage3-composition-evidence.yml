@@ -1,0 +1,72 @@
+name: Finalize Stage 3 Composition Evidence
+
+on:
+  push:
+    branches: [agent/service-composition-platform]
+    paths: [.github/workflows/finalize-stage3-composition-evidence.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: agent/service-composition-platform
+      - uses: pnpm/action-setup@v4
+        with: { version: 11.13.1 }
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - name: Update verification statuses
+        shell: python
+        run: |
+          from pathlib import Path
+
+          public = Path('docs/public_documentation/winzard-service-container.md')
+          text = public.read_text()
+          old = 'status: "implemented-unverified"'
+          if old not in text:
+              raise RuntimeError('public documentation status marker missing')
+          public.write_text(text.replace(old, 'status: "implemented-verified"', 1))
+
+          development = Path('docs/development/service-composition-platform-implementation.md')
+          text = development.read_text()
+          old = '''The implementation and tests are authored in the development phase. The full
+repository, template, database, build, E2E, runtime-security and reproducibility
+gates run in the separate testing-and-repair phase before merge.'''
+          new = '''The complete Stage 3 verification matrix passed on 2026-07-22. Type generation,
+strict type-checking, lint, 174 unit tests, documentation and Forge contract gates,
+minimal and webapp template builds, reference production build and E2E, PostgreSQL
+migration deployment, read-only runtime security and canonical two-build
+reproducibility all completed successfully. The result is recorded in
+`docs/development/service-composition-verification.md` and
+`WZ-EVIDENCE-COMPOSITION-001`. No merge to `main` occurred during verification.'''
+          if old not in text:
+              raise RuntimeError('development verification marker missing')
+          development.write_text(text.replace(old, new, 1))
+      - run: pnpm install --frozen-lockfile
+      - name: Regenerate consumer documentation
+        run: |
+          project=packages/forge/tests/fixtures/documented-project
+          pnpm forge docs:sync --project "$project"
+          pnpm forge docs:adapters --project "$project"
+          pnpm forge docs:generate --project "$project"
+          pnpm forge context:build ATLAS-TASK-0001 --project "$project"
+      - name: Verify documentation integrity
+        run: |
+          pnpm vitest run packages/forge/tests/documentation.test.ts
+          pnpm verify:documentation
+      - name: Commit final evidence and remove helper
+        run: |
+          rm -f .github/workflows/finalize-stage3-composition-evidence.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "docs: finalize service composition verification evidence"
+          git push origin HEAD:agent/service-composition-platform
