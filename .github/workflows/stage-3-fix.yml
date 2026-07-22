@@ -29,13 +29,11 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-
           contract = Path('packages/forge/assets/consumer-contract/platform-contracts/WZ-CONTRACT-COMPOSITION-001.md')
           text = contract.read_text()
           text = text.replace('  - command:pnpm forge composition:check --project .\n', '  - command:pnpm forge composition:check\n')
           text = text.replace('  - command:pnpm forge composition:generate --check --project .\n', '  - command:pnpm forge composition:generate --check\n')
           contract.write_text(text)
-
           project = Path('packages/forge/src/checks/project.ts')
           text = project.read_text()
           old = "  if (projectFile.startsWith('src/composition/') && !importsServerOnly) {\n"
@@ -51,13 +49,31 @@ jobs:
           pnpm forge docs:adapters --project "$project"
           pnpm forge docs:generate --project "$project"
           pnpm forge context:build ATLAS-TASK-0001 --project "$project"
-      - name: Verify focused repairs
+      - name: Capture focused verification
+        shell: bash
         run: |
-          pnpm test
-          pnpm forge check --project apps/reference
-          pnpm forge check --project templates/minimal
-          pnpm forge check --project templates/webapp
-          pnpm verify:documentation
+          set +e
+          pnpm test > repair-unit.log 2>&1; echo $? > repair-unit.status
+          pnpm forge check --project apps/reference > repair-reference.log 2>&1; echo $? > repair-reference.status
+          pnpm forge check --project templates/minimal > repair-minimal.log 2>&1; echo $? > repair-minimal.status
+          pnpm forge check --project templates/webapp > repair-webapp.log 2>&1; echo $? > repair-webapp.status
+          pnpm verify:documentation > repair-documentation.log 2>&1; echo $? > repair-documentation.status
+          exit 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage-3-repair-diagnostics
+          path: |
+            repair-*.log
+            repair-*.status
+          if-no-files-found: error
+      - name: Require focused verification success
+        run: |
+          cat repair-*.status
+          test "$(cat repair-unit.status)" = 0
+          test "$(cat repair-reference.status)" = 0
+          test "$(cat repair-minimal.status)" = 0
+          test "$(cat repair-webapp.status)" = 0
+          test "$(cat repair-documentation.status)" = 0
       - name: Commit repairs and remove helper
         run: |
           rm -f .github/workflows/stage-3-fix.yml
