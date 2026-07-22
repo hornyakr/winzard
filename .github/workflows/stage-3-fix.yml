@@ -66,6 +66,8 @@ jobs:
 
           contract = Path('packages/forge/assets/consumer-contract/platform-contracts/WZ-CONTRACT-COMPOSITION-001.md')
           text = contract.read_text()
+          text = text.replace('verification_status: verified', 'verification_status: unverified', 1)
+          text = text.replace('last_verified: 2026-07-22', 'last_verified:', 1)
           start = text.index('evidence:')
           end = text.index('\ntags:', start)
           text = text[:start] + 'evidence: []' + text[end:]
