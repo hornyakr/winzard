@@ -11,6 +11,7 @@
     "typecheck": "pnpm typegen && tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "forge": "winzard-forge",
     "db:validate": "prisma validate",
     "db:generate": "prisma generate",
