@@ -39,7 +39,7 @@
     "verify:composition": "pnpm forge composition:generate --check --project apps/reference && pnpm forge composition:check --resolve-config --project apps/reference && pnpm forge composition:docs --check --project apps/reference",
     "verify:events": "pnpm forge event:check --project apps/reference && pnpm forge event:generate --check --project apps/reference && pnpm forge event:docs --check --project apps/reference && pnpm forge message:contracts --project apps/reference && pnpm forge event:check --project templates/minimal && pnpm forge event:generate --check --project templates/minimal && pnpm forge event:docs --check --project templates/minimal && pnpm forge event:check --project templates/webapp && pnpm forge event:generate --check --project templates/webapp && pnpm forge event:docs --check --project templates/webapp && pnpm forge outbox:check --project templates/webapp",
     "verify:contracts": "pnpm forge contract:check --project apps/reference && pnpm forge contract:generate --check --project apps/reference && pnpm forge deprecation:check --project apps/reference && pnpm forge contract:check --project templates/minimal && pnpm forge contract:generate --check --project templates/minimal && pnpm forge contract:check --project templates/webapp && pnpm forge contract:generate --check --project templates/webapp",
-    "verify:extensions": "vitest run packages/forge/tests/extensions.test.ts packages/forge/tests/extension-lifecycle.test.ts"
+    "verify:extensions": "vitest run packages/forge/tests/extensions.test.ts packages/forge/tests/extension-*.test.ts"
   },
   "winzard": {
     "schemaVersion": 1,
