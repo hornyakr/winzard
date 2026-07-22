@@ -1,3 +1,4 @@
+# Rerun after removing concurrent diagnostics.
 name: Apply stage 3 view documentation fix
 
 on:
