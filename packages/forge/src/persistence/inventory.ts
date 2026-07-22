@@ -165,7 +165,7 @@ function migrationRisks(source: string): readonly MigrationRisk[] {
   if (/\bALTER\s+(?:TABLE|TYPE)\b/iu.test(source)) add('alter', 'ALTER művelet lock- és rollout-reviewt igényel.');
   if (/\bCREATE\s+(?:UNIQUE\s+)?INDEX\b(?![\s\S]{0,40}\bCONCURRENTLY\b)/iu.test(source)) add('blocking-index', 'Nagy táblán a nem concurrent indexépítés blokkolhat.');
   if (/\bDELETE\s+FROM\b|\bUPDATE\b[\s\S]*?\bSET\b/iu.test(source)) add('data-migration', 'Adatmigráció idempotencia-, chunking- és timeout-reviewt igényel.');
-  return Object.freeze(risks.map(Object.freeze));
+  return Object.freeze(risks.map((risk) => Object.freeze(risk)));
 }
 
 async function migrations(root: string): Promise<readonly MigrationRecord[]> {
