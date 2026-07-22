@@ -78,4 +78,15 @@ jobs:
         run: pnpm verify:persistence
 
       - name: Run PostgreSQL integration tests
-        run: pnpm --dir templates/webapp test:integration
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm --dir templates/webapp test:integration 2>&1 | tee /tmp/persistence-integration.log
+
+      - name: Upload integration diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: persistence-integration-${{ github.run_id }}
+          path: /tmp/persistence-integration.log
+          if-no-files-found: error
