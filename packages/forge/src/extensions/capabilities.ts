@@ -1,17 +1,54 @@
 import { loadProjectManifest } from '../manifest';
 import { loadExtensionState } from './state';
-import type { CapabilityGraph, CapabilityNode, ExtensionIssue, ExtensionManifest } from './types';
+import type { CapabilityGraph, CapabilityNode, ExtensionIssue, ExtensionManifest, InstalledExtensionState } from './types';
 
-function findCycles(edges: ReadonlyMap<string, readonly string[]>): readonly string[][] {
-  const cycles: string[][] = [];
+type ExtensionNode = Readonly<{
+  name: string;
+  file: string;
+  provides: readonly string[];
+  requires: readonly string[];
+  conflicts: readonly string[];
+  installed: boolean;
+}>;
+
+function installedNode(extension: InstalledExtensionState): ExtensionNode {
+  return Object.freeze({
+    name: extension.name,
+    file: '.winzard/state/extensions.json',
+    provides: extension.capabilities,
+    requires: extension.requires ?? [],
+    conflicts: extension.conflicts ?? [],
+    installed: true,
+  });
+}
+
+function candidateNode(extension: ExtensionManifest): ExtensionNode {
+  return Object.freeze({
+    name: extension.name,
+    file: extension.sourceFile,
+    provides: extension.provides,
+    requires: extension.requires,
+    conflicts: extension.conflicts,
+    installed: false,
+  });
+}
+
+function cycles(edges: ReadonlyMap<string, readonly string[]>): readonly string[][] {
+  const found = new Map<string, string[]>();
   const visiting = new Set<string>();
   const visited = new Set<string>();
   const stack: string[] = [];
-  const keys = [...edges.keys()].sort();
   const visit = (node: string): void => {
     if (visiting.has(node)) {
-      const index = stack.indexOf(node);
-      if (index >= 0) cycles.push([...stack.slice(index), node]);
+      const start = stack.indexOf(node);
+      if (start >= 0) {
+        const cycle = [...stack.slice(start), node];
+        const body = cycle.slice(0, -1);
+        const rotations = body.map((_, index) => [...body.slice(index), ...body.slice(0, index)]);
+        const canonical = rotations.map((item) => item.join(' -> ')).sort()[0] ?? body.join(' -> ');
+        const selected = rotations.find((item) => item.join(' -> ') === canonical) ?? body;
+        found.set(canonical, [...selected, selected[0] ?? node]);
+      }
       return;
     }
     if (visited.has(node)) return;
@@ -22,87 +59,64 @@ function findCycles(edges: ReadonlyMap<string, readonly string[]>): readonly str
     visiting.delete(node);
     visited.add(node);
   };
-  for (const key of keys) visit(key);
-  const unique = new Map<string, string[]>();
-  for (const cycle of cycles) unique.set(cycle.join(' -> '), cycle);
-  return Object.freeze([...unique.values()].sort((left, right) => left.join().localeCompare(right.join())));
+  for (const node of [...edges.keys()].sort()) visit(node);
+  return Object.freeze([...found.values()].sort((left, right) => left.join().localeCompare(right.join())));
 }
 
-export async function buildCapabilityGraph(
-  projectRoot: string,
-  candidates: readonly ExtensionManifest[] = [],
-): Promise<CapabilityGraph> {
-  const manifestResult = await loadProjectManifest(projectRoot);
+export async function buildCapabilityGraph(projectRoot: string, candidates: readonly ExtensionManifest[] = []): Promise<CapabilityGraph> {
+  const project = await loadProjectManifest(projectRoot);
   const state = await loadExtensionState(projectRoot);
-  const issues: ExtensionIssue[] = manifestResult.failures.map(({ code, file, message }) => ({
-    severity: 'error',
-    area: 'capability',
-    code,
-    file,
-    message,
-  }));
-  const installed = new Set([
-    ...(manifestResult.manifest?.capabilities ?? []),
-    ...state.extensions.flatMap((extension) => extension.capabilities),
-  ]);
+  const issues: ExtensionIssue[] = project.failures.map(({ code, file, message }) => ({ severity: 'error', area: 'capability', code, file, message }));
+  const extensionMap = new Map<string, ExtensionNode>();
+  for (const extension of state.extensions) extensionMap.set(extension.name, installedNode(extension));
+  for (const extension of candidates) extensionMap.set(extension.name, candidateNode(extension));
+  const extensions = [...extensionMap.values()].sort((left, right) => left.name.localeCompare(right.name));
+  const projectCapabilities = new Set(project.manifest?.capabilities ?? []);
+  const installedCapabilities = new Set([...projectCapabilities, ...state.extensions.flatMap((item) => item.capabilities)]);
   const providers = new Map<string, Set<string>>();
   const requiredBy = new Map<string, Set<string>>();
-  const conflicts = new Map<string, Set<string>>();
-  const edges = new Map<string, string[]>();
-  const addProvider = (capability: string, provider: string): void => {
-    const values = providers.get(capability) ?? new Set<string>();
-    values.add(provider);
-    providers.set(capability, values);
+  const conflictMap = new Map<string, Set<string>>();
+  const add = (map: Map<string, Set<string>>, capability: string, value: string): void => {
+    const values = map.get(capability) ?? new Set<string>();
+    values.add(value);
+    map.set(capability, values);
   };
-  const addRequired = (capability: string, consumer: string): void => {
-    const values = requiredBy.get(capability) ?? new Set<string>();
-    values.add(consumer);
-    requiredBy.set(capability, values);
-  };
-  for (const capability of manifestResult.manifest?.capabilities ?? []) addProvider(capability, 'project-manifest');
-  for (const extension of state.extensions) {
-    for (const capability of extension.capabilities) addProvider(capability, extension.name);
+  for (const capability of projectCapabilities) add(providers, capability, 'project-manifest');
+  for (const extension of extensions) {
+    for (const capability of extension.provides) add(providers, capability, extension.name);
+    for (const capability of extension.requires) add(requiredBy, capability, extension.name);
+    for (const capability of extension.conflicts) add(conflictMap, capability, extension.name);
   }
-  for (const extension of candidates) {
-    edges.set(extension.name, [...extension.requires]);
-    for (const capability of extension.provides) addProvider(capability, extension.name);
-    for (const capability of extension.requires) addRequired(capability, extension.name);
-    for (const capability of extension.conflicts) {
-      const values = conflicts.get(capability) ?? new Set<string>();
-      values.add(extension.name);
-      conflicts.set(capability, values);
-      if (installed.has(capability)) {
-        issues.push({ severity: 'error', area: 'capability', code: 'EXTENSION_CAPABILITY_CONFLICT', file: extension.sourceFile, message: `${extension.name} ütközik ezzel a telepített capability-vel: ${capability}.` });
-      }
+  for (const extension of extensions) {
+    for (const required of extension.requires) {
+      if ((providers.get(required)?.size ?? 0) === 0) issues.push({ severity: 'error', area: 'capability', code: 'EXTENSION_CAPABILITY_UNKNOWN', file: extension.file, message: `${extension.name} hiányzó capability-t követel: ${required}.` });
     }
-    for (const capability of extension.requires) {
-      if (!installed.has(capability) && !candidates.some(({ provides: provided }) => provided.includes(capability))) {
-        issues.push({ severity: 'error', area: 'capability', code: 'EXTENSION_CAPABILITY_UNKNOWN', file: extension.sourceFile, message: `${extension.name} hiányzó capability-t követel: ${capability}.` });
-      }
+    for (const conflict of extension.conflicts) {
+      const active = installedCapabilities.has(conflict) || extensions.some((item) => item.name !== extension.name && item.provides.includes(conflict));
+      if (active) issues.push({ severity: 'error', area: 'capability', code: 'EXTENSION_CAPABILITY_CONFLICT', file: extension.file, message: `${extension.name} ütközik ezzel a capability-vel: ${conflict}.` });
     }
   }
-  const cycles = findCycles(edges);
-  for (const cycle of cycles) {
-    issues.push({ severity: 'error', area: 'capability', code: 'EXTENSION_DEPENDENCY_CYCLE', file: 'extension graph', message: cycle.join(' -> ') });
+  const edges = new Map<string, readonly string[]>();
+  for (const extension of extensions) {
+    const dependencies = new Set<string>();
+    for (const required of extension.requires) {
+      if (projectCapabilities.has(required)) continue;
+      const extensionProviders = [...(providers.get(required) ?? [])].filter((provider) => provider !== 'project-manifest' && provider !== extension.name);
+      if (extensionProviders.length === 1) dependencies.add(extensionProviders[0] ?? '');
+    }
+    edges.set(extension.name, Object.freeze([...dependencies].filter(Boolean).sort()));
   }
-  const ids = new Set<string>([
-    ...installed,
-    ...providers.keys(),
-    ...requiredBy.keys(),
-    ...conflicts.keys(),
-  ]);
+  const dependencyCycles = cycles(edges);
+  for (const cycle of dependencyCycles) issues.push({ severity: 'error', area: 'capability', code: 'EXTENSION_DEPENDENCY_CYCLE', file: 'extension graph', message: cycle.join(' -> ') });
+  const ids = new Set([...installedCapabilities, ...providers.keys(), ...requiredBy.keys(), ...conflictMap.keys()]);
   const nodes: CapabilityNode[] = [...ids].sort().map((id) => Object.freeze({
     id,
     providers: Object.freeze([...(providers.get(id) ?? [])].sort()),
     requiredBy: Object.freeze([...(requiredBy.get(id) ?? [])].sort()),
-    conflicts: Object.freeze([...(conflicts.get(id) ?? [])].sort()),
-    installed: installed.has(id),
+    conflicts: Object.freeze([...(conflictMap.get(id) ?? [])].sort()),
+    installed: installedCapabilities.has(id),
   }));
-  return Object.freeze({
-    nodes: Object.freeze(nodes),
-    cycles,
-    issues: Object.freeze(issues.sort((left, right) => left.code.localeCompare(right.code) || left.file.localeCompare(right.file))),
-  });
+  return Object.freeze({ nodes: Object.freeze(nodes), cycles: dependencyCycles, issues: Object.freeze(issues.sort((left, right) => left.file.localeCompare(right.file) || left.code.localeCompare(right.code))) });
 }
 
 export function capabilityWhy(graph: CapabilityGraph, capability: string): readonly string[] {
