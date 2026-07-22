@@ -21,6 +21,10 @@
       "sha256": "sha256:07b46af44dc880ee078ea60986d220bdabc86474e34fb362470fa1e8ebb912fa"
     },
     {
+      "file": "platform-contracts/WZ-CONTRACT-COMPOSITION-001.md",
+      "sha256": "sha256:d92a261367ba99c9d9e544af365c8043b55f40df16dad7560d4a58e8692faff1"
+    },
+    {
       "file": "platform-contracts/WZ-CONTRACT-CONFIGURATION-001.md",
       "sha256": "sha256:46d2854a36758cb3305b83ed71ad64de14f694dd3b85144e0da5069172da539b"
     },

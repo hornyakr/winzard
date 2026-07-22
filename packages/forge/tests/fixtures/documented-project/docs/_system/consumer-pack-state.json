@@ -16,15 +16,19 @@
     },
     {
       "file": "manifest/source-manifest.json",
-      "sha256": "sha256:64d41919124d7754a587025212c13d7d3e5afe2cdfa18f1e810f7c7202e3b3ee"
+      "sha256": "sha256:707740e0e7ed9b8454504ed09d5de4d68e69d39962b2f4ccffe280359bce6209"
     },
     {
       "file": "manifest/source-manifest.md",
-      "sha256": "sha256:b1a8edd847ea660a8b864294b80ddd5d19de7f19f3a558229846c82beb4f00c0"
+      "sha256": "sha256:ac7a2648c879bffecd2e4b6f325c7f08480284bd6cf771211f9578f301b2ee78"
     },
     {
       "file": "manifest/winzard-version.md",
       "sha256": "sha256:07b46af44dc880ee078ea60986d220bdabc86474e34fb362470fa1e8ebb912fa"
+    },
+    {
+      "file": "platform-contracts/WZ-CONTRACT-COMPOSITION-001.md",
+      "sha256": "sha256:d92a261367ba99c9d9e544af365c8043b55f40df16dad7560d4a58e8692faff1"
     },
     {
       "file": "platform-contracts/WZ-CONTRACT-CONFIGURATION-001.md",

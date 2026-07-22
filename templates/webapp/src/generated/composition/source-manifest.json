@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "fingerprint": "b02d59cb7fda51f57e58a7862a4bc15f577c16ea73e2032a7689b3f95f3c2ae6",
+  "sources": [
+    {
+      "path": "src/composition/platform.composition.definition.ts",
+      "sha256": "31303c014573d66ea95c8d8d1f2471f09d72e9b20e04cb118947188d560b968e"
+    }
+  ]
+}

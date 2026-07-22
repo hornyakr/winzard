@@ -104,6 +104,22 @@ pnpm forge handoff:new ATLAS-TASK-0001 --project <PROJECT>
 
 A kitelepített projekt nem kapja meg a Winzard belső roadmapjét, taskjait, handoffjait vagy nem publikus ADR-jeit. Csak a verziózott, read-only `docs/80-winzard` consumer documentation pack kerül ki.
 
+## Service composition és dependency injection
+
+A `service-composition` capability explicit TypeScript composition rootokat,
+konstruktoros dependency injectiont, statikus definition contractokat,
+determinisztikus registryt, lifetime- és graph-ellenőrzést biztosít runtime service
+locator nélkül.
+
+```bash
+pnpm forge composition:list --project apps/reference
+pnpm forge composition:inspect demo.lucky-number.query.get --project apps/reference
+pnpm forge composition:graph --format=mermaid --project apps/reference
+pnpm forge composition:check --project apps/reference
+pnpm forge composition:generate --check --project apps/reference
+pnpm forge composition:docs --check --project apps/reference
+```
+
 ## Opcionális PostgreSQL-profil
 
 A `templates/webapp` és a `recipes/prisma-postgresql` tartalmazza az opcionális Prisma/PostgreSQL képességet.
@@ -126,6 +142,7 @@ A root `build` kizárólag a referenciaalkalmazás Next.js buildjét futtatja. P
 
 ## Dokumentáció
 
+- [Service composition és dependency injection](docs/public_documentation/winzard-service-container.md)
 - [Kernel-szintű konfiguráció](docs/public_documentation/winzard-kernel-configuration.md)
 - [HTTP-kernel és request–response lifecycle](docs/public_documentation/winzard-http-kernel.md)
 - [Konfiguráció Winzard alkalmazásokban](docs/public_documentation/winzard-configuration.md)

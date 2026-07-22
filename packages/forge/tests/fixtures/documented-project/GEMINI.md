@@ -18,6 +18,7 @@ Project prefix: `ATLAS`.
 ## Source contracts
 
 - ATLAS-POLICY-AI-001: AI-assisted Delivery Policy
+- WZ-CONTRACT-COMPOSITION-001: Winzard service composition
 - WZ-CONTRACT-CONFIGURATION-001: Winzard configuration and secret boundary contract
 - WZ-CONTRACT-DELIVERY-001: Winzard delivery contract
 - WZ-CONTRACT-DOCUMENTATION-001: Winzard project documentation contract
@@ -57,6 +58,31 @@ Hash: `sha256:a3648a7332e8ce77567ffb4a5d6f3b3e2a576589af44cfb864dfaa983d0a1b1b`
 - [ ] AI adapters are generated from accepted project contracts.
 - [ ] Context packages are deterministic and provenance-tracked.
 - [ ] Task, handoff and review remain separately attributable.
+
+---
+
+## WZ-CONTRACT-COMPOSITION-001 — Winzard service composition
+
+Source: `docs/80-winzard/platform-contracts/WZ-CONTRACT-COMPOSITION-001.md`
+Hash: `sha256:d92a261367ba99c9d9e544af365c8043b55f40df16dad7560d4a58e8692faff1`
+
+## Contract
+
+- Production object graphs are explicit TypeScript composition code with constructor injection.
+- Composition roots are server-only and export a narrow immutable module surface.
+- Generic runtime service locators, reflection containers and runtime source-tree scans are not supported.
+- Ports are owned by the application side; infrastructure adapters implement them.
+- Process, request, operation, static and external lifetimes are explicit and checked.
+- Generated registries and graph manifests are deterministic, reviewable and secret-free.
+- `COMPOSITION_HASH` may pin the canonical graph fingerprint at deployment startup.
+
+## Acceptance criteria
+
+- `forge composition:check` reports no error.
+- generated composition artifacts and documentation are drift-free;
+- Client Components cannot import composition or infrastructure modules;
+- process-scoped services do not store request-, actor- or tenant-specific mutable state;
+- the production graph passes startup validation.
 
 ---
 

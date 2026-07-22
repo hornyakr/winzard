@@ -1,6 +1,6 @@
 'use server';
 
-import { demoModule } from '@/composition/demo';
+import { demoModule } from '@/composition/demo.server';
 import { enforceServerActionContract } from '@/platform/http/delivery-contract';
 import { createActionRequestContext, toApplicationContext } from '@/composition/request-context.server';
 
