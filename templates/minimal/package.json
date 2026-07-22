@@ -18,6 +18,7 @@
     "profile": "minimal",
     "capabilities": [
       "next-app",
+      "kernel-configuration",
       "http-kernel",
       "forge",
       "presentation-contract"

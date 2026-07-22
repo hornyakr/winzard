@@ -2,8 +2,8 @@
 title: "Winzard termékhatárok, profilok és opcionális capability-k"
 description: "A Winzard setup dokumentáció normatív kiegészítése a Forge, a template-ek, a referenciaalkalmazás és az opcionális infrastruktúrák szétválasztásához."
 status: "accepted-specification"
-document_version: "0.3.0"
-last_verified: "2026-07-19"
+document_version: "0.4.0"
+last_verified: "2026-07-22"
 supersedes:
   - "winzard-setup.md azon részei, amelyek a PostgreSQL-t, a Prismát vagy az AUTH_SECRET változót minden projektre kötelezőként kezelik"
 architecture_decision: "ADR-0001"
@@ -169,6 +169,7 @@ A projektnek pontosan egy értelmezhető, támogatott szerződést kell adnia.
   "profile": "minimal",
   "capabilities": [
     "next-app",
+    "kernel-configuration",
     "http-kernel",
     "forge",
     "presentation-contract"
@@ -184,6 +185,7 @@ A projektnek pontosan egy értelmezhető, támogatott szerződést kell adnia.
   "profile": "webapp",
   "capabilities": [
     "next-app",
+    "kernel-configuration",
     "http-kernel",
     "forge",
     "presentation-contract",
@@ -216,6 +218,7 @@ A capability sorrendje nem hordoz üzleti jelentést. A generátor stabil, deter
 | Capability | Jelentés | Kötelező következmény |
 |---|---|---|
 | `next-app` | Next.js App Router alkalmazás | `src/app`, Next.js és TypeScript konfiguráció. |
+| `kernel-configuration` | Build-, deployment-, runtime-, locale-, Host- és proxyinvariánsok | Típusos kernelconfig, startup validation, Forge diagnostics és generált evidence. |
 | `http-kernel` | Explicit request–response lifecycle contract | Adjacent delivery contractok, RequestContext, response policy, Proxy bridge, instrumentation és Forge kernel evidence. |
 | `forge` | Forge-kompatibilis projekt | Érvényes Winzard manifest. |
 | `presentation-contract` | Nézeti és UI-kompozíciós szerződés | View inventory, presentation architecture check és generált view-contract bizonyíték. |
@@ -228,9 +231,14 @@ A capability sorrendje nem hordoz üzleti jelentést. A generátor stabil, deter
 ### 5.1. Capability-függőségek
 
 ```text
+kernel-configuration
+  -> next-app
+  -> forge
+
 http-kernel
   -> next-app
   -> forge
+  -> kernel-configuration
 
 presentation-contract
   -> next-app
@@ -274,6 +282,7 @@ Tartalmazza:
 - `src/app`;
 - ESLint;
 - Forge manifest;
+- `kernel-configuration` capability, build/deployment identity, Host/proxy és locale-policy;
 - `http-kernel` capability, request-context, Proxy request-ID bridge és lifecycle-diagnosztika;
 - `presentation-contract` capability és Forge view-diagnosztika.
 
@@ -327,6 +336,7 @@ A referenciaalkalmazás manifestje jelenleg:
   "profile": "reference",
   "capabilities": [
     "next-app",
+    "kernel-configuration",
     "http-kernel",
     "forge",
     "presentation-contract",

@@ -6,4 +6,4 @@
 
 The machine-readable manifest is [source-manifest.json](./source-manifest.json).
 
-Files: 11.
+Files: 12.

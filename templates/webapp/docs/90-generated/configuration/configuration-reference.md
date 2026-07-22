@@ -5,17 +5,44 @@
 
 # Configuration reference
 
-Inventory SHA-256: `sha256:51eea06c352f53aee064b19a8c3325e8b8d5af40ccc7fb2ae39f514468427f92`
+Inventory SHA-256: `sha256:86e5c1e85a0a918fd5ab6789d88e0730965c0ee3acca8461ac6465cc33e9f197`
 
 Profile: `webapp`
 
 | Key | Owner | Type / validation | Required | Phase | Classification | Rebuild | Restart | Default | Safe example | Introduced | Deprecated | Removed | Description |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `APP_ID` | kernel-configuration | string[1,64] | yes | process-start | internal | no | yes | - | `winzard-app` | 0.1.0 | - | - | Stabil alkalmazásazonosító cache-, telemetry- és deploymentnamespace-ekhez. |
 | `APP_NAME` | application-shell | string[1,128] | yes | process-start | internal | no | yes | - | `Atlas` | 0.1.0 | - | - | Az alkalmazás szerveroldali, nem üres megjelenítési neve. |
-| `APP_STAGE` | application-shell | enum(local\|preview\|staging\|production) | yes | process-start | internal | no | yes | - | `local` | 0.1.0 | - | - | A deployment operációs stage-e; nem helyettesíti a NODE_ENV értéket. |
+| `APP_REGION` | kernel-configuration | string[1,64] | no | process-start | internal | no | yes | `local` | `local` | 0.1.0 | - | - | A deployment explicit régiója; nem része az APP_STAGE értékének. |
+| `APP_STAGE` | application-shell | enum(local\|development\|preview\|staging\|production) | yes | process-start | internal | no | yes | - | `local` | 0.1.0 | - | - | A deployment operációs stage-e; nem helyettesíti a NODE_ENV értéket. |
 | `APP_URL` | application-shell | URL(http:,https:,origin-only) | yes | process-start | internal | no | yes | - | `http://localhost:3000` | 0.1.0 | - | - | Az alkalmazás megbízható canonical originje szerveroldali URL-generáláshoz. |
+| `BUILD_ID` | kernel-configuration | string[1,128] | no | build-time | internal | yes | no | `local-build` | `local-build` | 0.1.0 | - | - | Az immutable build hordozható azonosítója; hiányában local módban a commitazonosító használható. |
+| `CACHE_SCHEMA_VERSION` | kernel-configuration | integer[1,10000] | no | process-start | internal | no | yes | `1` | `1` | 0.1.0 | - | - | A cache-entry formátum és namespace pozitív egész schema verziója. |
+| `COMPOSITION_HASH` | kernel-configuration | string[4,64] | no | process-start | internal | no | yes | `auto` | `auto` | 0.1.0 | - | - | Opcionális deployment-elvárás a canonical composition fingerprinthez; auto esetén nincs külső pin. |
 | `DATABASE_CONNECTION_TIMEOUT_MS` | prisma-postgresql | integer[100,60000] | yes | process-start | internal | no | yes | - | `5000` | 0.1.0 | - | - | Adatbázis-kapcsolódási timeout ezredmásodpercben. |
 | `DATABASE_POOL_MAX` | prisma-postgresql | integer[1,100] | yes | process-start | internal | no | yes | - | `10` | 0.1.0 | - | - | Egy process maximális adatbázis-kapcsolatszáma. |
 | `DATABASE_URL` | prisma-postgresql | PostgreSQL DSN | yes | process-start | secret | no | yes | - | `postgresql://user:password@localhost:5432/atlas` | 0.1.0 | - | - | A PostgreSQL runtime kapcsolat credentialt is tartalmazó DSN-je. |
+| `DEFAULT_LOCALE` | kernel-configuration | enum(hu\|en) | no | process-start | internal | no | yes | `hu` | `hu` | 0.1.0 | - | - | A támogatott locale-listából választott alapértelmezett locale. |
+| `DEPLOYMENT_ID` | kernel-configuration | string[1,128] | no | build-time | internal | yes | no | `local-deployment` | `local-deployment` | 0.1.0 | - | - | Egy konkrét rollout valamennyi példányán egységes deploymentazonosító. |
+| `ENABLED_LOCALES` | kernel-configuration | csv-enum(hu\|en) | no | process-start | internal | no | yes | `hu,en` | `hu,en` | 0.1.0 | - | - | Vesszővel tagolt, zárt locale-allowlist. |
+| `GIT_COMMIT` | kernel-configuration | string[7,64] | no | build-time | internal | yes | no | - | `0000000` | 0.1.0 | - | - | Az artifact forráscommitja; release buildben a stabil buildazonosság kötelező inputja. |
+| `KERNEL_VERBOSE_DIAGNOSTICS` | kernel-configuration | boolean(true\|false) | no | process-start | internal | no | yes | `false` | `false` | 0.1.0 | - | - | Részletes, de minden esetben redaktált kernel-diagnosztika kapcsolója. |
 | `LOG_LEVEL` | observability | enum(debug\|info\|warn\|error) | yes | process-start | internal | no | yes | - | `info` | 0.1.0 | - | - | A process-szintű strukturált naplózás minimális súlyossága. |
+| `NEXT_DIST_DIR` | kernel-configuration | string[1,256] | no | build-time | internal | yes | no | `.next` | `.next` | 0.1.0 | - | - | A projektgyökéren belül maradó Next.js buildkönyvtár. |
+| `NEXT_OUTPUT_STANDALONE` | kernel-configuration | boolean(true\|false) | no | build-time | internal | yes | no | `false` | `false` | 0.1.0 | - | - | Explicit deployment-policy a Next.js standalone output engedélyezéséhez. |
 | `NEXT_PUBLIC_APP_NAME` | public-ui | string[1,128] | yes | public-client | public | yes | no | - | `Atlas` | 0.1.0 | - | - | A böngészőbundle-be beágyazható publikus alkalmazásnév. |
+| `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` | kernel-configuration | secret(min:43) | no | build-time | secret | yes | no | - | `<generate-32-byte-base64-server-action-key>` | 0.1.0 | - | - | A Next.js Server Action payloadok build- és rolloutszinten konzisztens, 256 bites AES-GCM kulcsa. |
+| `PRODUCTION_BROWSER_SOURCE_MAPS` | kernel-configuration | boolean(true\|false) | no | build-time | internal | yes | no | `false` | `false` | 0.1.0 | - | - | Production browser source map explicit, review-köteles buildpolicyja. |
+| `PRODUCTION_BROWSER_SOURCE_MAPS_WAIVER` | kernel-configuration | string[1,128] | no | build-time | internal | yes | no | `not-required` | `not-required` | 0.1.0 | - | - | Production source map engedélyezésekor kötelező dokumentált waiver hivatkozás. |
+| `RUNTIME_WRITABLE_ROOT` | kernel-configuration | string[1,512] | no | process-start | internal | no | yes | `/tmp/winzard` | `/tmp/winzard` | 0.1.0 | - | - | Az immutable application artifacton kívüli, korlátozott runtime írható gyökér. |
+| `SERVER_ACTION_ALLOWED_ORIGINS` | kernel-configuration | string[1,2048] | no | build-time | internal | yes | no | `localhost:3000` | `localhost:3000` | 0.1.0 | - | - | A Next.js Server Action CSRF-origin ellenőrzésének szűk buildidős allowlistje. |
+| `SERVER_ACTION_BODY_SIZE_LIMIT` | kernel-configuration | string[2,32] | no | build-time | internal | yes | no | `1mb` | `1mb` | 0.1.0 | - | - | A Server Action request body buildidős felső méretkorlátja. |
+| `SOURCE_DATE_EPOCH` | kernel-configuration | integer[0,9007199254740991] | no | build-time | internal | yes | no | `0` | `0` | 0.1.0 | - | - | Reprodukálható buildhez használt nem negatív Unix timestamp másodpercben. |
+| `TRUSTED_HOSTS` | kernel-configuration | string[1,2048] | no | process-start | internal | no | yes | `localhost:3000` | `localhost:3000,127.0.0.1,[::1]` | 0.1.0 | - | - | A request Host validálására szolgáló exact vagy egycímkés wildcard allowlist. |
+| `TRUSTED_PROXY_CIDRS` | kernel-configuration | string[9,2048] | no | process-start | internal | no | yes | `127.0.0.1/32` | `127.0.0.1/32` | 0.1.0 | - | - | CIDR proxy trust mód explicit IPv4/IPv6 allowlistje. |
+| `TRUSTED_PROXY_HOPS` | kernel-configuration | integer[1,8] | no | process-start | internal | no | yes | `1` | `1` | 0.1.0 | - | - | Fixed-hop proxy trust módban a megbízható proxy hopok száma. |
+| `TRUSTED_PROXY_MODE` | kernel-configuration | enum(none\|fixed-hops\|cidr) | no | process-start | internal | no | yes | `none` | `none` | 0.1.0 | - | - | A proxy trust explicit módja: none, fixed-hops vagy cidr. |
+| `WORKER_CONCURRENCY` | kernel-configuration | integer[1,128] | no | process-start | internal | no | yes | `4` | `4` | 0.1.0 | - | - | Worker entrypoint korlátozott párhuzamossága. |
+| `WORKER_POLL_INTERVAL_MS` | kernel-configuration | integer[10,60000] | no | process-start | internal | no | yes | `1000` | `1000` | 0.1.0 | - | - | Worker polling intervalluma ezredmásodpercben. |
+| `WORKER_SHUTDOWN_GRACE_MS` | kernel-configuration | integer[1000,300000] | no | process-start | internal | no | yes | `30000` | `30000` | 0.1.0 | - | - | Worker graceful shutdown időablaka ezredmásodpercben. |
+| `WORKER_VISIBILITY_TIMEOUT_MS` | kernel-configuration | integer[1000,86400000] | no | process-start | internal | no | yes | `60000` | `60000` | 0.1.0 | - | - | Worker lease/visibility timeout ezredmásodpercben. |

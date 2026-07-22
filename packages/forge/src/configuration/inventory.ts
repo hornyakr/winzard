@@ -99,6 +99,20 @@ function validateValue(
         issues.push(issue(definition, 'CONFIG_KEY_INVALID', `${definition.key} megengedett értékei: ${validation.values.join(', ')}.`, source));
       }
       break;
+    case 'csv-enum': {
+      const values = value.split(',').map((item) => item.trim()).filter(Boolean);
+      if (validation.minimumItems !== undefined && values.length < validation.minimumItems) {
+        issues.push(issue(definition, 'CONFIG_KEY_INVALID', `${definition.key} legalább ${validation.minimumItems} elemet igényel.`, source));
+      }
+      const unknown = values.filter((item) => !validation.values.includes(item));
+      if (unknown.length > 0) {
+        issues.push(issue(definition, 'CONFIG_KEY_INVALID', `${definition.key} ismeretlen elemei: ${unknown.join(', ')}.`, source));
+      }
+      if (new Set(values).size !== values.length) {
+        issues.push(issue(definition, 'CONFIG_KEY_INVALID', `${definition.key} nem tartalmazhat duplikált elemet.`, source));
+      }
+      break;
+    }
     case 'integer': {
       if (!/^-?\d+$/u.test(value.trim())) {
         issues.push(issue(definition, 'CONFIG_KEY_INVALID', `${definition.key} egész szám legyen.`, source));
@@ -211,8 +225,9 @@ function recordForDefinition(
     present: value !== undefined,
     empty: value !== undefined && value.trim() === '',
     valid: issues.length === 0 && (value !== undefined || !definition.required),
-    fingerprint: value === undefined ? null : fingerprint(value),
-    length: value?.length ?? null,
+    fingerprint: value === undefined || definition.classification === 'secret' ? null : fingerprint(value),
+    comparisonFingerprint: value === undefined ? null : fingerprint(value),
+    length: value === undefined || definition.classification === 'secret' ? null : value.length,
     consumers,
     issues,
   };
@@ -275,8 +290,8 @@ export function redactConfigurationRecord(record: ConfigurationRecord): Record<s
     source: record.source.label,
     present: record.present,
     empty: record.empty,
-    length: record.length,
-    fingerprint: record.fingerprint,
+    length: record.definition.classification === 'secret' ? null : record.length,
+    fingerprint: record.definition.classification === 'secret' ? null : record.fingerprint,
     consumers: record.consumers,
     issues: record.issues,
   };

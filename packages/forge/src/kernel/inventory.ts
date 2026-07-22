@@ -571,6 +571,7 @@ function inspectSource(file: string, source: string): readonly KernelIssue[] {
   }
   if (
     file !== 'src/proxy.ts' &&
+    !file.endsWith('platform/kernel-config/proxy-trust.ts') &&
     /['"](?:forwarded|x-forwarded-for|x-forwarded-host|x-forwarded-proto|x-real-ip)['"]/iu.test(source)
   ) {
     issues.push(issue(

@@ -54,8 +54,8 @@ export function renderConfigurationInspection(record: ConfigurationRecord): stri
     `Source:          ${record.source.label}`,
     `Present:         ${yesNo(record.present)}`,
     `Empty:           ${yesNo(record.empty)}`,
-    `Length:          ${record.length ?? '-'}`,
-    `Fingerprint:     ${record.fingerprint ?? '-'}`,
+    `Length:          ${record.definition.classification === 'secret' ? '[redacted]' : record.length ?? '-'}`,
+    `Fingerprint:     ${record.definition.classification === 'secret' ? '[redacted]' : record.fingerprint ?? '-'}`,
     `Consumers:       ${record.consumers.join(', ') || '-'}`,
   ].join('\n');
 }
@@ -85,7 +85,9 @@ export function renderConfigurationDiff(
       record.owner,
       record.fromStatus,
       record.toStatus,
-      record.fromFingerprint === record.toFingerprint ? 'no' : 'yes',
+      record.fromFingerprint === null && record.toFingerprint === null
+        ? (record.changed ? 'redacted-change' : 'no')
+        : record.fromFingerprint === record.toFingerprint ? 'no' : 'yes',
     ].join('  ')),
   ].join('\n');
 }

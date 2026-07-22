@@ -2,8 +2,8 @@
 title: "A Winzard telepítése és beállítása"
 description: "Új és meglévő Winzard alkalmazások teljes fejlesztői környezetének létrehozása, ellenőrzése és futtatása."
 status: "draft-specification"
-document_version: "0.1.0"
-last_verified: "2026-07-16"
+document_version: "0.2.0"
+last_verified: "2026-07-22"
 source_basis: "Symfony Docs — Installing & Setting up the Symfony Framework"
 ---
 
@@ -24,6 +24,9 @@ A dokumentum célja, hogy egy fejlesztő:
 7. meg tudja különböztetni a fejlesztési, CI-, staging- és production workflow-kat.
 
 A Winzardban a Next.js App Router a HTTP-, rendering- és UI-adapter. Az üzleti architektúra a `src/modules`, `src/platform` és `src/composition` rétegekben helyezkedik el. Az `app` könyvtár nem válhat közvetlen adatbázis-hozzáférési vagy üzleti logikai réteggé.
+
+> [!IMPORTANT]
+> A kernel-, build-, deployment-, locale-, Host- és proxykonfiguráció normatív szerződését a `winzard-kernel-configuration.md` rögzíti.
 
 > [!IMPORTANT]
 > A dokumentumban szereplő `create-winzard` és `forge` parancsok egy része **cél-CLI szerződés**. A dokumentáció előbb készül el, mint a teljes implementáció. Ahol egy parancs még nem tekinthető megvalósítottnak, a dokumentum külön megadja a használható manuális megfelelőjét is.

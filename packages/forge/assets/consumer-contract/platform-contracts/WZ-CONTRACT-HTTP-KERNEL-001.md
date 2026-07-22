@@ -30,6 +30,7 @@ applies_to:
 depends_on:
   - WZ-CONTRACT-MODULES-001
   - WZ-CONTRACT-CONFIGURATION-001
+  - WZ-CONTRACT-KERNEL-CONFIGURATION-001
 supersedes: []
 superseded_by: []
 evidence: []

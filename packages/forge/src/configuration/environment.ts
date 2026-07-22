@@ -133,10 +133,29 @@ export async function loadExplicitEnvironmentFile(
   const candidate = path.isAbsolute(fileOrStage) || fileOrStage.includes('/') || fileOrStage.includes('\\') || fileOrStage.startsWith('.')
     ? fileOrStage
     : `.env.${fileOrStage}`;
-  const filePath = path.isAbsolute(candidate) ? candidate : path.join(root, candidate);
-  const label = path.relative(root, filePath).split(path.sep).join('/');
-  const source = await readOptionalFile(filePath);
+  const filePath = path.resolve(root, candidate);
+  const relative = path.relative(path.resolve(root), filePath);
+  const label = relative.split(path.sep).join('/');
   const issues: EnvironmentSnapshotIssue[] = [];
+  if (
+    relative === '..' ||
+    relative.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relative)
+  ) {
+    issues.push({
+      code: 'CONFIG_SOURCE_FILE_OUTSIDE_PROJECT',
+      file: label,
+      message: 'A konfigurációs snapshot fájl nem mutathat a projektgyökéren kívülre.',
+    });
+    return {
+      nodeEnv: 'production',
+      values: Object.freeze({}),
+      sources: new Map(),
+      loadedFiles: [],
+      issues,
+    };
+  }
+  const source = await readOptionalFile(filePath);
   if (source === null) {
     issues.push({
       code: 'CONFIG_SOURCE_FILE_MISSING',

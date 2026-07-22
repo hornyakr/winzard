@@ -5,7 +5,7 @@
   "generatedAt": "2026-07-17",
   "documentationContractVersion": 1,
   "generatorVersion": "0.1.0",
-  "contextSha256": "sha256:aae0242b27452d9e6595d869d1b9ff3e81de4616cd85c60938bc8e70c7404023",
+  "contextSha256": "sha256:14ba9226dc94ac02177758da4db30d3275e4b1dd167991824d0335eaf2d2a14b",
   "sourceDocuments": [
     {
       "id": "ATLAS-TASK-0001",
@@ -23,7 +23,7 @@
       "id": "WZ-CONTRACT-CONFIGURATION-001",
       "file": "docs/80-winzard/platform-contracts/WZ-CONTRACT-CONFIGURATION-001.md",
       "reason": "required",
-      "sourceHash": "sha256:0d65fdb6511167c35d5134269e4f1dcd94a853fe0224724d33316fc42880c414"
+      "sourceHash": "sha256:46d2854a36758cb3305b83ed71ad64de14f694dd3b85144e0da5069172da539b"
     },
     {
       "id": "WZ-CONTRACT-DELIVERY-001",
@@ -47,7 +47,13 @@
       "id": "WZ-CONTRACT-HTTP-KERNEL-001",
       "file": "docs/80-winzard/platform-contracts/WZ-CONTRACT-HTTP-KERNEL-001.md",
       "reason": "required",
-      "sourceHash": "sha256:9b476c0407bc17a22775ef905241e3331dfe0117b4929b7a2f9e479f616e08a3"
+      "sourceHash": "sha256:22dfa8e9baff6d7552893b2bae49ee9164af93fde5d05768dc93cd121a1b5e93"
+    },
+    {
+      "id": "WZ-CONTRACT-KERNEL-CONFIGURATION-001",
+      "file": "docs/80-winzard/platform-contracts/WZ-CONTRACT-KERNEL-CONFIGURATION-001.md",
+      "reason": "required",
+      "sourceHash": "sha256:e55606632fae82c42e1398c19a9bf970f52ab22cbbbea7a4537177794e380301"
     },
     {
       "id": "WZ-CONTRACT-MODULES-001",

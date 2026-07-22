@@ -14,8 +14,9 @@ contracts.
 - Next.js-compatible environment precedence, including the intentional
   omission of `.env.local` under `NODE_ENV=test`;
 - dotenv expansion, cycle diagnostics and source provenance;
-- redacted inventory records with status, length and short SHA-256
-  fingerprints, never raw values;
+- redacted inventory records with status and source; bounded length and short
+  SHA-256 fingerprints are limited to public/internal values, while secrets
+  expose neither length nor fingerprint;
 - typed validation for URL, origin, enum, integer bounds, PostgreSQL DSN,
   boolean, JSON and secret contracts;
 - `config:list`, `config:inspect`, `config:reference`, `config:diff`,

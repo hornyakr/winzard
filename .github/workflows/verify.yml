@@ -18,6 +18,32 @@ jobs:
       APP_STAGE: local
       LOG_LEVEL: error
       NEXT_PUBLIC_APP_NAME: Winzard Reference
+      APP_ID: winzard-reference
+      APP_REGION: local
+      GIT_COMMIT: ${{ github.sha }}
+      BUILD_ID: ${{ github.sha }}
+      DEPLOYMENT_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
+      SOURCE_DATE_EPOCH: '0'
+      DEFAULT_LOCALE: hu
+      ENABLED_LOCALES: hu,en
+      TRUSTED_HOSTS: localhost:3000,127.0.0.1,[::1]
+      SERVER_ACTION_ALLOWED_ORIGINS: localhost:3000
+      SERVER_ACTION_BODY_SIZE_LIMIT: 1mb
+      TRUSTED_PROXY_MODE: none
+      TRUSTED_PROXY_CIDRS: 127.0.0.1/32
+      TRUSTED_PROXY_HOPS: '1'
+      NEXT_DIST_DIR: .next
+      NEXT_OUTPUT_STANDALONE: 'false'
+      PRODUCTION_BROWSER_SOURCE_MAPS: 'false'
+      PRODUCTION_BROWSER_SOURCE_MAPS_WAIVER: not-required
+      KERNEL_VERBOSE_DIAGNOSTICS: 'false'
+      CACHE_SCHEMA_VERSION: '1'
+      COMPOSITION_HASH: auto
+      RUNTIME_WRITABLE_ROOT: /tmp/winzard-reference
+      WORKER_CONCURRENCY: '4'
+      WORKER_VISIBILITY_TIMEOUT_MS: '60000'
+      WORKER_SHUTDOWN_GRACE_MS: '30000'
+      WORKER_POLL_INTERVAL_MS: '1000'
 
     steps:
       - name: Checkout
@@ -38,6 +64,17 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Configure deterministic CI-only Server Action key
+        shell: bash
+        run: |
+          {
+            printf 'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY='
+            printf '%s' '${{ github.repository_id }}:${{ github.sha }}' \
+              | openssl dgst -sha256 -binary \
+              | base64 -w0
+            printf '\n'
+          } >> "$GITHUB_ENV"
 
       - name: Generate reference route types
         run: pnpm typegen
@@ -63,6 +100,9 @@ jobs:
       - name: Verify HTTP-kernel lifecycle contracts
         run: pnpm verify:kernel
 
+      - name: Verify kernel configuration and deployment contracts
+        run: pnpm verify:kernel-configuration
+
       - name: Verify template, view and presentation contracts
         run: pnpm verify:views
 
@@ -80,6 +120,90 @@ jobs:
 
       - name: Run reference E2E smoke tests
         run: pnpm test:e2e:reference
+
+  reproducibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      APP_URL: http://localhost:3000
+      APP_NAME: Winzard Reference
+      APP_STAGE: local
+      LOG_LEVEL: error
+      NEXT_PUBLIC_APP_NAME: Winzard Reference
+      APP_ID: winzard-reference
+      APP_REGION: local
+      GIT_COMMIT: ${{ github.sha }}
+      BUILD_ID: ${{ github.sha }}
+      DEPLOYMENT_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
+      SOURCE_DATE_EPOCH: '0'
+      DEFAULT_LOCALE: hu
+      ENABLED_LOCALES: hu,en
+      TRUSTED_HOSTS: localhost:3000,127.0.0.1,[::1]
+      SERVER_ACTION_ALLOWED_ORIGINS: localhost:3000
+      SERVER_ACTION_BODY_SIZE_LIMIT: 1mb
+      TRUSTED_PROXY_MODE: none
+      TRUSTED_PROXY_CIDRS: 127.0.0.1/32
+      TRUSTED_PROXY_HOPS: '1'
+      NEXT_DIST_DIR: .next
+      NEXT_OUTPUT_STANDALONE: 'false'
+      PRODUCTION_BROWSER_SOURCE_MAPS: 'false'
+      PRODUCTION_BROWSER_SOURCE_MAPS_WAIVER: not-required
+      KERNEL_VERBOSE_DIAGNOSTICS: 'false'
+      CACHE_SCHEMA_VERSION: '1'
+      COMPOSITION_HASH: auto
+      RUNTIME_WRITABLE_ROOT: /tmp/winzard-reference
+      WORKER_CONCURRENCY: '4'
+      WORKER_VISIBILITY_TIMEOUT_MS: '60000'
+      WORKER_SHUTDOWN_GRACE_MS: '30000'
+      WORKER_POLL_INTERVAL_MS: '1000'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure deterministic CI-only Server Action key
+        shell: bash
+        run: |
+          {
+            printf 'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY='
+            printf '%s' '${{ github.repository_id }}:${{ github.sha }}' \
+              | openssl dgst -sha256 -binary \
+              | base64 -w0
+            printf '\n'
+          } >> "$GITHUB_ENV"
+
+      - name: Build first source-clean artifact
+        run: |
+          rm -rf /tmp/winzard-repro-a
+          pnpm build
+          mv apps/reference/.next /tmp/winzard-repro-a
+
+      - name: Build second source-clean artifact
+        run: |
+          pnpm build
+          mv /tmp/winzard-repro-a apps/reference/.next-repro-a
+
+      - name: Compare canonical artifact manifests
+        run: >-
+          pnpm forge build:reproducibility
+          --project apps/reference
+          --artifact .next-repro-a
+          --compare .next
 
   database:
     runs-on: ubuntu-latest
@@ -106,6 +230,32 @@ jobs:
       APP_STAGE: local
       LOG_LEVEL: error
       NEXT_PUBLIC_APP_NAME: Winzard Webapp CI
+      APP_ID: winzard-webapp
+      APP_REGION: local
+      GIT_COMMIT: ${{ github.sha }}
+      BUILD_ID: ${{ github.sha }}
+      DEPLOYMENT_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
+      SOURCE_DATE_EPOCH: '0'
+      DEFAULT_LOCALE: hu
+      ENABLED_LOCALES: hu,en
+      TRUSTED_HOSTS: localhost:3000,127.0.0.1,[::1]
+      SERVER_ACTION_ALLOWED_ORIGINS: localhost:3000
+      SERVER_ACTION_BODY_SIZE_LIMIT: 1mb
+      TRUSTED_PROXY_MODE: none
+      TRUSTED_PROXY_CIDRS: 127.0.0.1/32
+      TRUSTED_PROXY_HOPS: '1'
+      NEXT_DIST_DIR: .next
+      NEXT_OUTPUT_STANDALONE: 'false'
+      PRODUCTION_BROWSER_SOURCE_MAPS: 'false'
+      PRODUCTION_BROWSER_SOURCE_MAPS_WAIVER: not-required
+      KERNEL_VERBOSE_DIAGNOSTICS: 'false'
+      CACHE_SCHEMA_VERSION: '1'
+      COMPOSITION_HASH: auto
+      RUNTIME_WRITABLE_ROOT: /tmp/winzard-webapp
+      WORKER_CONCURRENCY: '4'
+      WORKER_VISIBILITY_TIMEOUT_MS: '60000'
+      WORKER_SHUTDOWN_GRACE_MS: '30000'
+      WORKER_POLL_INTERVAL_MS: '1000'
       DATABASE_URL: postgresql://winzard:winzard_dev_only@127.0.0.1:5432/winzard?schema=public
       DATABASE_POOL_MAX: 10
       DATABASE_CONNECTION_TIMEOUT_MS: 5000
@@ -127,6 +277,17 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Configure deterministic CI-only Server Action key
+        shell: bash
+        run: |
+          {
+            printf 'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY='
+            printf '%s' '${{ github.repository_id }}:${{ github.sha }}' \
+              | openssl dgst -sha256 -binary \
+              | base64 -w0
+            printf '\n'
+          } >> "$GITHUB_ENV"
 
       - name: Check webapp capabilities
         run: pnpm forge check --project templates/webapp

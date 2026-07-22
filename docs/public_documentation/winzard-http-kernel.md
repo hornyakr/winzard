@@ -1,9 +1,9 @@
 ---
 title: "A Winzard HTTP-kernelje és request–response életciklusa"
 description: "A Symfony HttpKernel teljes Winzard-specifikus átültetése: a Next.js App Router request pipeline-ja, delivery entrypointok, request context, policyk, válaszképzés, streaming, hibakezelés, after-fázis, observability, állapotreset, subrequest-helyettesítés és bővítési pontok."
-status: "draft-specification"
-document_version: "0.1.0"
-last_verified: "2026-07-18"
+status: "implemented-unverified"
+document_version: "1.0.0"
+last_verified: "2026-07-22"
 source_basis: "Symfony Docs — The HttpKernel Component"
 nextjs_baseline: "16.2.10"
 nodejs_baseline: "24.x"
@@ -14,6 +14,7 @@ related_documents:
   - "winzard-controller.md"
   - "winzard-templates.md"
   - "winzard-configuration.md"
+  - "winzard-kernel-configuration.md"
 ---
 
 # A Winzard HTTP-kernelje és request–response életciklusa
@@ -47,8 +48,8 @@ A három réteg közül csak az első kezeli közvetlenül a webes request/respo
 > [!IMPORTANT]
 > A Symfony HttpKernel eseményeinek Winzard-megfelelői nem egy globális EventEmitterben vagy rejtett interceptorhálóban valósulnak meg. Ahol bővítési pont szükséges, az explicit függőség, wrapper, policy, presenter, instrumentation hook vagy route contract legyen.
 
-> [!WARNING]
-> A dokumentumban szereplő egyes `forge kernel:*`, `forge delivery:*` és `forge instrumentation:*` parancsok célfelületet jelölnek. A már működő routing parancsokat külön jelöljük; egy célparancs nem tekinthető implementáltnak pusztán attól, hogy a dokumentáció leírja.
+> [!NOTE]
+> A dokumentumban szereplő `forge kernel:*`, `forge delivery:*`, `forge instrumentation:*` és lifecycle-evidence parancsok implementált Forge-felületek. A teljes release-verifikációt a külön CI- és tesztkapuk adják.
 
 A fejezet végére egy fejlesztő:
 

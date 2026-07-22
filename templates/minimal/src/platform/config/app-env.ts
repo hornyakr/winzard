@@ -6,6 +6,7 @@ const ALLOWED_APP_PROTOCOLS = new Set(['http:', 'https:']);
 
 export const deploymentStageSchema = z.enum([
   'local',
+  'development',
   'preview',
   'staging',
   'production',

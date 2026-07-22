@@ -23,6 +23,7 @@ Project prefix: `ATLAS`.
 - WZ-CONTRACT-DOCUMENTATION-001: Winzard project documentation contract
 - WZ-CONTRACT-GENERATED-001: Generated code and documentation policy
 - WZ-CONTRACT-HTTP-KERNEL-001: Winzard HTTP-kernel and request lifecycle contract
+- WZ-CONTRACT-KERNEL-CONFIGURATION-001: Winzard kernel configuration and deployment identity contract
 - WZ-CONTRACT-MODULES-001: Winzard module boundaries
 
 ---
@@ -62,7 +63,7 @@ Hash: `sha256:a3648a7332e8ce77567ffb4a5d6f3b3e2a576589af44cfb864dfaa983d0a1b1b`
 ## WZ-CONTRACT-CONFIGURATION-001 — Winzard configuration and secret boundary contract
 
 Source: `docs/80-winzard/platform-contracts/WZ-CONTRACT-CONFIGURATION-001.md`
-Hash: `sha256:0d65fdb6511167c35d5134269e4f1dcd94a853fe0224724d33316fc42880c414`
+Hash: `sha256:46d2854a36758cb3305b83ed71ad64de14f694dd3b85144e0da5069172da539b`
 
 ## Contract
 
@@ -72,7 +73,7 @@ Hash: `sha256:0d65fdb6511167c35d5134269e4f1dcd94a853fe0224724d33316fc42880c414`
 - `NODE_ENV` is limited to `development`, `production` and `test`; deployment stages use a separate `APP_STAGE` contract.
 - `NEXT_PUBLIC_*` values are public and may be frozen into the build artifact. A secret never uses that prefix or `next.config.env`.
 - Runtime or local `.env*` files, credentials, private keys and raw configuration dumps are not committed, generated or included in AI context.
-- Diagnostics show only key metadata, source, status, length and a short fingerprint. They never print the raw value.
+- Diagnostics show only key metadata, source and status. Public/internal values may expose a short fingerprint; secret values expose neither raw data, length nor fingerprint.
 - An installed capability alone determines whether its configuration is required. The presence of an env key never activates a capability.
 
 ## Constraints and prohibitions
@@ -160,7 +161,7 @@ Hash: `sha256:47938875e69ebfe9e03800f230ed122e647e753386b26e0a87c85c93cdd462db`
 ## WZ-CONTRACT-HTTP-KERNEL-001 — Winzard HTTP-kernel and request lifecycle contract
 
 Source: `docs/80-winzard/platform-contracts/WZ-CONTRACT-HTTP-KERNEL-001.md`
-Hash: `sha256:9b476c0407bc17a22775ef905241e3331dfe0117b4929b7a2f9e479f616e08a3`
+Hash: `sha256:22dfa8e9baff6d7552893b2bae49ee9164af93fde5d05768dc93cd121a1b5e93`
 
 ## Contract
 
@@ -182,6 +183,36 @@ Hash: `sha256:9b476c0407bc17a22775ef905241e3331dfe0117b4929b7a2f9e479f616e08a3`
 - Multi-request actor, tenant, locale and request-ID isolation is proven in one process.
 - Body-limit, abort cleanup, internal-header spoofing and unexpected-error redaction have negative tests.
 - Production build and E2E checks pass for the installed template/profile.
+
+---
+
+## WZ-CONTRACT-KERNEL-CONFIGURATION-001 — Winzard kernel configuration and deployment identity contract
+
+Source: `docs/80-winzard/platform-contracts/WZ-CONTRACT-KERNEL-CONFIGURATION-001.md`
+Hash: `sha256:e55606632fae82c42e1398c19a9bf970f52ab22cbbbea7a4537177794e380301`
+
+## Contract
+
+- Kernel configuration is not a global service locator or mutable parameter bag.
+- Repository, application, package, working and build roots are explicit; the build directory and every project input remain inside the allowed real path boundary.
+- Build ID identifies an immutable artifact. Deployment ID identifies one rollout. Every replica in a rollout uses the same deployment ID.
+- Preview, staging and production use `NODE_ENV=production`, a validated `APP_STAGE`, a Git commit and `SOURCE_DATE_EPOCH` release input.
+- Web, CLI and worker runtime modes are selected by explicit entrypoints, never TTY, port or ad hoc argument heuristics.
+- Default locale belongs to the enabled, closed locale allowlist; request language input is normalized before it enters the request context.
+- Raw Host and forwarded headers are untrusted. Only the Host allowlist and configured fixed-hop or CIDR proxy boundary may produce canonical request metadata.
+- A single global `APP_SECRET` is prohibited. Each signing or encryption capability owns a rotatable active/previous keyring.
+- A reproducible or multi-instance Next.js build supplies one deployment-consistent `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY`; diagnostics expose no value, length or fingerprint.
+- Method override is disabled by default. File offload produces only an authorized internal URI and never accepts a client-provided filesystem path.
+- Runtime writes use an explicit external writable root; the application artifact is treated as immutable.
+- Diagnostics and generated evidence do not expose secret values, secret lengths, secret fingerprints, absolute internal paths or raw environment dumps.
+
+## Acceptance criteria
+
+- `forge kernel-config:check`, `forge runtime:check`, `forge proxy:trust`, `forge locale:check` and `forge kernel-config:docs --check` pass.
+- Release configuration fails closed on invalid build, deployment, timestamp, Host, proxy, locale or writable-root contracts.
+- Multi-request and multi-instance state uses explicit context and namespaces rather than mutable module globals.
+- Artifact manifests normalize only documented Next.js timing traces and Draft Mode preview secrets; every other path, canonical byte length and SHA-256 must match.
+- The installed profile builds without undeclared infrastructure capabilities.
 
 ---
 

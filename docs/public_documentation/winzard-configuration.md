@@ -2,13 +2,14 @@
 title: "Konfiguráció Winzard alkalmazásokban"
 description: "A kitelepített Winzard projektek teljes konfigurációs szerződése: manifestek, next.config, capability-specifikus sémák, környezeti változók, build- és runtime-határok, secretek, validáció, diagnosztika és deployment."
 status: "implemented"
-document_version: "1.0.0"
-last_verified: "2026-07-19"
+document_version: "1.1.0"
+last_verified: "2026-07-22"
 source_basis: "Symfony Docs — Configuring Symfony"
 nextjs_baseline: "16.2.10"
 nodejs_baseline: "24.x LTS"
 applies_to: "kitelepített vagy generált Winzard projektek, template-ek és publikus recipe-contractok"
 related_documents:
+  - "winzard-kernel-configuration.md"
   - "winzard-setup-capabilities.md"
   - "winzard-application-platform.md"
   - "winzard-controller.md"
@@ -2303,8 +2304,8 @@ A secret manager eléréséhez szükséges credentialt lehetőleg workload ident
 Csak ezt jelezd:
 
 ```text
-AUTH_SECRET: present, length class >= 32, fingerprint ab12...
-DATABASE_URL: present, scheme postgresql, host db.internal
+AUTH_SECRET: present [redacted]
+DATABASE_URL: present [redacted]
 ```
 
 Ne ezt:
@@ -3801,20 +3802,23 @@ Biztonságos script:
 
 ```ts
 const keys = [
-  'APP_URL',
-  'APP_NAME',
-  'LOG_LEVEL',
-  'DATABASE_URL',
+  { key: 'APP_URL', classification: 'internal' },
+  { key: 'APP_NAME', classification: 'internal' },
+  { key: 'LOG_LEVEL', classification: 'internal' },
+  { key: 'DATABASE_URL', classification: 'secret' },
 ] as const;
 
-for (const key of keys) {
+for (const definition of keys) {
+  const key = definition.key;
   const value = process.env[key];
 
   console.log({
     key,
     present: value !== undefined,
     empty: value === '',
-    length: value?.length,
+    ...(definition.classification === 'secret'
+      ? { value: '[redacted]' }
+      : { length: value?.length }),
   });
 }
 ```
@@ -3865,11 +3869,11 @@ documentation
 source precedence
 present?
 valid?
-fingerprint
+fingerprint, kizárólag public/internal értéknél
 consumers
 ```
 
-Secretet nem.
+Secretnél csak a státusz és a `[redacted]` jelölés jelenhet meg; hossz és fingerprint sem.
 
 ### 49.7. Exit code
 
@@ -3877,7 +3881,7 @@ Config error CI-ben non-zero exit code. Warning és error külön kategória.
 
 
 > [!NOTE]
-> A Forge `env:check`, `config:list`, `config:inspect` és `config:doctor` ugyanazt a dokumentált precedenciát alkalmazza: `process.env` → `.env.$NODE_ENV.local` → `.env.local` (testben kihagyva) → `.env.$NODE_ENV` → `.env`. A diagnosztika rögzíti a forrást, státuszt, hosszt és rövid SHA-256 fingerprintet, de nyers értéket nem közöl.
+> A Forge `env:check`, `config:list`, `config:inspect` és `config:doctor` ugyanazt a dokumentált precedenciát alkalmazza: `process.env` → `.env.$NODE_ENV.local` → `.env.local` (testben kihagyva) → `.env.$NODE_ENV` → `.env`. Public/internal konfigurációnál a diagnosztika rögzíthet hosszt és rövid SHA-256 fingerprintet. Secretnél kizárólag a forrás, státusz és `[redacted]` jelölés jelenhet meg; hossz és fingerprint sem.
 
 ---
 
@@ -3918,14 +3922,14 @@ COOKIE
 
 A névminta önmagában nem teljes. Schema metadata alapján is redaktálni kell.
 
-### 50.3. Fingerprint
+### 50.3. Nem secret konfiguráció fingerprintje
 
 Diagnosztikai fingerprint:
 
 ```ts
 import { createHash } from 'node:crypto';
 
-export function secretFingerprint(value: string): string {
+export function configurationFingerprint(value: string): string {
   return createHash('sha256')
     .update(value)
     .digest('hex')
@@ -3933,7 +3937,7 @@ export function secretFingerprint(value: string): string {
 }
 ```
 
-A fingerprint segít megállapítani, hogy instance-ok azonos verziót kaptak-e, értékfeltárás nélkül. Még ezt is csak kontrollált logban használd.
+A fingerprint public vagy internal konfigurációnál segíthet megállapítani, hogy instance-ok azonos verziót kaptak-e, értékfeltárás nélkül. **Secrethez fingerprintet készíteni vagy diagnosztikában közölni TILOS**, mert offline találgatást és korrelációt segíthet. Nem secret fingerprintet is csak kontrollált logban használj.
 
 ### 50.4. Startup log
 
@@ -5290,7 +5294,7 @@ A generált Markdown-reference külön a `config:reference --check` feladata.
 pnpm forge config:diff --from=staging --to=production --project .
 ```
 
-A parancs explicit `.env.<stage>` vagy megadott snapshotfájlokat hasonlít össze. Csak státuszt és fingerprint-változást jelenít meg; nyers értéket nem.
+A parancs explicit `.env.<stage>` vagy megadott snapshotfájlokat hasonlít össze. Public/internal értéknél státuszt és fingerprint-változást jeleníthet meg. Secret esetén csak azt jelzi, hogy a redaktált érték változott-e; secret fingerprintet és nyers értéket nem közöl.
 
 ### 66.8. `config:unused`
 
