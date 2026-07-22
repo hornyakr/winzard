@@ -67,8 +67,8 @@ function parseModel(name: string, body: string): PrismaModelRecord {
     mappedName,
     fields: Object.freeze(fields),
     ids: Object.freeze([...new Set(ids)]),
-    uniqueConstraints: Object.freeze(uniqueConstraints.map(Object.freeze)),
-    indexes: Object.freeze(indexes.map(Object.freeze)),
+    uniqueConstraints: Object.freeze(uniqueConstraints.map((constraint) => Object.freeze(constraint))),
+    indexes: Object.freeze(indexes.map((index) => Object.freeze(index))),
   });
 }
 
