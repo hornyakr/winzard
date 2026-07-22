@@ -46,6 +46,7 @@ jobs:
       - name: Decode and apply development payload
         shell: bash
         run: |
+          rm -f tools/service-composition-apply-error.log
           cat tools/apply-service-composition.py.gz.b64.part* \
             | base64 -d \
             | gzip -d > tools/apply-service-composition.py
