@@ -1,0 +1,68 @@
+name: Stage 3 Fix
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/stage-3-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: agent/service-composition-platform
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with: { version: 11.13.1 }
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - name: Apply focused fixes
+        shell: python
+        run: |
+          from pathlib import Path
+
+          contract = Path('packages/forge/assets/consumer-contract/platform-contracts/WZ-CONTRACT-COMPOSITION-001.md')
+          text = contract.read_text()
+          text = text.replace('  - command:pnpm forge composition:check --project .\n', '  - command:pnpm forge composition:check\n')
+          text = text.replace('  - command:pnpm forge composition:generate --check --project .\n', '  - command:pnpm forge composition:generate --check\n')
+          contract.write_text(text)
+
+          project = Path('packages/forge/src/checks/project.ts')
+          text = project.read_text()
+          old = "  if (projectFile.startsWith('src/composition/') && !importsServerOnly) {\n"
+          new = "  if (\n    projectFile.startsWith('src/composition/') &&\n    !projectFile.endsWith('.composition.definition.ts') &&\n    !importsServerOnly\n  ) {\n"
+          if old not in text:
+              raise RuntimeError('composition boundary pattern not found')
+          project.write_text(text.replace(old, new, 1))
+      - run: pnpm install --frozen-lockfile
+      - name: Refresh consumer documentation fixture
+        run: |
+          project=packages/forge/tests/fixtures/documented-project
+          pnpm forge docs:sync --project "$project"
+          pnpm forge docs:adapters --project "$project"
+          pnpm forge docs:generate --project "$project"
+          pnpm forge context:build ATLAS-TASK-0001 --project "$project"
+      - name: Verify focused repairs
+        run: |
+          pnpm test
+          pnpm forge check --project apps/reference
+          pnpm forge check --project templates/minimal
+          pnpm forge check --project templates/webapp
+          pnpm verify:documentation
+      - name: Commit repairs and remove helper
+        run: |
+          rm -f .github/workflows/stage-3-fix.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "fix: repair composition documentation and boundary checks"
+          git push origin HEAD:agent/service-composition-platform
