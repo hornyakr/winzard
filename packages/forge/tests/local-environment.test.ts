@@ -143,11 +143,27 @@ describe('local environment bootstrap', () => {
     }
   });
 
-  it('a verziózott lokális példák érvényes Next.js kernelkonfigurációt adnak', async () => {
+  it('a verziózott példákból érvényes lokális Next.js kernelkonfigurációt készít', async () => {
+    const root = await fixture();
+    for (const projectRoot of projectRoots) {
+      const source = path.join(repositoryRoot, projectRoot, '.env.example');
+      const targetDirectory = path.join(root, projectRoot);
+      await mkdir(targetDirectory, { recursive: true });
+      await writeFile(
+        path.join(targetDirectory, '.env.example'),
+        await readFile(source, 'utf8'),
+        'utf8',
+      );
+    }
+    await setupLocalEnvironment({
+      repositoryRoot: root,
+      environment: {},
+    });
+
     for (const projectRoot of projectRoots) {
       const applicationRoot = path.join(repositoryRoot, projectRoot);
-      const environment = {
-        ...parse(await readFile(path.join(applicationRoot, '.env.example'), 'utf8')),
+      const environment: Readonly<Record<string, string | undefined>> = {
+        ...parse(await readFile(path.join(root, projectRoot, '.env.local'), 'utf8')),
         NODE_ENV: 'development',
       };
       const { createKernelNextConfig } = nodeRequire(
@@ -159,7 +175,7 @@ describe('local environment bootstrap', () => {
         }>): Readonly<Record<string, unknown>>;
       }>;
 
-      expect(environment.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY).toBe('');
+      expectCanonicalServerActionKey(environment.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY ?? '');
       expect(() => createKernelNextConfig({ applicationRoot, environment })).not.toThrow();
     }
   });
