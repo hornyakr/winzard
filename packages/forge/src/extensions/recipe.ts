@@ -238,7 +238,10 @@ async function updateCapabilities(root: string, operations: readonly RecipePlanO
   if (typeof manifest !== 'object' || manifest === null || Array.isArray(manifest)) throw new Error('MANIFEST_INVALID');
   const record = manifest as Record<string, unknown>;
   const values = new Set(Array.isArray(record.capabilities) ? record.capabilities.filter((item): item is string => typeof item === 'string') : []);
-  for (const change of changes) change.kind === 'add-capability' ? values.add(change.capability) : values.delete(change.capability);
+  for (const change of changes) {
+    if (change.kind === 'add-capability') values.add(change.capability);
+    else values.delete(change.capability);
+  }
   record.capabilities = [...values].sort();
   if (file !== dedicated) wrapper.winzard = record;
   const temporary = `${file}.tmp-${process.pid}-${Date.now()}`;
