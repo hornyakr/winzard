@@ -82,12 +82,15 @@ export class PrismaOutboxRepository implements OutboxRepository {
 
 export class PrismaInboxRepository implements InboxRepository {
   async tryRecord(input: Readonly<{ consumerId: string; source: string; eventId: string; resultHash?: string }>, context: unknown): Promise<boolean> {
-    try {
-      await transaction(context).inboxMessage.create({ data: { consumerId: input.consumerId, source: input.source, eventId: input.eventId, resultHash: input.resultHash } });
-      return true;
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return false;
-      throw error;
-    }
+    const result = await transaction(context).inboxMessage.createMany({
+      data: [{
+        consumerId: input.consumerId,
+        source: input.source,
+        eventId: input.eventId,
+        resultHash: input.resultHash,
+      }],
+      skipDuplicates: true,
+    });
+    return result.count === 1;
   }
 }

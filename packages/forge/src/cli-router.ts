@@ -3,6 +3,7 @@ import { runCompositionCli } from './composition/cli';
 import { runContractCli } from './contracts/cli';
 import { runEventCli } from './events/cli';
 import { EXTENSION_COMMANDS, runExtensionCli } from './extensions/cli';
+import { PERSISTENCE_COMMANDS, runPersistenceCli } from './persistence/cli';
 
 try {
   const args = process.argv.slice(2);
@@ -10,10 +11,13 @@ try {
     !await runContractCli(args) &&
     !await runEventCli(args) &&
     !await runCompositionCli(args) &&
-    !await runExtensionCli(args)
+    !await runExtensionCli(args) &&
+    !await runPersistenceCli(args)
   ) {
     await import('./cli-router-base');
-    if ((args[0] ?? 'list') === 'list') console.log(EXTENSION_COMMANDS.join('\n'));
+    if ((args[0] ?? 'list') === 'list') {
+      console.log([...EXTENSION_COMMANDS, ...PERSISTENCE_COMMANDS].join('\n'));
+    }
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
