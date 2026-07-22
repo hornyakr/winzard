@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { PERSISTENCE_COMMANDS } from '../src/persistence/cli';
+import { PERSISTENCE_COMMANDS, runPersistenceCli } from '../src/persistence/cli';
 import { checkPersistenceDocumentation, generatePersistenceDocumentation } from '../src/persistence/docs';
 import { buildPersistenceInventory } from '../src/persistence/inventory';
 import { parsePrismaSchema } from '../src/persistence/schema';
@@ -47,6 +47,20 @@ describe('Forge persistence platform', () => {
     expect(inventory.repositories[0]?.definition?.id).toBe('catalog.product');
     expect(inventory.issues.filter(({ severity }) => severity === 'error')).toEqual([]);
     expect(inventory.issues).toContainEqual(expect.objectContaining({ code: 'PERSISTENCE_QUERY_PLAN_MISSING' }));
+  });
+
+  it('a database:about JSON nem tartalmaz gépfüggő abszolút rootot', async () => {
+    const root = await copyFixture();
+    const output: string[] = [];
+    const original = console.log;
+    console.log = (value?: unknown) => { output.push(String(value)); };
+    try {
+      expect(await runPersistenceCli(['database:about', '--project', root, '--json'])).toBe(true);
+    } finally {
+      console.log = original;
+    }
+    const result = JSON.parse(output.at(-1) ?? '{}') as { inventory?: Record<string, unknown> };
+    expect(result.inventory).not.toHaveProperty('root');
   });
 
   it('generált evidence driftet észlel', async () => {
