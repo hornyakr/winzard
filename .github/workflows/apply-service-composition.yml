@@ -1,3 +1,4 @@
+# Activated through a contents commit so the branch push event is emitted.
 name: Apply service composition development
 
 on:
