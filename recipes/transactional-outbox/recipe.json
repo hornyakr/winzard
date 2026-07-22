@@ -10,7 +10,13 @@
     "prisma-postgresql"
   ],
   "files": [
-    "src/platform/messaging/outbox.ts"
+    "prisma/migrations/20260722130000_event_messaging/migration.sql",
+    "prisma/schema.prisma",
+    "src/composition/messaging.composition.definition.ts",
+    "src/composition/messaging.server.ts",
+    "src/platform/messaging/outbox.repository.definition.ts",
+    "src/platform/messaging/outbox.ts",
+    "src/platform/messaging/prisma-outbox.repository.ts"
   ],
   "generated": [],
   "dependencies": {
