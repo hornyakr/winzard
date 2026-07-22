@@ -15,7 +15,16 @@
     "db:validate": "prisma validate",
     "db:generate": "prisma generate",
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "db:check": "forge database:check",
+    "db:connections": "forge database:connections",
+    "db:schema": "forge schema:list",
+    "db:schema:docs": "forge schema:docs",
+    "db:migrations": "forge migration:list",
+    "db:migrations:check": "forge migration:check",
+    "db:repositories": "forge repository:list",
+    "db:repositories:check": "forge repository:check",
+    "db:query-plans": "forge query:plans"
   },
   "winzard": {
     "schemaVersion": 1,
