@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/home/runner/work/winzard/winzard/tools/apply-service-composition.py", line 2376, in <module>
+    main()
+  File "/home/runner/work/winzard/winzard/tools/apply-service-composition.py", line 2362, in main
+    write_docs()
+  File "/home/runner/work/winzard/winzard/tools/apply-service-composition.py", line 2340, in write_docs
+    document = gzip.decompress(base64.b64decode(encoded)).decode('utf-8')
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/base64.py", line 88, in b64decode
+    return binascii.a2b_base64(s, strict_mode=validate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+binascii.Error: Invalid base64-encoded string: number of data characters (51665) cannot be 1 more than a multiple of 4
