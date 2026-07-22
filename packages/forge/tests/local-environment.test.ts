@@ -29,6 +29,13 @@ async function writeExample(root: string, projectRoot: string, value: string): P
   await writeFile(path.join(directory, '.env.example'), `APP_NAME=${value}\n`, 'utf8');
 }
 
+function expectCanonicalServerActionKey(key: string): void {
+  const decoded = Buffer.from(key, 'base64');
+  expect(key).toMatch(/^[A-Za-z0-9+/]{43}=$/u);
+  expect(decoded.byteLength).toBe(32);
+  expect(decoded.toString('base64')).toBe(key);
+}
+
 describe('local environment bootstrap', () => {
   it('friss checkoutnál létrehozza a hiányzó, ignored lokális env fájlokat', async () => {
     const root = await fixture();
@@ -64,12 +71,34 @@ describe('local environment bootstrap', () => {
       projectRoots: [projectRoot],
     });
     const environment = parse(await readFile(path.join(directory, '.env.local'), 'utf8'));
-    const key = environment.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY ?? '';
-    const decoded = Buffer.from(key, 'base64');
 
-    expect(key).toMatch(/^[A-Za-z0-9+/]{43}=$/u);
-    expect(decoded.byteLength).toBe(32);
-    expect(decoded.toString('base64')).toBe(key);
+    expectCanonicalServerActionKey(environment.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY ?? '');
+  });
+
+  it('a korábbi ismert placeholdert javítja, más lokális értéket megőriz', async () => {
+    const root = await fixture();
+    const projectRoot = 'apps/reference';
+    const directory = path.join(root, projectRoot);
+    await writeExample(root, projectRoot, 'Example');
+    await writeFile(
+      path.join(directory, '.env.local'),
+      [
+        'APP_NAME=Custom',
+        'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=<generate-32-byte-base64-server-action-key>',
+        '',
+      ].join('\n'),
+      'utf8',
+    );
+
+    await expect(setupLocalEnvironment({
+      repositoryRoot: root,
+      environment: {},
+      projectRoots: [projectRoot],
+    })).resolves.toEqual([path.join(projectRoot, '.env.local')]);
+    const environment = parse(await readFile(path.join(directory, '.env.local'), 'utf8'));
+
+    expect(environment.APP_NAME).toBe('Custom');
+    expectCanonicalServerActionKey(environment.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY ?? '');
   });
 
   it('nem írja felül a fejlesztő meglévő lokális konfigurációját', async () => {
