@@ -56,22 +56,18 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Capture documentation commands
+      - name: Capture view commands
         shell: bash
         run: |
           set +e
-          project=packages/forge/tests/fixtures/documented-project
-          pnpm forge check --project "$project" > docs-project-check.log 2>&1; echo $? > docs-project-check.status
-          pnpm forge docs:check --project "$project" > docs-check.log 2>&1; echo $? > docs-check.status
-          pnpm forge docs:generate --check --project "$project" > docs-generate.log 2>&1; echo $? > docs-generate.status
-          pnpm forge docs:sync --check --project "$project" > docs-sync.log 2>&1; echo $? > docs-sync.status
-          pnpm forge docs:adapters --check --project "$project" > docs-adapters.log 2>&1; echo $? > docs-adapters.status
-          pnpm forge context:check ATLAS-TASK-0001 --project "$project" > docs-context.log 2>&1; echo $? > docs-context.status
+          pnpm forge view:check --project apps/reference > view-check.log 2>&1; echo $? > view-check.status
+          pnpm forge view:contracts --check --project apps/reference > view-contracts.log 2>&1; echo $? > view-contracts.status
+          pnpm forge view:assets --check --project apps/reference > view-assets.log 2>&1; echo $? > view-assets.status
           exit 0
       - uses: actions/upload-artifact@v4
         with:
-          name: stage-3-documentation-diagnostics
+          name: stage-3-view-diagnostics
           path: |
-            docs-*.log
-            docs-*.status
+            view-*.log
+            view-*.status
           if-no-files-found: error
