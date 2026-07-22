@@ -29,6 +29,7 @@ The matrix includes:
 - Prisma schema validation and client generation;
 - PostgreSQL migration deployment;
 - persistence inventory and generated-evidence checks;
+- PostgreSQL query-plan drift verification;
 - PostgreSQL integration tests;
 - runtime read-only and network-boundary tests;
 - reproducible artifact comparison.
@@ -55,23 +56,33 @@ The fixture now supplies an explicit `availableAt` before the fixed claim time. 
 
 ### Diagnostic artifact scoping
 
-The Persistence workflow now records type-check and integration-test output only when the corresponding step fails. Diagnostic artifacts do not run for unrelated downstream failures.
+The Persistence workflow now records type-check, query-plan and integration-test output only when the corresponding step fails. Diagnostic artifacts do not run for unrelated downstream failures.
 
 ### Portable JSON output
 
 `database:about --json` no longer exposes the machine-specific absolute project root. A regression test verifies that the serialized inventory omits the filesystem root while retaining schema, migration, repository, query-plan, issue and fingerprint data.
 
+### Missing query-plan evidence
+
+The outbox repository contract requires `OutboxMessage_status_availableAt_idx` for `claim-batch`, but the initial template had no execution-plan evidence. This left a project-level persistence warning even though the error-only CI gate passed.
+
+A PostgreSQL 18.4 capture now loads a deterministic 10,000-row fixture, runs `ANALYZE`, and explains the bounded `FOR UPDATE SKIP LOCKED` candidate query. The captured plan uses an `Index Scan` on `OutboxMessage_status_availableAt_idx` and is committed with query and plan fingerprints.
+
+Every Persistence workflow run reconstructs the same plan and verifies the committed query fingerprint, plan hash and index set. Plan drift fails CI.
+
 ## PostgreSQL coverage
 
-The dedicated integration suite verifies:
+The dedicated integration and evidence suites verify:
 
 - tagged, read-only readiness;
 - rollback without partial outbox state;
 - bounded and ordered `FOR UPDATE SKIP LOCKED` claiming;
-- transaction-safe inbox idempotency through `createMany({ skipDuplicates: true })`.
+- transaction-safe inbox idempotency through `createMany({ skipDuplicates: true })`;
+- actual use of `OutboxMessage_status_availableAt_idx` by the claim query;
+- stable query and plan fingerprints on PostgreSQL 18.4.
 
 ## Merge gate
 
-Stage 3 is complete only when the final branch head has no failed or pending GitHub Actions jobs, the branch is not behind `main`, and the pull request remains mergeable.
+Stage 3 is complete only when the final branch head has no failed or pending GitHub Actions jobs, no project-level persistence error or warning remains, the branch is not behind `main`, and the pull request remains mergeable.
 
 The pull request must remain draft and unmerged at the end of this stage. Stage 4 requires separate explicit approval.
