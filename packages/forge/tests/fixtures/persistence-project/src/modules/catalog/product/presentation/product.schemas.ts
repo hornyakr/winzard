@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const productIdSchema = z.uuid();
+export const productIdSchema = z.string().uuid();
 
 export const updateProductSchema = z.object({
   name: z.string().trim().min(1).max(200),
