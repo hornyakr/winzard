@@ -49,7 +49,20 @@ jobs:
           cat tools/apply-service-composition.py.gz.b64.part* \
             | base64 -d \
             | gzip -d > tools/apply-service-composition.py
-          python tools/apply-service-composition.py
+          set +e
+          python tools/apply-service-composition.py > /tmp/service-composition-apply.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            cp /tmp/service-composition-apply.log tools/service-composition-apply-error.log
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add tools/service-composition-apply-error.log
+            git commit -m "chore: capture service composition apply failure"
+            git push origin HEAD:agent/service-composition-platform
+            cat /tmp/service-composition-apply.log
+            exit "$status"
+          fi
 
       - name: Install dependencies for deterministic generation
         run: pnpm install --frozen-lockfile
