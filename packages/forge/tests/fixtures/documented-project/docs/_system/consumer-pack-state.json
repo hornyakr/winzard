@@ -16,11 +16,11 @@
     },
     {
       "file": "manifest/source-manifest.json",
-      "sha256": "sha256:34bba6305bee5660088542fe8c68068951b1da9ddb84163bcff0c8623933cbe5"
+      "sha256": "sha256:b9b701d5e6c7220fc507b1b1293f913d045299e1a326ad1005e24abe8553cca7"
     },
     {
       "file": "manifest/source-manifest.md",
-      "sha256": "sha256:ac7a2648c879bffecd2e4b6f325c7f08480284bd6cf771211f9578f301b2ee78"
+      "sha256": "sha256:77ade9762c4bfe8ef26f6a7b4d18c2bc9bcd3a72f08e1dd9d97ec9af273b445d"
     },
     {
       "file": "manifest/winzard-version.md",
@@ -28,7 +28,7 @@
     },
     {
       "file": "platform-contracts/WZ-CONTRACT-COMPOSITION-001.md",
-      "sha256": "sha256:04725634026f7810379570aa904d823de4f5b7a96d164a812b869478a713a246"
+      "sha256": "sha256:2766f708b23f651a061f9fe1a35d2d62999af72e75db0ee3f0704a016fa0f96b"
     },
     {
       "file": "platform-contracts/WZ-CONTRACT-CONFIGURATION-001.md",
@@ -61,6 +61,10 @@
     {
       "file": "platform-contracts/WZ-CONTRACT-MODULES-001.md",
       "sha256": "sha256:8b20a96923ec03e3197f492e2f68a120de4a83e56da171be574171830c8a1faf"
+    },
+    {
+      "file": "platform-contracts/WZ-EVIDENCE-COMPOSITION-001.md",
+      "sha256": "sha256:74b2beaa64c5efd559962f60394d40fb05d7b12873d07aeff4c70445b421f819"
     }
   ]
 }

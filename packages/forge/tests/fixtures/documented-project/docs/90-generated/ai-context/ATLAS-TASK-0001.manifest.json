@@ -5,7 +5,7 @@
   "generatedAt": "2026-07-17",
   "documentationContractVersion": 1,
   "generatorVersion": "0.1.0",
-  "contextSha256": "sha256:9d2dcf365997b2ea26f34928c092b0c976a3388198dcb07a01122573c169f0bf",
+  "contextSha256": "sha256:6d546228f84183989f4fb9e64df32e367fb76681f00a44d6a5a2b36c9599f0c1",
   "sourceDocuments": [
     {
       "id": "ATLAS-TASK-0001",
@@ -23,7 +23,7 @@
       "id": "WZ-CONTRACT-COMPOSITION-001",
       "file": "docs/80-winzard/platform-contracts/WZ-CONTRACT-COMPOSITION-001.md",
       "reason": "required",
-      "sourceHash": "sha256:04725634026f7810379570aa904d823de4f5b7a96d164a812b869478a713a246"
+      "sourceHash": "sha256:2766f708b23f651a061f9fe1a35d2d62999af72e75db0ee3f0704a016fa0f96b"
     },
     {
       "id": "WZ-CONTRACT-CONFIGURATION-001",

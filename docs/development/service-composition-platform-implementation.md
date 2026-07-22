@@ -44,6 +44,10 @@ injection.
 
 ## Verification status
 
-The implementation and tests are authored in the development phase. The full
-repository, template, database, build, E2E, runtime-security and reproducibility
-gates run in the separate testing-and-repair phase before merge.
+The complete Stage 3 verification matrix passed on 2026-07-22. Type generation,
+strict type-checking, lint, 174 unit tests, documentation and Forge contract gates,
+minimal and webapp template builds, reference production build and E2E, PostgreSQL
+migration deployment, read-only runtime security and canonical two-build
+reproducibility all completed successfully. The result is recorded in
+`docs/development/service-composition-verification.md` and
+`WZ-EVIDENCE-COMPOSITION-001`. No merge to `main` occurred during verification.
