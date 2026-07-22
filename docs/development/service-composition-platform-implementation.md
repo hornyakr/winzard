@@ -13,7 +13,7 @@ generated evidence and a reusable recipe.
 - deterministic service, root, dependency, alias, decorator and lifetime inventory;
 - missing/ambiguous binding, cycle, lifetime, runtime and server-only checks;
 - static generated registry, graph manifest and source-hash manifest;
-- startup validation and concrete composition-root import smoke through `instrumentation.ts`;
+- startup validation and runtime-compatible concrete composition-root import smoke through `instrumentation.ts`; Edge-only roots remain build- and contract-validated without entering the Node startup graph;
 - canonical secret-free composition fingerprint and `COMPOSITION_HASH` pinning;
 - typed multiple binding and decorator example in the reference application;
 - deterministic Markdown evidence and drift checks;

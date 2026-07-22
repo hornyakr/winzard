@@ -104,6 +104,7 @@ export async function validateComposition(
   };
   for (const id of [...services.keys()].sort()) visit(id, []);
 
+  const startupRoots = value.roots.filter(({ runtime }) => runtime !== 'edge');
   const fingerprint = compositionFingerprint(value.roots, value.services);
   if (value.fingerprint !== fingerprint || generatedCompositionFingerprint !== fingerprint) {
     throw new CompositionValidationError('COMPOSITION_FINGERPRINT_DRIFT', 'A generated graph és registry fingerprintje eltér.');
@@ -111,13 +112,18 @@ export async function validateComposition(
   if (
     generatedCompositionRegistry.length !== value.services.length ||
     generatedCompositionRoots.length !== value.roots.length ||
-    generatedCompositionRootInstances.length !== value.roots.length
+    generatedCompositionRootInstances.length !== startupRoots.length
   ) {
     throw new CompositionValidationError('COMPOSITION_REGISTRY_DRIFT', 'A generated registry és graph manifest elemszáma eltér.');
   }
-  for (const [index, root] of value.roots.entries()) {
-    if (generatedCompositionRootInstances[index]?.id !== root.id) {
-      throw new CompositionValidationError('COMPOSITION_ROOT_SMOKE_FAILED', `A generated composition root binding eltér: ${root.id}.`);
+  for (const [index, root] of startupRoots.entries()) {
+    const binding = generatedCompositionRootInstances[index];
+    const validValue = binding && (
+      typeof binding.value === 'function' ||
+      (typeof binding.value === 'object' && binding.value !== null)
+    );
+    if (binding?.id !== root.id || !validValue) {
+      throw new CompositionValidationError('COMPOSITION_ROOT_SMOKE_FAILED', `A generated runtime-kompatibilis composition root binding érvénytelen: ${root.id}.`);
     }
   }
   const expected = input.COMPOSITION_HASH?.trim();

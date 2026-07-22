@@ -19,11 +19,12 @@ function rootBinding(index: number): string {
 }
 
 function registry(inventory: CompositionInventory): string {
-  const imports = inventory.roots
+  const startupRoots = inventory.roots.filter(({ runtime }) => runtime !== 'edge');
+  const imports = startupRoots
     .map((root, index) =>
       `import { ${root.exportName} as ${rootBinding(index)} } from ${JSON.stringify(rootImportSpecifier(root.source))};`)
     .join('\n');
-  const instances = inventory.roots
+  const instances = startupRoots
     .map((root, index) =>
       `  Object.freeze({ id: ${JSON.stringify(root.id)}, value: ${rootBinding(index)} }),`)
     .join('\n');

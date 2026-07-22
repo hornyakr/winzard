@@ -107,6 +107,27 @@ export const catalog = defineComposition({
     ]));
   });
 
+  it('a Node startup registry nem importál Edge-only composition rootot', async () => {
+    const root = await fixture();
+    await file(root, 'src/composition/edge.server.ts', "import 'server-only'; export const edgeApplication = Object.freeze({});\n");
+    await file(root, 'src/modules/catalog/application/edge-query.ts', 'export class EdgeQuery {}\n');
+    await file(root, 'src/composition/edge.composition.definition.ts', `
+export const edge = defineComposition({
+  schemaVersion: 1,
+  id: 'edge',
+  capability: 'service-composition',
+  roots: [{ id: 'edge.root', source: 'src/composition/edge.server.ts', export: 'edgeApplication', runtime: 'edge', services: ['edge.query'] }],
+  services: [
+    { id: 'edge.query', kind: 'application', implementation: 'EdgeQuery', source: 'src/modules/catalog/application/edge-query.ts', export: 'EdgeQuery', lifetime: 'process', runtime: 'edge', visibility: 'public', dependencies: [] },
+  ],
+});
+`);
+    await generateComposition(root);
+    const registry = await readFile(path.join(root, 'src/generated/composition/registry.ts'), 'utf8');
+    expect(registry).toContain('"runtime": "edge"');
+    expect(registry).not.toContain('edgeApplication as compositionRoot');
+  });
+
   it('generated artifactot és dokumentációt drift-checkel', async () => {
     const root = await fixture();
     await generateComposition(root);

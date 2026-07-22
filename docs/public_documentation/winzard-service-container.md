@@ -4433,6 +4433,8 @@ Promise<void> {
 - required external SDK construction;
 - health contract konfiguráció.
 
+A Node `instrumentation.ts` startup smoke csak `nodejs` és `universal` rootokat importálhat. Az Edge-only rootok a statikus graph-, runtime- és production build-ellenőrzésben validálódnak, de nem kerülhetnek be a Node startup module graphba.
+
 ### 59.2. Mit ne végezzen?
 
 - migration;
