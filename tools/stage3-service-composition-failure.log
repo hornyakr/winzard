@@ -1,0 +1,66 @@
+
+===== core (exit 1) =====
+$ pnpm typegen && pnpm typecheck && pnpm lint && pnpm test && pnpm verify:documentation && pnpm verify:routing && pnpm verify:delivery && pnpm verify:kernel && pnpm verify:kernel-configuration && pnpm verify:composition && pnpm verify:views && pnpm verify:configuration && pnpm forge check --project apps/reference && pnpm verify:minimal-template && pnpm build && pnpm test:e2e:reference
+$ next typegen apps/reference
+Generating route types...
+✓ Types generated successfully
+$ tsc -p tsconfig.json --noEmit && tsc -p apps/reference/tsconfig.json --noEmit && tsc -p packages/config/tsconfig.json --noEmit && tsc -p packages/forge/tsconfig.json --noEmit
+$ eslint . --max-warnings=0
+Pages directory cannot be found at /home/runner/work/winzard/winzard/pages or /home/runner/work/winzard/winzard/src/pages. If using a custom path, please configure with the `no-html-link-for-pages` rule in your eslint config file.
+$ vitest run
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/winzard/winzard[39m
+
+ [32m✓[39m apps/reference/tests/unit/platform/kernel-config/kernel-configuration.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/configuration.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 86[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/platform/http/http-kernel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/kernel-configuration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 112[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/composition.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 78[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/views.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 81[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/delivery.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 55[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/project.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 53[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/routing.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/kernel.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 131[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/platform/http/request-context.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/app/api/lucky/number/routing.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/platform/http/proxy.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/platform/http/delivery-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/get-lucky-number.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m packages/config/tests/app-env.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.actions.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m packages/forge/tests/documentation.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 2212[2mms[22m[39m
+     [33m[2m✓[22m[39m determinista, hash-elt context package-et állít elő elfogadott taskból [33m 333[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/platform/http/request-body.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.presenter.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/routing.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/composition.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/generate-lucky-number.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/platform/http/response-policy.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/modules/demo/lucky-number/node-crypto-random-integer-generator.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/app/api/lucky/number/route.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m apps/reference/tests/unit/platform/composition/composition.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m27 passed[39m[22m[90m (27)[39m
+[2m      Tests [22m [1m[32m174 passed[39m[22m[90m (174)[39m
+[2m   Start at [22m 11:41:17
+[2m   Duration [22m 3.00s[2m (transform 932ms, setup 0ms, import 2.98s, tests 3.12s, environment 2ms)[22m
+
+$ pnpm forge check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:generate --check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:sync --check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:adapters --check --project packages/forge/tests/fixtures/documented-project && pnpm forge context:check ATLAS-TASK-0001 --project packages/forge/tests/fixtures/documented-project
+$ tsx packages/forge/src/cli-router.ts check --project packages/forge/tests/fixtures/documented-project
+[DOC_GENERATED_DRIFT] docs/_system/consumer-pack-state.json: A consumer pack generálási state fájlja hiányzik vagy elavult.
+[DOC_GENERATED_DRIFT] docs/80-winzard/manifest/source-manifest.json: A consumer documentation pack hiányzik vagy eltér a telepített publikus contracttól.
+[DOC_FOREIGN_PROJECT_REFERENCE] docs/80-winzard/platform-contracts/WZ-CONTRACT-COMPOSITION-001.md: Más projektprefixre mutató kapcsolat: command:pnpm forge composition:check --project ..
+[DOC_FOREIGN_PROJECT_REFERENCE] docs/80-winzard/platform-contracts/WZ-CONTRACT-COMPOSITION-001.md: Más projektprefixre mutató kapcsolat: command:pnpm forge composition:generate --check --project ..
+[DOC_GENERATED_DRIFT] docs/80-winzard/platform-contracts/WZ-CONTRACT-COMPOSITION-001.md: A consumer documentation pack hiányzik vagy eltér a telepített publikus contracttól.
+FAIL: check (5 hiba)
+[ELIFECYCLE] Command failed with exit code 1.
+[ELIFECYCLE] Command failed with exit code 1.
+[ELIFECYCLE] Command failed with exit code 1.
+
+===== database (exit 1) =====
+$ pnpm forge check --project templates/webapp && pnpm forge env:check --project templates/webapp && pnpm db:validate:webapp && pnpm db:generate:webapp && pnpm verify:webapp-template && pnpm db:migrate:deploy:webapp
+$ tsx packages/forge/src/cli-router.ts check --project templates/webapp
+[COMPOSITION_MISSING_SERVER_ONLY] src/composition/platform.composition.definition.ts: A composition root fájlnak explicit server-only határt kell deklarálnia.
+FAIL: check (1 hiba)
+[ELIFECYCLE] Command failed with exit code 1.
+[ELIFECYCLE] Command failed with exit code 1.
