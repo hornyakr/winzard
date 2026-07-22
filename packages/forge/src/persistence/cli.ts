@@ -61,7 +61,14 @@ export async function runPersistenceCli(args: readonly string[]): Promise<boolea
   const inventory = await buildPersistenceInventory(root);
 
   if (command === 'database:about') {
-    const portableInventory = { ...inventory, root: project.split(path.sep).join('/') };
+    const portableInventory = {
+      schema: inventory.schema,
+      migrations: inventory.migrations,
+      repositories: inventory.repositories,
+      queryPlans: inventory.queryPlans,
+      issues: inventory.issues,
+      fingerprint: inventory.fingerprint,
+    };
     print({ inventory: portableInventory }, json, renderDatabaseAbout(inventory));
     return true;
   }
