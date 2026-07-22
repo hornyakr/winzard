@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/apply-service-composition-contract-finalization.yml
       - tools/finalize-service-composition-contract.py
+      - tools/repair-service-composition-finalizer.py
 
 permissions:
   contents: write
@@ -38,6 +39,7 @@ jobs:
         shell: bash
         run: |
           rm -f tools/service-composition-contract-error.log
+          python tools/repair-service-composition-finalizer.py
           set +e
           python tools/finalize-service-composition-contract.py > /tmp/service-composition-contract.log 2>&1
           status=$?
@@ -52,6 +54,7 @@ jobs:
             cat /tmp/service-composition-contract.log
             exit "$status"
           fi
+          rm -f tools/repair-service-composition-finalizer.py
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
