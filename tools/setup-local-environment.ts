@@ -10,7 +10,10 @@ const defaultProjectRoots = Object.freeze([
 ] as const);
 
 const releaseStages = new Set(['preview', 'staging', 'production']);
-const serverActionEncryptionKeyLine = /^NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=[ \t]*$/mu;
+const unsafeLocalServerActionEncryptionKeyLine = new RegExp(
+  '^NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=(?:[ \\t]*|<generate-32-byte-base64-server-action-key>[ \\t]*)$',
+  'mu',
+);
 
 const externallyRequiredKeys = Object.freeze([
   'APP_URL',
@@ -45,7 +48,7 @@ function hasCompleteExternalApplicationEnvironment(
 
 function localEnvironmentContent(example: string, serverActionEncryptionKey: string): string {
   return example.replace(
-    serverActionEncryptionKeyLine,
+    unsafeLocalServerActionEncryptionKeyLine,
     `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${serverActionEncryptionKey}`,
   );
 }
@@ -66,10 +69,11 @@ export async function setupLocalEnvironment(
   }
 
   const serverActionEncryptionKey = randomBytes(32).toString('base64');
-  const createdFiles: string[] = [];
+  const preparedFiles: string[] = [];
   for (const projectRoot of options.projectRoots ?? defaultProjectRoots) {
     const examplePath = path.join(repositoryRoot, projectRoot, '.env.example');
     const localPath = path.join(repositoryRoot, projectRoot, '.env.local');
+    const relativeLocalPath = path.relative(repositoryRoot, localPath);
     try {
       const example = await readFile(examplePath, 'utf8');
       await writeFile(
@@ -77,20 +81,25 @@ export async function setupLocalEnvironment(
         localEnvironmentContent(example, serverActionEncryptionKey),
         { encoding: 'utf8', flag: 'wx' },
       );
-      createdFiles.push(path.relative(repositoryRoot, localPath));
+      preparedFiles.push(relativeLocalPath);
     } catch (error) {
-      if (errorCode(error) === 'EEXIST') continue;
-      throw error;
+      if (errorCode(error) !== 'EEXIST') throw error;
+      const existing = await readFile(localPath, 'utf8');
+      const repaired = localEnvironmentContent(existing, serverActionEncryptionKey);
+      if (repaired !== existing) {
+        await writeFile(localPath, repaired, 'utf8');
+        preparedFiles.push(relativeLocalPath);
+      }
     }
   }
 
-  return Object.freeze(createdFiles);
+  return Object.freeze(preparedFiles);
 }
 
 async function main(): Promise<void> {
-  const createdFiles = await setupLocalEnvironment();
-  if (createdFiles.length > 0) {
-    process.stdout.write(`Created local environment files: ${createdFiles.join(', ')}\n`);
+  const preparedFiles = await setupLocalEnvironment();
+  if (preparedFiles.length > 0) {
+    process.stdout.write(`Prepared local environment files: ${preparedFiles.join(', ')}\n`);
   }
 }
 
