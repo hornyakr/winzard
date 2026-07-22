@@ -42,7 +42,7 @@ A cél nem a Symfony container API másolása. A cél a Symfony container által
 A Winzardban a Next.js továbbra is HTTP-, routing-, rendering- és UI-runtime. A composition layer nem új framework-runtime, hanem az alkalmazás objektumgráfjának típusos összeállítási helye.
 
 > [!IMPORTANT]
-> A dokumentumban szereplő `forge composition:*`, `forge service:*` és `forge graph:*` parancsok egy része **cél-CLI szerződés**. Egy parancs csak akkor tekinthető implementáltnak, ha a repository Forge CLI-je ténylegesen listázza és teszteli. A jelenleg használható alapellenőrzések a `pnpm typecheck`, `pnpm test`, `pnpm forge check --project ...` és `pnpm build`.
+> A dokumentumban szereplő `forge composition:*` és `forge service:*` parancsok ebben a repository-verzióban implementált CLI-felületek. A későbbi `forge graph:*` bővítések továbbra is cél-CLI szerződések. Az implementált composition parancsokat a Forge ténylegesen listázza, teszteli, és a `verify:composition` kapuban ellenőrzi.
 
 A fejezet végére egy fejlesztő:
 
@@ -130,7 +130,7 @@ A fejezet végére egy fejlesztő:
 68. [Migráció ad hoc kódból](#section-68)
 69. [Teljes vertikális példa](#section-69)
 70. [Ajánlott könyvtárstruktúra](#section-70)
-71. [Forge célparancsok](#section-71)
+71. [Forge composition- és service-parancsok](#section-71)
 72. [Implementációs elfogadási kritériumok](#section-72)
 73. [Hibaelhárítás](#section-73)
 74. [Symfony–Winzard megfeleltetés](#section-74)
@@ -4470,17 +4470,18 @@ Ne feltételezd, hogy minden runtime secret build során elérhető.
 
 A Symfony `lint:container` megfelelője több ellenőrzésből áll.
 
-### 60.1. Jelenlegi alap
+### 60.1. Alap repository-ellenőrzések
 
 ```bash
 pnpm typecheck
 pnpm lint
 pnpm test
 pnpm forge check --project .
+pnpm verify:composition
 pnpm build
 ```
 
-### 60.2. Célparancsok
+### 60.2. Implementált composition-diagnosztika
 
 ```bash
 pnpm forge composition:list
@@ -5551,7 +5552,7 @@ Generated composition output külön könyvtárban, kézi módosítás nélkül.
 
 <a id="section-71"></a>
 
-## 71. Forge célparancsok
+## 71. Forge composition- és service-parancsok
 
 ### 71.1. Lista
 
@@ -5609,15 +5610,16 @@ pnpm forge service:lifetimes   --project .
 
 ### 71.10. Státusz
 
-Ezek célparancsok. A jelenlegi stabil ellenőrzési minimum:
+A 71.1–71.9 alatt felsorolt composition- és service-parancsok implementáltak. A repository és a template-ek stabil composition kapuja:
 
 ```bash
-pnpm typecheck
-pnpm lint
-pnpm test
-pnpm forge check --project .
-pnpm build
+pnpm verify:composition
+pnpm forge composition:generate --check --project apps/reference
+pnpm forge composition:check --resolve-config --project apps/reference
+pnpm forge composition:docs --check --project apps/reference
 ```
+
+A teljes release-ellenőrzés ezek mellett továbbra is futtatja a typecheck, lint, unit, build, E2E és template kapukat.
 
 
 ---
@@ -5788,7 +5790,7 @@ haladj service-enként, majd szűkítsd a locator API-t, végül töröld.
 | Factory service | TypeScript factory | Sync vagy async |
 | Service locator | Szűk typed registry kivételesen | Generic locator tiltott |
 | Compiler pass | Forge build-time generator/check | Determinisztikus output |
-| `debug:container` | `composition:list/inspect/why` célparancs | Redaktált |
+| `debug:container` | `composition:list/inspect/why` implementált parancs | Redaktált |
 | `lint:container` | typecheck + composition check + tests | CI gate |
 | `When` / `WhenNot` | capability/stage composition | Explicit graph |
 | Container compile | TypeScript build és generated graph validation | Nincs runtime PHP container cache |
@@ -5855,7 +5857,7 @@ docs/public_documentation/winzard-http-kernel.md
 ### 75.6. Ellenőrzési dátum
 
 ```text
-2026-07-19
+2026-07-22
 ```
 
 A következő elemek változhatnak, ezért dokumentációfrissítéskor újra ellenőrizendők:

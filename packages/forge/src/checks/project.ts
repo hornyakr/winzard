@@ -554,7 +554,7 @@ export async function runProjectChecks(root = process.cwd()): Promise<readonly C
       .map(({ code, file, message }) => ({ code, file, message })));
   }
   if (enabled.has('service-composition')) {
-    const composition = await buildCompositionInventory(root);
+    const composition = await buildCompositionInventory(root, { resolveConfig: true });
     failures.push(...composition.issues
       .filter(({ severity }) => severity === 'error')
       .map(({ code, file, message }) => ({ code, file, message })));

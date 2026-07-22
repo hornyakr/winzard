@@ -86,6 +86,10 @@ export type CompositionIssue = Readonly<{
   serviceId?: string;
 }>;
 
+export type CompositionInventoryOptions = Readonly<{
+  resolveConfig?: boolean;
+}>;
+
 export type CompositionInventory = Readonly<{
   schemaVersion: 1;
   projectRoot: '.';

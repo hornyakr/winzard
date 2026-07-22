@@ -1,6 +1,9 @@
 import { access, readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 
+import { configurationDefinitionsForManifest } from '../configuration/catalog';
+import { loadProjectManifest } from '../manifest';
+
 import {
   COMPOSITION_KINDS,
   COMPOSITION_LIFETIMES,
@@ -8,6 +11,7 @@ import {
   COMPOSITION_VISIBILITIES,
   type CompositionDefinitionRecord,
   type CompositionInventory,
+  type CompositionInventoryOptions,
   type CompositionIssue,
   type CompositionIssueArea,
   type CompositionKind,
@@ -385,8 +389,54 @@ async function sourceIssues(
   return Object.freeze(issues);
 }
 
+async function configurationReferenceIssues(
+  root: string,
+  services: readonly CompositionServiceRecord[],
+): Promise<readonly CompositionIssue[]> {
+  const referencedKeys = new Set(
+    services.flatMap((service) => [...service.configKeys, ...service.secretKeys]),
+  );
+  if (referencedKeys.size === 0) return Object.freeze([]);
+
+  const manifestResult = await loadProjectManifest(root);
+  if (!manifestResult.manifest) {
+    return Object.freeze(manifestResult.failures.map(({ file, message }) =>
+      issue('security', 'COMPOSITION_CONFIG_MANIFEST_INVALID', file, message)));
+  }
+
+  const definitions = new Map(
+    configurationDefinitionsForManifest(manifestResult.manifest)
+      .map((definition) => [definition.key, definition] as const),
+  );
+  const issues: CompositionIssue[] = [];
+  for (const service of services) {
+    const configSet = new Set(service.configKeys);
+    for (const key of service.configKeys) {
+      const definition = definitions.get(key);
+      if (!definition) {
+        issues.push(issue('security', 'COMPOSITION_CONFIG_MISSING', service.definitionFile, `A ${service.id} nem deklarált konfigurációs kulcsot használ: ${key}.`, service.id));
+      } else if (definition.classification === 'secret') {
+        issues.push(issue('security', 'COMPOSITION_SECRET_EXPOSED', service.definitionFile, `A ${service.id} secret kulcsot configKeys mezőben deklarál: ${key}.`, service.id));
+      }
+    }
+    for (const key of service.secretKeys) {
+      const definition = definitions.get(key);
+      if (!definition) {
+        issues.push(issue('security', 'COMPOSITION_CONFIG_MISSING', service.definitionFile, `A ${service.id} nem deklarált secret kulcsot használ: ${key}.`, service.id));
+      } else if (definition.classification !== 'secret') {
+        issues.push(issue('security', 'COMPOSITION_SECRET_CLASSIFICATION_INVALID', service.definitionFile, `A ${service.id} nem secret konfigurációt secretKeys mezőben deklarál: ${key}.`, service.id));
+      }
+      if (configSet.has(key)) {
+        issues.push(issue('security', 'COMPOSITION_SECRET_EXPOSED', service.definitionFile, `A ${service.id} ugyanazt a kulcsot config- és secret-dependencyként is deklarálja: ${key}.`, service.id));
+      }
+    }
+  }
+  return Object.freeze(issues);
+}
+
 export async function buildCompositionInventory(
   root = process.cwd(),
+  options: CompositionInventoryOptions = {},
 ): Promise<CompositionInventory> {
   const absoluteRoot = path.resolve(root);
   const files = await collect(path.join(absoluteRoot, 'src'));
@@ -419,6 +469,9 @@ export async function buildCompositionInventory(
   }
   issues.push(...graphIssues(roots, services));
   issues.push(...await sourceIssues(absoluteRoot, roots, services, files));
+  if (options.resolveConfig) {
+    issues.push(...await configurationReferenceIssues(absoluteRoot, services));
+  }
   const orderedDefinitions = Object.freeze([...definitions].sort((left, right) => left.id.localeCompare(right.id)));
   const orderedRoots = Object.freeze([...roots].sort((left, right) => left.id.localeCompare(right.id)));
   const orderedServices = Object.freeze([...services].sort((left, right) => left.id.localeCompare(right.id)));

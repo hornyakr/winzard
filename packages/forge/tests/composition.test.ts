@@ -78,6 +78,35 @@ export const catalog = defineComposition({
     ]));
   });
 
+  it('resolve-config módban ellenőrzi a config- és secret-tulajdonlást', async () => {
+    const root = await fixture();
+    await file(root, 'package.json', `${JSON.stringify({
+      name: 'composition-fixture',
+      private: true,
+      winzard: {
+        schemaVersion: 1,
+        profile: 'minimal',
+        capabilities: ['next-app', 'forge', 'kernel-configuration', 'service-composition'],
+      },
+    }, null, 2)}\n`);
+    await file(root, 'src/composition/catalog.composition.definition.ts', `
+export const catalog = defineComposition({
+  schemaVersion: 1,
+  id: 'catalog',
+  capability: 'service-composition',
+  roots: [{ id: 'catalog.root', source: 'src/composition/app.server.ts', export: 'application', runtime: 'nodejs', services: ['catalog.query'] }],
+  services: [
+    { id: 'catalog.query', kind: 'application', implementation: 'Query', source: 'src/modules/catalog/application/query.ts', export: 'Query', lifetime: 'process', runtime: 'nodejs', visibility: 'public', dependencies: [], configKeys: ['UNKNOWN_CONFIG', 'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY'] },
+  ],
+});
+`);
+    const codes = (await buildCompositionInventory(root, { resolveConfig: true })).issues.map(({ code }) => code);
+    expect(codes).toEqual(expect.arrayContaining([
+      'COMPOSITION_CONFIG_MISSING',
+      'COMPOSITION_SECRET_EXPOSED',
+    ]));
+  });
+
   it('generated artifactot és dokumentációt drift-checkel', async () => {
     const root = await fixture();
     await generateComposition(root);

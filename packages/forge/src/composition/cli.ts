@@ -89,7 +89,9 @@ export async function runCompositionCli(args: readonly string[]): Promise<boolea
     return true;
   }
 
-  const inventory = await buildCompositionInventory(root);
+  const inventory = await buildCompositionInventory(root, {
+    resolveConfig: flag('--resolve-config'),
+  });
   if (command === 'composition:list') {
     console.log(json ? JSON.stringify(inventory, null, 2) : renderCompositionList(inventory));
   } else if (command === 'composition:inspect') {

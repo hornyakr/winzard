@@ -62,7 +62,7 @@ export async function generateCompositionDocumentation(
   root = process.cwd(),
 ): Promise<readonly string[]> {
   const absoluteRoot = path.resolve(root);
-  const files = expected(await buildCompositionInventory(absoluteRoot));
+  const files = expected(await buildCompositionInventory(absoluteRoot, { resolveConfig: true }));
   const directory = path.join(absoluteRoot, 'docs/90-generated/composition');
   await mkdir(directory, { recursive: true });
   const written: string[] = [];
@@ -77,7 +77,7 @@ export async function checkCompositionDocumentation(
   root = process.cwd(),
 ): Promise<readonly CompositionIssue[]> {
   const absoluteRoot = path.resolve(root);
-  const files = expected(await buildCompositionInventory(absoluteRoot));
+  const files = expected(await buildCompositionInventory(absoluteRoot, { resolveConfig: true }));
   const issues: CompositionIssue[] = [];
   for (const [name, content] of Object.entries(files)) {
     const file = `docs/90-generated/composition/${name}`;
