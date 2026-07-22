@@ -6,7 +6,7 @@ on:
     paths: [.github/workflows/stage3-config-diagnostic.yml]
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   NEXT_TELEMETRY_DISABLED: '1'
@@ -47,7 +47,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
+          ref: agent/service-composition-platform
       - uses: pnpm/action-setup@v4
         with: { version: 11.13.1 }
       - uses: actions/setup-node@v6
@@ -59,12 +61,16 @@ jobs:
         shell: bash
         run: |
           set +e
-          pnpm verify:configuration > configuration.log 2>&1
-          echo $? > configuration.status
-          exit 0
-      - uses: actions/upload-artifact@v4
-        with:
-          name: stage3-configuration-diagnostic
-          path: |
-            configuration.log
-            configuration.status
+          pnpm verify:configuration > tools/stage3-configuration.log 2>&1
+          status=$?
+          set -e
+          printf '%s\n' "$status" > tools/stage3-configuration.status
+          cat tools/stage3-configuration.log
+      - name: Persist diagnostic and remove helper
+        run: |
+          rm -f .github/workflows/stage3-config-diagnostic.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "ci: record stage 3 configuration diagnostics"
+          git push origin HEAD:agent/service-composition-platform
