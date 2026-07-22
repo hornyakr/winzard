@@ -71,7 +71,7 @@ export async function buildCapabilityGraph(projectRoot: string, candidates: read
   for (const extension of state.extensions) extensionMap.set(extension.name, installedNode(extension));
   for (const extension of candidates) extensionMap.set(extension.name, candidateNode(extension));
   const extensions = [...extensionMap.values()].sort((left, right) => left.name.localeCompare(right.name));
-  const projectCapabilities = new Set(project.manifest?.capabilities ?? []);
+  const projectCapabilities = new Set<string>(project.manifest?.capabilities ?? []);
   const installedCapabilities = new Set([...projectCapabilities, ...state.extensions.flatMap((item) => item.capabilities)]);
   const providers = new Map<string, Set<string>>();
   const requiredBy = new Map<string, Set<string>>();
