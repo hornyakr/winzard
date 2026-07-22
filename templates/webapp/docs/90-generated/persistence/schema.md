@@ -1,6 +1,6 @@
 # Persistence schema inventory
 
-Inventory fingerprint: `df9d307deaafa20777072e062b123ca991d7d93701b4d23b9f6a0a2646bdcded`
+Inventory fingerprint: `b6573893efea12d7c14a2c22864cb63739588b521080cd3a6de380fc704022e8`
 Schema fingerprint: `6eaef4690ac6ab00e28d1b6ab4973ab94d99e09c1aaeec89e759e9c869f15f9b`
 Provider: `postgresql`
 
