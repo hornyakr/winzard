@@ -35,7 +35,23 @@ jobs:
           cache: pnpm
 
       - name: Finalize composition contract and CLI integration
-        run: python tools/finalize-service-composition-contract.py
+        shell: bash
+        run: |
+          rm -f tools/service-composition-contract-error.log
+          set +e
+          python tools/finalize-service-composition-contract.py > /tmp/service-composition-contract.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            cp /tmp/service-composition-contract.log tools/service-composition-contract-error.log
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add tools/service-composition-contract-error.log
+            git commit -m "chore: capture composition contract finalization failure"
+            git push origin HEAD:agent/service-composition-platform
+            cat /tmp/service-composition-contract.log
+            exit "$status"
+          fi
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
