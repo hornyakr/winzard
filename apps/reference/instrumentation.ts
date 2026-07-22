@@ -2,14 +2,16 @@ import type { Instrumentation } from 'next';
 
 export async function register(): Promise<void> {
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
-  const [configuration, kernel, composition] = await Promise.all([
+  const [configuration, kernel, composition, events] = await Promise.all([
     import('./src/platform/config/validate-server-config'),
     import('./src/platform/kernel-config/validate-kernel-config.server'),
     import('./src/platform/composition/validate-composition.server'),
+    import('./src/platform/events/validate-events.server'),
   ]);
   configuration.validateServerConfiguration();
   await kernel.validateKernelConfiguration();
   await composition.validateComposition();
+  await events.validateEventRegistry();
 }
 
 export const onRequestError: Instrumentation.onRequestError = async (

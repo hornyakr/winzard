@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { runProjectChecks } from './checks/project';
 import { COMPOSITION_COMMANDS } from './composition/cli';
+import { EVENT_COMMANDS } from './events/cli';
 import { diffConfiguration } from './configuration/diff';
 import { checkConfigurationDrift, findUnusedConfiguration } from './configuration/drift';
 import { buildConfigurationInventory, redactConfigurationRecord } from './configuration/inventory';
@@ -520,6 +521,7 @@ try {
     await import('./cli');
     console.log([
       ...COMPOSITION_COMMANDS,
+      ...EVENT_COMMANDS,
       'kernel-config:list',
       'kernel-config:inspect',
       'kernel-config:check',

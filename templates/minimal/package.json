@@ -22,7 +22,9 @@
       "http-kernel",
       "service-composition",
       "forge",
-      "presentation-contract"
+      "presentation-contract",
+      "event-dispatching",
+      "integration-messaging"
     ]
   },
   "dependencies": {

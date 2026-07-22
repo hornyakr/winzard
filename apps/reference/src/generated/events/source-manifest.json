@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "fingerprint": "ce6b3fcdb7b5285fc5116b493f044153ee950876b20db3ab669b1309b80c0fa4",
+  "sources": [
+    {
+      "file": "src/composition/application.event.definition.ts",
+      "sha256": "20d14ae147eb6e3ba4a5b4dbca49ad6f32862bf23e6976e984de2bdbf32a0a13"
+    }
+  ]
+}

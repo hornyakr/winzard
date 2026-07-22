@@ -30,7 +30,10 @@
       "modular-application",
       "liveness",
       "prisma-postgresql",
-      "database-readiness"
+      "database-readiness",
+      "event-dispatching",
+      "integration-messaging",
+      "transactional-outbox"
     ]
   },
   "dependencies": {

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "fingerprint": "ce6b3fcdb7b5285fc5116b493f044153ee950876b20db3ab669b1309b80c0fa4",
+  "events": [
+    {
+      "type": "com.winzard.demo.lucky-number.generated.v1",
+      "producer": "src/modules/demo/lucky-number/application/commands/generate-lucky-number.ts",
+      "handlers": []
+    },
+    {
+      "type": "demo.lucky-number.generated",
+      "producer": "src/modules/demo/lucky-number/application/commands/generate-lucky-number.ts",
+      "handlers": [
+        {
+          "id": "demo.lucky-number.generated.record-trace",
+          "phase": "observe"
+        }
+      ]
+    }
+  ]
+}

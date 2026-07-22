@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "name": "event-dispatching",
+  "provides": [
+    "event-dispatching",
+    "integration-messaging"
+  ],
+  "requires": [
+    "next-app",
+    "forge",
+    "kernel-configuration"
+  ],
+  "files": [
+    "src/platform/events/contract.ts",
+    "src/platform/events/aggregate-root.ts",
+    "src/platform/events/dispatcher.ts",
+    "src/platform/events/recording-trace.ts",
+    "src/platform/events/validate-events.server.ts",
+    "src/composition/application.event.definition.ts"
+  ],
+  "generated": [
+    "src/generated/events/registry.ts",
+    "src/generated/events/graph-manifest.json",
+    "src/generated/events/source-manifest.json",
+    "docs/90-generated/events/event-inventory.md",
+    "docs/90-generated/events/event-graph.md",
+    "docs/90-generated/events/handler-registry.md",
+    "docs/90-generated/events/security-status.md"
+  ],
+  "dependencies": {
+    "runtime": [
+      "server-only"
+    ],
+    "development": []
+  },
+  "events": {
+    "schemaVersion": 1,
+    "definitionPattern": "src/**/*.event.definition.ts"
+  },
+  "environment": [
+    "EVENT_REGISTRY_HASH"
+  ],
+  "configuration": [
+    {
+      "key": "EVENT_REGISTRY_HASH",
+      "owner": "event-dispatching",
+      "required": false,
+      "phase": "process-start",
+      "classification": "internal",
+      "rebuildRequired": false,
+      "restartRequired": true,
+      "type": "string[4,64]",
+      "example": "auto",
+      "description": "Opcionális deployment-elvárás a canonical event registry fingerprinthez.",
+      "introduced": "0.1.0",
+      "defaultValue": "auto"
+    }
+  ]
+}

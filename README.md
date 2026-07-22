@@ -120,6 +120,19 @@ pnpm forge composition:generate --check --project apps/reference
 pnpm forge composition:docs --check --project apps/reference
 ```
 
+## Események és tartós üzenetkezelés
+
+A `event-dispatching` capability immutable domain- és integration event contractokat, statikus handler registryt, determinisztikus sorrendet, Forge graphot és generated evidence-et biztosít. A `transactional-outbox` capability a PostgreSQL-profilban outbox-, inbox-, retry- és dead-letter contractot ad.
+
+```bash
+pnpm forge event:list --project apps/reference
+pnpm forge event:graph --format=mermaid --project apps/reference
+pnpm forge event:check --project apps/reference
+pnpm forge message:contracts --project apps/reference
+pnpm forge outbox:check --project templates/webapp
+pnpm verify:events
+```
+
 ## Opcionális PostgreSQL-profil
 
 A `templates/webapp` és a `recipes/prisma-postgresql` tartalmazza az opcionális Prisma/PostgreSQL képességet.
@@ -143,6 +156,7 @@ A root `build` kizárólag a referenciaalkalmazás Next.js buildjét futtatja. P
 ## Dokumentáció
 
 - [Service composition és dependency injection](docs/public_documentation/winzard-service-container.md)
+- [Események, handlerek és tartós üzenetkezelés](docs/public_documentation/winzard-event-dispatcher.md)
 - [Kernel-szintű konfiguráció](docs/public_documentation/winzard-kernel-configuration.md)
 - [HTTP-kernel és request–response lifecycle](docs/public_documentation/winzard-http-kernel.md)
 - [Konfiguráció Winzard alkalmazásokban](docs/public_documentation/winzard-configuration.md)
