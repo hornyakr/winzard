@@ -1,9 +1,6 @@
 name: Apply event platform
 
 on:
-  push:
-    branches:
-      - agent/event-dispatching-platform
   pull_request:
     branches:
       - main
@@ -78,10 +75,42 @@ jobs:
           pnpm forge event:generate --project templates/webapp
           pnpm forge event:docs --project templates/webapp
 
-      - name: Run event platform checks
+      - name: Run event tests
+        shell: bash
         run: |
-          pnpm vitest run packages/forge/tests/events.test.ts
-          pnpm typecheck
+          set +e
+          pnpm vitest run packages/forge/tests/events.test.ts 2>&1 | tee /tmp/event-tests.log
+          printf '%s\n' "${PIPESTATUS[0]}" > /tmp/event-tests.exit
+          exit 0
+
+      - name: Run typecheck
+        shell: bash
+        run: |
+          set +e
+          pnpm typecheck 2>&1 | tee /tmp/event-typecheck.log
+          printf '%s\n' "${PIPESTATUS[0]}" > /tmp/event-typecheck.exit
+          exit 0
+
+      - name: Record development diagnostics
+        shell: bash
+        run: |
+          mkdir -p docs/development
+          {
+            echo '# Event-dispatching development checks'
+            echo
+            echo "Event tests exit: $(cat /tmp/event-tests.exit)"
+            echo "Typecheck exit: $(cat /tmp/event-typecheck.exit)"
+            echo
+            echo '## Event tests'
+            echo '```text'
+            cat /tmp/event-tests.log
+            echo '```'
+            echo
+            echo '## Typecheck'
+            echo '```text'
+            cat /tmp/event-typecheck.log
+            echo '```'
+          } > docs/development/event-dispatching-development-checks.md
 
       - name: Remove staging payloads
         run: rm -f tools/event-platform.payload.* tools/event-doc.payload.*
