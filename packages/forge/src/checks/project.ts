@@ -58,6 +58,7 @@ const CAPABILITY_REQUIREMENTS: Readonly<Record<WinzardCapability, Readonly<{
       'src/platform/kernel-config/proxy-trust.ts',
       'src/platform/kernel-config/runtime-environment.ts',
       'src/platform/kernel-config/runtime-mode.ts',
+      'src/platform/kernel-config/runtime-writable-root.server.ts',
       'src/platform/kernel-config/secret-keyring.server.ts',
       'src/platform/kernel-config/structured-log.ts',
       'src/platform/kernel-config/utf8.ts',

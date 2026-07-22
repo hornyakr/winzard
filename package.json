@@ -18,6 +18,7 @@
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
     "test:e2e:reference": "tsx apps/reference/tests/e2e/lucky-number.smoke.ts",
+    "test:runtime:readonly": "bash tools/verify-read-only-runtime.sh",
     "forge": "tsx packages/forge/src/cli-router.ts",
     "doctor": "pnpm forge doctor --project apps/reference",
     "verify:documentation": "pnpm forge check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:generate --check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:sync --check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:adapters --check --project packages/forge/tests/fixtures/documented-project && pnpm forge context:check ATLAS-TASK-0001 --project packages/forge/tests/fixtures/documented-project",

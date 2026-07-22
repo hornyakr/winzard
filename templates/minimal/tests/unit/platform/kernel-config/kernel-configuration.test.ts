@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer';
 import { createRequire } from 'node:module';
-import { mkdtemp, mkdir } from 'node:fs/promises';
+import { mkdtemp, mkdir, symlink } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -82,6 +82,19 @@ describe('kernel configuration runtime contracts', () => {
       repositoryRoot,
       applicationRoot,
       buildDirectory: '../../outside',
+    })).toThrow();
+
+    const outsideRoot = await mkdtemp(path.join(os.tmpdir(), 'winzard-kernel-outside-'));
+    const symlinkedBuild = path.join(applicationRoot, 'linked-build');
+    await symlink(
+      outsideRoot,
+      symlinkedBuild,
+      process.platform === 'win32' ? 'junction' : 'dir',
+    );
+    expect(() => resolveProjectPaths({
+      repositoryRoot,
+      applicationRoot,
+      buildDirectory: 'linked-build',
     })).toThrow();
   });
 

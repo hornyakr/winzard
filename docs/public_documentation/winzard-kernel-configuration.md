@@ -3471,6 +3471,23 @@ export async function register(): Promise<void> {
 - read-only filesystem expectation;
 - package/capability manifest.
 
+> [!NOTE]
+> A bundled `instrumentation.ts` csak az explicit külső runtime írható gyökeret
+> próbálja meg. Az application artifact tényleges read-only tulajdonságát külön
+> deployment smoke teszt ellenőrzi. Így a startup továbbra is fail-fast az
+> írható runtime tér hibájára, miközben a Next.js output file tracer nem vonja
+> be véletlenül a teljes projektfát az instrumentation artifactba.
+
+
+
+> [!NOTE]
+> A bundled `instrumentation.ts` az explicit külső runtime írható gyökeret
+> próbálja meg, valamint lexikálisan ellenőrzi a build- és writable-root
+> containmentet. Az application artifact tényleges read-only tulajdonságát
+> külön deployment smoke teszt ellenőrzi. Így a startup fail-fast marad, miközben
+> a Next.js output file tracer nem vonja be véletlenül a teljes projektfát az
+> instrumentation artifactba.
+
 ### 61.2. Nem végezhető
 
 - database migration;

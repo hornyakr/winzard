@@ -61,3 +61,19 @@ gates are executed in the separate testing-and-repair phase before merge.
 ## Reproducibility hardening
 
 The release gate supplies one explicit `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` to both isolated builds so Server Action identifiers remain stable across replicas and rebuilds. The canonical artifact comparator ignores only Next.js timing traces and normalizes the random Draft Mode preview secrets in `prerender-manifest.json`; all route, chunk, server-reference, asset and application bytes remain compared by relative path, canonical byte length and SHA-256.
+
+## Testing-phase hardening
+
+The production startup validator imports a dedicated
+`runtime-writable-root.server.ts` adapter. It probes only the explicit external
+writable root. The full application-artifact write probe remains in
+`filesystem.server.ts` and is exercised by unit and deployment smoke tests, but
+is deliberately not imported into bundled Next.js instrumentation: tracing a
+filesystem operation against the application root causes Next.js output file
+tracing to retain the entire project and emit an NFT warning.
+
+The CI runtime-security job builds the reference application, removes write
+permissions from the application tree, starts it as the non-root checkout user,
+and verifies liveness, trusted Host enforcement and internal-header spoofing
+protection. Project-path tests also cover a symlinked build directory escaping
+the application root.

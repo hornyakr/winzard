@@ -17,6 +17,7 @@ import { createLocaleConfiguration } from './locale-config';
 import { createProxyTrustPolicy } from './proxy-trust';
 import { createRuntimeEnvironment } from './runtime-environment';
 import { createWebRuntimeMode } from './runtime-mode';
+import { verifyRuntimeWritableRoot } from './runtime-writable-root.server';
 
 const startupCompositionEntries: readonly CompositionEntry[] = Object.freeze([
   Object.freeze({
@@ -31,7 +32,10 @@ const startupCompositionEntries: readonly CompositionEntry[] = Object.freeze([
 ]);
 
 function contained(root: string, target: string): boolean {
-  const relative = path.relative(path.resolve(root), path.resolve(target));
+  const relative = path.relative(
+    path.resolve(/* turbopackIgnore: true */ root),
+    path.resolve(/* turbopackIgnore: true */ target),
+  );
   return relative === '' || (
     relative !== '..' &&
     !relative.startsWith(`..${path.sep}`) &&
@@ -56,25 +60,31 @@ export async function validateKernelConfiguration(
 ): Promise<void> {
   createAppConfig(input);
   const applicationRoot = path.resolve(
-    path.dirname(fileURLToPath(import.meta.url)),
+    /* turbopackIgnore: true */ path.dirname(fileURLToPath(import.meta.url)),
     '../../..',
   );
   const environment = createRuntimeEnvironment(input);
   const identity = createBuildIdentity(input, environment.stage);
-  const buildDirectory = path.resolve(applicationRoot, input.NEXT_DIST_DIR?.trim() || '.next');
+  const buildDirectory = path.resolve(
+    /* turbopackIgnore: true */ applicationRoot,
+    input.NEXT_DIST_DIR?.trim() || '.next',
+  );
   if (!contained(applicationRoot, buildDirectory)) {
     throw new KernelConfigurationError(
       'KERNEL_BUILD_DIR_OUTSIDE_PROJECT',
       'A buildkönyvtár az application rooton belül maradjon.',
     );
   }
-  const writableRoot = input.RUNTIME_WRITABLE_ROOT?.trim();
-  if (writableRoot && contained(applicationRoot, path.resolve(writableRoot))) {
+  const writableRoot = path.resolve(
+    /* turbopackIgnore: true */ input.RUNTIME_WRITABLE_ROOT?.trim() || '/tmp/winzard',
+  );
+  if (contained(applicationRoot, writableRoot)) {
     throw new KernelConfigurationError(
       'KERNEL_READ_ONLY_FILESYSTEM_VIOLATION',
       'A runtime írható root nem lehet az immutable application artifact alatt.',
     );
   }
+  await verifyRuntimeWritableRoot(writableRoot);
   createLocaleConfiguration(input);
   createHostPolicy(input, environment.stage);
   createProxyTrustPolicy(input);
