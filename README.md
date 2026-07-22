@@ -148,6 +148,21 @@ pnpm forge deprecation:check --project apps/reference
 pnpm verify:contracts
 ```
 
+## Extension-, capability-, recipe- és package-platform
+
+A Forge lokális extension manifestből determinisztikus capability graphot és recipe plant készít. Az apply SHA-256 ownership state-et ír, a második apply idempotens, drift esetén pedig fail-closed módon leáll. A package-diagnosztika ellenőrzi az exportokat, a tarball allowlistet, az ESM- és React peer contractot.
+
+```bash
+pnpm forge extension:check packages/forge/tests/fixtures/acme-demo-extension --project templates/minimal
+pnpm forge extension:add packages/forge/tests/fixtures/acme-demo-extension --project <PROJECT> --dry-run
+pnpm forge recipe:plan packages/forge/tests/fixtures/acme-demo-extension/recipes/acme-demo --project <PROJECT>
+pnpm forge capability:graph --project <PROJECT>
+pnpm forge package:check packages/forge/tests/fixtures/acme-demo-extension/packages/demo-core
+pnpm verify:extensions
+```
+
+A megvalósítás nem vezet be runtime plugin registryt, route discoveryt, reflectiont vagy service locatort.
+
 ## Opcionális PostgreSQL-profil
 
 A `templates/webapp` és a `recipes/prisma-postgresql` tartalmazza az opcionális Prisma/PostgreSQL képességet.
@@ -170,6 +185,7 @@ A root `build` kizárólag a referenciaalkalmazás Next.js buildjét futtatja. P
 
 ## Dokumentáció
 
+- [Extension-, capability-, recipe- és package-platform](docs/public_documentation/winzard-extension-platform.md)
 - [Szerződések és interoperabilitási határok](docs/public_documentation/winzard-contracts.md)
 - [Service composition és dependency injection](docs/public_documentation/winzard-service-container.md)
 - [Események, handlerek és tartós üzenetkezelés](docs/public_documentation/winzard-event-dispatcher.md)
