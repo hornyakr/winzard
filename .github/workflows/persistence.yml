@@ -75,19 +75,19 @@ jobs:
       - name: Apply migrations
         run: pnpm db:migrate:deploy:webapp
 
-      - name: Capture PostgreSQL query-plan evidence
-        run: |
-          pnpm --dir templates/webapp exec tsx tools/capture-outbox-query-plan.ts \
-            --output=tests/evidence/outbox-claim.query-plan.json
-          pnpm forge schema:docs --project templates/webapp
+      - name: Verify PostgreSQL query-plan evidence
+        id: query_plan
+        run: >-
+          pnpm --dir templates/webapp exec tsx tools/capture-outbox-query-plan.ts
+          --output=/tmp/outbox-claim.query-plan.json
+          --verify=tests/evidence/outbox-claim.query-plan.json
 
-      - name: Upload PostgreSQL query-plan evidence
+      - name: Upload query-plan diagnostics
+        if: steps.query_plan.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: persistence-query-plan-${{ github.run_id }}
-          path: |
-            templates/webapp/tests/evidence/outbox-claim.query-plan.json
-            templates/webapp/docs/90-generated/persistence
+          path: /tmp/outbox-claim.query-plan.json
           if-no-files-found: error
 
       - name: Verify persistence contracts
