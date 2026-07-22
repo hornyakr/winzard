@@ -1,0 +1,80 @@
+name: Stage 3 Configuration Diagnostics
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/stage-3-configuration-diagnostics.yml
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+  APP_URL: http://localhost:3000
+  APP_NAME: Winzard Stage 3
+  APP_STAGE: local
+  LOG_LEVEL: error
+  NEXT_PUBLIC_APP_NAME: Winzard Stage 3
+  APP_ID: winzard-stage3
+  APP_REGION: local
+  GIT_COMMIT: ${{ github.sha }}
+  BUILD_ID: ${{ github.sha }}
+  DEPLOYMENT_ID: stage3-config-${{ github.run_id }}
+  SOURCE_DATE_EPOCH: '0'
+  DEFAULT_LOCALE: hu
+  ENABLED_LOCALES: hu,en
+  TRUSTED_HOSTS: localhost:3000,127.0.0.1,[::1]
+  SERVER_ACTION_ALLOWED_ORIGINS: localhost:3000
+  SERVER_ACTION_BODY_SIZE_LIMIT: 1mb
+  TRUSTED_PROXY_MODE: none
+  TRUSTED_PROXY_CIDRS: 127.0.0.1/32
+  TRUSTED_PROXY_HOPS: '1'
+  NEXT_DIST_DIR: .next
+  NEXT_OUTPUT_STANDALONE: 'false'
+  PRODUCTION_BROWSER_SOURCE_MAPS: 'false'
+  PRODUCTION_BROWSER_SOURCE_MAPS_WAIVER: not-required
+  KERNEL_VERBOSE_DIAGNOSTICS: 'false'
+  CACHE_SCHEMA_VERSION: '1'
+  COMPOSITION_HASH: auto
+  RUNTIME_WRITABLE_ROOT: /tmp/winzard-stage3-config
+  WORKER_CONCURRENCY: '4'
+  WORKER_VISIBILITY_TIMEOUT_MS: '60000'
+  WORKER_SHUTDOWN_GRACE_MS: '30000'
+  WORKER_POLL_INTERVAL_MS: '1000'
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with: { version: 11.13.1 }
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Capture configuration commands
+        shell: bash
+        run: |
+          set +e
+          pnpm forge config:drift --project . > config-root-drift.log 2>&1; echo $? > config-root-drift.status
+          pnpm forge config:drift --project apps/reference > config-reference-drift.log 2>&1; echo $? > config-reference-drift.status
+          pnpm forge config:reference --check --project apps/reference > config-reference-doc.log 2>&1; echo $? > config-reference-doc.status
+          pnpm forge config:drift --project templates/minimal > config-minimal-drift.log 2>&1; echo $? > config-minimal-drift.status
+          pnpm forge config:reference --check --project templates/minimal > config-minimal-doc.log 2>&1; echo $? > config-minimal-doc.status
+          pnpm forge config:drift --project templates/webapp > config-webapp-drift.log 2>&1; echo $? > config-webapp-drift.status
+          pnpm forge config:reference --check --project templates/webapp > config-webapp-doc.log 2>&1; echo $? > config-webapp-doc.status
+          pnpm forge secrets:check --project . > config-secrets.log 2>&1; echo $? > config-secrets.status
+          exit 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage-3-configuration-diagnostics
+          path: |
+            config-*.log
+            config-*.status
+          if-no-files-found: error
