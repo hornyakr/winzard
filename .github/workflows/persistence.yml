@@ -59,7 +59,7 @@ jobs:
           pnpm typecheck 2>&1 | tee /tmp/persistence-typecheck.log
 
       - name: Upload type-check diagnostics
-        if: steps.typecheck.outcome == 'failure'
+        if: failure() && steps.typecheck.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: persistence-typecheck-${{ github.run_id }}
@@ -83,7 +83,7 @@ jobs:
           --verify=tests/evidence/outbox-claim.query-plan.json
 
       - name: Upload query-plan diagnostics
-        if: steps.query_plan.outcome == 'failure'
+        if: failure() && steps.query_plan.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: persistence-query-plan-${{ github.run_id }}
@@ -101,7 +101,7 @@ jobs:
           pnpm --dir templates/webapp test:integration 2>&1 | tee /tmp/persistence-integration.log
 
       - name: Upload integration diagnostics
-        if: steps.integration.outcome == 'failure'
+        if: failure() && steps.integration.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: persistence-integration-${{ github.run_id }}
