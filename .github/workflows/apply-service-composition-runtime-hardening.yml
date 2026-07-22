@@ -1,0 +1,61 @@
+name: Apply service composition runtime hardening
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/apply-service-composition-runtime-hardening.yml
+      - tools/harden-service-composition-runtime.py
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout development branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: agent/service-composition-platform
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Apply runtime-target hardening
+        run: python tools/harden-service-composition-runtime.py
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Regenerate and structurally validate composition artifacts
+        shell: bash
+        run: |
+          for project in apps/reference templates/minimal templates/webapp; do
+            pnpm forge composition:generate --project "$project"
+            pnpm forge composition:docs --project "$project"
+            pnpm forge composition:generate --check --project "$project"
+            pnpm forge composition:check --resolve-config --project "$project"
+            pnpm forge composition:docs --check --project "$project"
+          done
+
+      - name: Commit hardened development result
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "fix: isolate Edge roots from Node composition startup"
+          git push origin HEAD:agent/service-composition-platform
