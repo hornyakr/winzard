@@ -116,5 +116,26 @@ jobs:
             apps/reference/docs/90-generated/forms
           if-no-files-found: error
 
+      - name: Verify adjacent delivery contracts
+        id: deliveryverify
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm verify:delivery 2>&1 | tee /tmp/forms-delivery.log
+
+      - name: Regenerate delivery evidence for diagnostics
+        if: failure() && steps.deliveryverify.outcome == 'failure'
+        run: pnpm forge http:contracts --project apps/reference
+
+      - name: Upload adjacent delivery diagnostics
+        if: failure() && steps.deliveryverify.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: forms-delivery-${{ github.run_id }}
+          path: |
+            /tmp/forms-delivery.log
+            apps/reference/docs/90-generated/delivery
+          if-no-files-found: error
+
       - name: Build reference application
         run: pnpm build
