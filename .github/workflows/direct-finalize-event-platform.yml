@@ -16,7 +16,7 @@ jobs:
   finalize:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
 
     steps:
       - name: Checkout development branch
@@ -39,8 +39,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Apply direct implementation scripts
+      - name: Apply Stage 3 corrections and implementation scripts
         run: |
+          bash tools/stage3-fix-event-platform.sh
           bash tools/finalize-events-runtime.sh
           bash tools/finalize-events-reference.sh
           bash tools/finalize-events-outbox.sh
@@ -69,54 +70,59 @@ jobs:
           pnpm vitest run --config templates/webapp/vitest.config.ts
           pnpm test
 
-      - name: Run type and drift checks
+      - name: Run type, lint and architecture checks
         run: |
           pnpm typecheck
           pnpm exec tsc -p templates/minimal/tsconfig.json --noEmit
           pnpm exec tsc -p templates/webapp/tsconfig.json --noEmit
+          pnpm lint
           pnpm verify:events
           for project in apps/reference templates/minimal templates/webapp; do
+            pnpm forge check --project "$project"
             pnpm forge composition:generate --check --project "$project"
             pnpm forge composition:docs --check --project "$project"
           done
 
-      - name: Record Stage 2 development checks
+      - name: Record Stage 3 correction checks
         shell: bash
         run: |
           cat > docs/development/event-dispatching-development-checks.md <<EOF
-          # Event-dispatching Stage 2 development checks
+          # Event-dispatching Stage 3 correction checks
 
           Development head before final commit: \`${GITHUB_SHA}\`
           Workflow run: \`${GITHUB_RUN_ID}\` / attempt \`${GITHUB_RUN_ATTEMPT}\`
 
-          | Development gate | Result |
+          | Correction gate | Result |
           | --- | --- |
           | Forge event tests | PASS |
           | Reference dispatcher and vertical slice tests | PASS |
           | Webapp messaging tests | PASS |
           | Repository unit tests | PASS |
           | Root, minimal and webapp typecheck | PASS |
+          | ESLint | PASS |
+          | Reference, minimal and webapp architecture checks | PASS |
           | Event generated artifact drift | PASS |
           | Composition generated artifact drift | PASS |
 
-          This is the Stage 2 development smoke matrix. The complete repository,
-          runtime-security, reproducibility and PostgreSQL verification matrix is
-          reserved for Stage 3. No merge to \`main\` occurred.
+          The complete core, database, runtime-security and reproducibility matrix
+          is executed by the repository Verify workflow. No merge to \`main\` occurred.
           EOF
 
       - name: Remove all staging artifacts
         run: |
           rm -f tools/finalize-events-*.sh
+          rm -f tools/stage3-fix-event-platform.sh
           rm -f tools/event-finalize.* tools/event-platform.payload.* tools/event-doc.payload.*
           rm -f .github/workflows/apply-event-platform.yml
           rm -f .github/workflows/finalize-event-platform.yml
           rm -f .github/workflows/direct-finalize-event-platform.yml
+          rm -f .github/workflows/stage3-diagnostics.yml
 
-      - name: Commit finalized Stage 2 implementation
+      - name: Commit corrected implementation
         shell: bash
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add -A
-          git commit -m "feat: complete event runtime and transactional messaging"
+          git commit -m "fix: complete Stage 3 event platform corrections"
           git push
