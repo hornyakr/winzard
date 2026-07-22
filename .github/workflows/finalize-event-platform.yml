@@ -42,7 +42,7 @@ jobs:
       - name: Reconstruct and apply finalization payload
         shell: bash
         run: |
-          cat tools/event-finalize.payload.* | base64 -d > /tmp/event-finalize.tar.gz
+          cat tools/event-finalize.part.* | base64 -d > /tmp/event-finalize.tar.gz
           test "$(sha256sum /tmp/event-finalize.tar.gz | cut -d' ' -f1)" = "73cafd2cdef685f864d7e2582d8c8ad1392fcf4e8de1356900cc4d86c7a148be"
           rm -rf /tmp/event-finalize
           mkdir -p /tmp/event-finalize
@@ -98,17 +98,18 @@ jobs:
           pnpm db:validate:webapp
           pnpm db:generate:webapp
           pnpm typegen
-          next typegen templates/webapp
+          pnpm exec next typegen templates/webapp
 
       - name: Run event and outbox development tests
         run: |
           pnpm vitest run packages/forge/tests/events.test.ts apps/reference/tests/unit/platform/events/dispatcher.test.ts apps/reference/tests/unit/modules/demo/lucky-number/event-dispatch.test.ts
           pnpm vitest run --config templates/webapp/vitest.config.ts
+          pnpm test
 
       - name: Run development type and drift checks
         run: |
           pnpm typecheck
-          tsc -p templates/webapp/tsconfig.json --noEmit
+          pnpm exec tsc -p templates/webapp/tsconfig.json --noEmit
           pnpm verify:events
           pnpm forge composition:generate --check --project apps/reference
           pnpm forge composition:docs --check --project apps/reference
@@ -117,7 +118,7 @@ jobs:
 
       - name: Remove temporary payload and workflow
         run: |
-          rm -f tools/event-finalize.payload.*
+          rm -f tools/event-finalize.part.* tools/event-finalize.payload.*
           rm -f .github/workflows/finalize-event-platform.yml
 
       - name: Commit finalized development
