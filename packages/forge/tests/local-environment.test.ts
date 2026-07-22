@@ -1,5 +1,6 @@
-import { createRequire } from 'node:module';
+import { Buffer } from 'node:buffer';
 import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -38,12 +39,37 @@ describe('local environment bootstrap', () => {
     await expect(setupLocalEnvironment({
       repositoryRoot: root,
       environment: {},
-    })).resolves.toEqual(projectRoots.map((projectRoot) => `${projectRoot}/.env.local`));
+    })).resolves.toEqual(projectRoots.map((projectRoot) => path.join(projectRoot, '.env.local')));
 
     for (const projectRoot of projectRoots) {
       await expect(readFile(path.join(root, projectRoot, '.env.local'), 'utf8'))
         .resolves.toBe(`APP_NAME=${projectRoot}\n`);
     }
+  });
+
+  it('kanonikus, 32 bájtos lokális Server Action kulcsot generál', async () => {
+    const root = await fixture();
+    const projectRoot = 'apps/reference';
+    const directory = path.join(root, projectRoot);
+    await mkdir(directory, { recursive: true });
+    await writeFile(
+      path.join(directory, '.env.example'),
+      'APP_NAME=Example\nNEXT_SERVER_ACTIONS_ENCRYPTION_KEY=\n',
+      'utf8',
+    );
+
+    await setupLocalEnvironment({
+      repositoryRoot: root,
+      environment: {},
+      projectRoots: [projectRoot],
+    });
+    const environment = parse(await readFile(path.join(directory, '.env.local'), 'utf8'));
+    const key = environment.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY ?? '';
+    const decoded = Buffer.from(key, 'base64');
+
+    expect(key).toMatch(/^[A-Za-z0-9+/]{43}=$/u);
+    expect(decoded.byteLength).toBe(32);
+    expect(decoded.toString('base64')).toBe(key);
   });
 
   it('nem írja felül a fejlesztő meglévő lokális konfigurációját', async () => {
