@@ -1,0 +1,122 @@
+name: Direct finalize event platform
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout development branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: agent/event-dispatching-platform
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply direct implementation scripts
+        run: |
+          bash tools/finalize-events-runtime.sh
+          bash tools/finalize-events-reference.sh
+          bash tools/finalize-events-outbox.sh
+          bash tools/finalize-events-forge.sh
+
+      - name: Generate event and composition artifacts
+        run: |
+          for project in apps/reference templates/minimal templates/webapp; do
+            pnpm forge event:generate --project "$project"
+            pnpm forge event:docs --project "$project"
+            pnpm forge composition:generate --project "$project"
+            pnpm forge composition:docs --project "$project"
+          done
+
+      - name: Generate Prisma and Next.js types
+        run: |
+          pnpm db:validate:webapp
+          pnpm db:generate:webapp
+          pnpm typegen
+          pnpm exec next typegen templates/minimal
+          pnpm exec next typegen templates/webapp
+
+      - name: Run event and messaging tests
+        run: |
+          pnpm vitest run packages/forge/tests/events.test.ts packages/forge/tests/events-runtime.test.ts apps/reference/tests/unit/platform/events/dispatcher.test.ts apps/reference/tests/unit/modules/demo/lucky-number/event-dispatch.test.ts
+          pnpm vitest run --config templates/webapp/vitest.config.ts
+          pnpm test
+
+      - name: Run type and drift checks
+        run: |
+          pnpm typecheck
+          pnpm exec tsc -p templates/minimal/tsconfig.json --noEmit
+          pnpm exec tsc -p templates/webapp/tsconfig.json --noEmit
+          pnpm verify:events
+          for project in apps/reference templates/minimal templates/webapp; do
+            pnpm forge composition:generate --check --project "$project"
+            pnpm forge composition:docs --check --project "$project"
+          done
+
+      - name: Record Stage 2 development checks
+        shell: bash
+        run: |
+          cat > docs/development/event-dispatching-development-checks.md <<EOF
+          # Event-dispatching Stage 2 development checks
+
+          Development head before final commit: \`${GITHUB_SHA}\`
+          Workflow run: \`${GITHUB_RUN_ID}\` / attempt \`${GITHUB_RUN_ATTEMPT}\`
+
+          | Development gate | Result |
+          | --- | --- |
+          | Forge event tests | PASS |
+          | Reference dispatcher and vertical slice tests | PASS |
+          | Webapp messaging tests | PASS |
+          | Repository unit tests | PASS |
+          | Root, minimal and webapp typecheck | PASS |
+          | Event generated artifact drift | PASS |
+          | Composition generated artifact drift | PASS |
+
+          This is the Stage 2 development smoke matrix. The complete repository,
+          runtime-security, reproducibility and PostgreSQL verification matrix is
+          reserved for Stage 3. No merge to \`main\` occurred.
+          EOF
+
+      - name: Remove all staging artifacts
+        run: |
+          rm -f tools/finalize-events-*.sh
+          rm -f tools/event-finalize.* tools/event-platform.payload.* tools/event-doc.payload.*
+          rm -f .github/workflows/apply-event-platform.yml
+          rm -f .github/workflows/finalize-event-platform.yml
+          rm -f .github/workflows/direct-finalize-event-platform.yml
+
+      - name: Commit finalized Stage 2 implementation
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "feat: complete event runtime and transactional messaging"
+          git push
