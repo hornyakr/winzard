@@ -1,5 +1,5 @@
-import { constants } from 'node:fs';
-import { copyFile } from 'node:fs/promises';
+import { randomBytes } from 'node:crypto';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,6 +10,7 @@ const defaultProjectRoots = Object.freeze([
 ] as const);
 
 const releaseStages = new Set(['preview', 'staging', 'production']);
+const serverActionEncryptionKeyLine = /^NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=[ \t]*$/mu;
 
 const externallyRequiredKeys = Object.freeze([
   'APP_URL',
@@ -42,6 +43,13 @@ function hasCompleteExternalApplicationEnvironment(
   return externallyRequiredKeys.every((key) => Boolean(environment[key]?.trim()));
 }
 
+function localEnvironmentContent(example: string, serverActionEncryptionKey: string): string {
+  return example.replace(
+    serverActionEncryptionKeyLine,
+    `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${serverActionEncryptionKey}`,
+  );
+}
+
 export async function setupLocalEnvironment(
   options: SetupLocalEnvironmentOptions = {},
 ): Promise<readonly string[]> {
@@ -57,12 +65,18 @@ export async function setupLocalEnvironment(
     return Object.freeze([]);
   }
 
+  const serverActionEncryptionKey = randomBytes(32).toString('base64');
   const createdFiles: string[] = [];
   for (const projectRoot of options.projectRoots ?? defaultProjectRoots) {
     const examplePath = path.join(repositoryRoot, projectRoot, '.env.example');
     const localPath = path.join(repositoryRoot, projectRoot, '.env.local');
     try {
-      await copyFile(examplePath, localPath, constants.COPYFILE_EXCL);
+      const example = await readFile(examplePath, 'utf8');
+      await writeFile(
+        localPath,
+        localEnvironmentContent(example, serverActionEncryptionKey),
+        { encoding: 'utf8', flag: 'wx' },
+      );
       createdFiles.push(path.relative(repositoryRoot, localPath));
     } catch (error) {
       if (errorCode(error) === 'EEXIST') continue;
