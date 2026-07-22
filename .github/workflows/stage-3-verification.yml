@@ -54,12 +54,11 @@ env:
 jobs:
   core:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
-        with:
-          version: 11.13.1
+        with: { version: 11.13.1 }
       - uses: actions/setup-node@v6
         with:
           node-version-file: .node-version
@@ -70,7 +69,38 @@ jobs:
           printf 'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=' >> "$GITHUB_ENV"
           printf '%s' '${{ github.repository_id }}:${{ github.sha }}' | openssl dgst -sha256 -binary | base64 -w0 >> "$GITHUB_ENV"
           printf '\n' >> "$GITHUB_ENV"
-      - run: pnpm verify:core
+      - name: Type generation
+        run: pnpm typegen
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Lint
+        run: pnpm lint
+      - name: Unit tests
+        run: pnpm test
+      - name: Documentation
+        run: pnpm verify:documentation
+      - name: Routing
+        run: pnpm verify:routing
+      - name: Delivery
+        run: pnpm verify:delivery
+      - name: HTTP kernel
+        run: pnpm verify:kernel
+      - name: Kernel configuration
+        run: pnpm verify:kernel-configuration
+      - name: Composition
+        run: pnpm verify:composition
+      - name: Views
+        run: pnpm verify:views
+      - name: Configuration
+        run: pnpm verify:configuration
+      - name: Reference architecture
+        run: pnpm forge check --project apps/reference
+      - name: Minimal template
+        run: pnpm verify:minimal-template
+      - name: Reference build
+        run: pnpm build
+      - name: Reference E2E
+        run: pnpm test:e2e:reference
 
   runtime-security:
     runs-on: ubuntu-latest
@@ -85,8 +115,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
-        with:
-          version: 11.13.1
+        with: { version: 11.13.1 }
       - uses: actions/setup-node@v6
         with:
           node-version-file: .node-version
@@ -106,8 +135,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
-        with:
-          version: 11.13.1
+        with: { version: 11.13.1 }
       - uses: actions/setup-node@v6
         with:
           node-version-file: .node-version
@@ -128,7 +156,7 @@ jobs:
 
   database:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     services:
       postgres:
         image: postgres:18.4-alpine
@@ -136,8 +164,7 @@ jobs:
           POSTGRES_DB: winzard
           POSTGRES_USER: winzard
           POSTGRES_PASSWORD: winzard_dev_only
-        ports:
-          - 5432:5432
+        ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready -U winzard -d winzard"
           --health-interval 5s
@@ -152,8 +179,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
-        with:
-          version: 11.13.1
+        with: { version: 11.13.1 }
       - uses: actions/setup-node@v6
         with:
           node-version-file: .node-version
@@ -164,4 +190,15 @@ jobs:
           printf 'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=' >> "$GITHUB_ENV"
           printf '%s' '${{ github.repository_id }}:${{ github.sha }}' | openssl dgst -sha256 -binary | base64 -w0 >> "$GITHUB_ENV"
           printf '\n' >> "$GITHUB_ENV"
-      - run: pnpm verify:database
+      - name: Webapp architecture
+        run: pnpm forge check --project templates/webapp
+      - name: Webapp environment
+        run: pnpm forge env:check --project templates/webapp
+      - name: Prisma validate
+        run: pnpm db:validate:webapp
+      - name: Prisma generate
+        run: pnpm db:generate:webapp
+      - name: Webapp template
+        run: pnpm verify:webapp-template
+      - name: Migrations
+        run: pnpm db:migrate:deploy:webapp
