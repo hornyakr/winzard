@@ -41,7 +41,16 @@ jobs:
 
       - name: Reconstruct finalization archive
         shell: bash
-        run: cat tools/event-finalize.part.* | base64 --decode --ignore-garbage > /tmp/event-finalize.tar.gz
+        run: |
+          python - <<'PY'
+          from base64 import b64decode
+          from pathlib import Path
+          parts = sorted(Path('tools').glob('event-finalize.part.*'))
+          encoded = ''.join(''.join(part.read_text().split()) for part in parts)
+          encoded += '=' * (-len(encoded) % 4)
+          Path('/tmp/event-finalize.tar.gz').write_bytes(b64decode(encoded, validate=False))
+          print(f'parts={len(parts)} encoded={len(encoded)} bytes={Path("/tmp/event-finalize.tar.gz").stat().st_size}')
+          PY
 
       - name: Verify finalization archive
         shell: bash
