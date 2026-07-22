@@ -55,6 +55,7 @@ jobs:
           path: |
             typecheck.log
             lint.log
+            packages/forge/src/extensions/recipe.ts
           if-no-files-found: error
 
       - name: Preserve verification result
