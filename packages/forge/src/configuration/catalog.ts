@@ -248,7 +248,7 @@ const kernelConfigurationDefinitions: readonly ConfigurationDefinition[] = [
     example: '1', defaultValue: '1', introduced,
   },
   {
-    key: 'COMPOSITION_HASH', owner: 'kernel-configuration', capability: 'kernel-configuration',
+    key: 'COMPOSITION_HASH', owner: 'service-composition', capability: 'service-composition',
     description: 'Opcionális deployment-elvárás a canonical composition fingerprinthez; auto esetén nincs külső pin.',
     required: false, phase: 'process-start', classification: 'internal',
     rebuildRequired: false, restartRequired: true,

@@ -5,7 +5,7 @@
 
 # Configuration reference
 
-Inventory SHA-256: `sha256:86e5c1e85a0a918fd5ab6789d88e0730965c0ee3acca8461ac6465cc33e9f197`
+Inventory SHA-256: `sha256:2ce32a30efb9e2b3078301e725dc7478d3f7f6d03a0f33553d9e55f83c432916`
 
 Profile: `webapp`
 
@@ -18,7 +18,7 @@ Profile: `webapp`
 | `APP_URL` | application-shell | URL(http:,https:,origin-only) | yes | process-start | internal | no | yes | - | `http://localhost:3000` | 0.1.0 | - | - | Az alkalmazás megbízható canonical originje szerveroldali URL-generáláshoz. |
 | `BUILD_ID` | kernel-configuration | string[1,128] | no | build-time | internal | yes | no | `local-build` | `local-build` | 0.1.0 | - | - | Az immutable build hordozható azonosítója; hiányában local módban a commitazonosító használható. |
 | `CACHE_SCHEMA_VERSION` | kernel-configuration | integer[1,10000] | no | process-start | internal | no | yes | `1` | `1` | 0.1.0 | - | - | A cache-entry formátum és namespace pozitív egész schema verziója. |
-| `COMPOSITION_HASH` | kernel-configuration | string[4,64] | no | process-start | internal | no | yes | `auto` | `auto` | 0.1.0 | - | - | Opcionális deployment-elvárás a canonical composition fingerprinthez; auto esetén nincs külső pin. |
+| `COMPOSITION_HASH` | service-composition | string[4,64] | no | process-start | internal | no | yes | `auto` | `auto` | 0.1.0 | - | - | Opcionális deployment-elvárás a canonical composition fingerprinthez; auto esetén nincs külső pin. |
 | `DATABASE_CONNECTION_TIMEOUT_MS` | prisma-postgresql | integer[100,60000] | yes | process-start | internal | no | yes | - | `5000` | 0.1.0 | - | - | Adatbázis-kapcsolódási timeout ezredmásodpercben. |
 | `DATABASE_POOL_MAX` | prisma-postgresql | integer[1,100] | yes | process-start | internal | no | yes | - | `10` | 0.1.0 | - | - | Egy process maximális adatbázis-kapcsolatszáma. |
 | `DATABASE_URL` | prisma-postgresql | PostgreSQL DSN | yes | process-start | secret | no | yes | - | `postgresql://user:password@localhost:5432/atlas` | 0.1.0 | - | - | A PostgreSQL runtime kapcsolat credentialt is tartalmazó DSN-je. |

@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "fingerprint": "b02d59cb7fda51f57e58a7862a4bc15f577c16ea73e2032a7689b3f95f3c2ae6",
+  "roots": [
+    {
+      "id": "platform.http-kernel.root",
+      "source": "src/composition/http-kernel.server.ts",
+      "exportName": "withRouteLifecycle",
+      "runtime": "nodejs",
+      "services": [
+        "platform.http-kernel.route-lifecycle"
+      ]
+    },
+    {
+      "id": "platform.request-context.root",
+      "source": "src/composition/request-context.server.ts",
+      "exportName": "createRouteRequestContext",
+      "runtime": "nodejs",
+      "services": [
+        "platform.request-context.factory"
+      ]
+    }
+  ],
+  "services": [
+    {
+      "id": "platform.database.client",
+      "capability": "service-composition",
+      "kind": "infrastructure",
+      "implementation": "database",
+      "port": "DatabaseClient",
+      "source": "src/platform/database/client.ts",
+      "exportName": "database",
+      "lifetime": "process",
+      "runtime": "nodejs",
+      "visibility": "private",
+      "dependencies": [],
+      "decorators": [],
+      "aliases": [],
+      "tags": [],
+      "priority": 0,
+      "configKeys": [
+        "DATABASE_CONNECTION_TIMEOUT_MS",
+        "DATABASE_POOL_MAX"
+      ],
+      "secretKeys": [
+        "DATABASE_URL"
+      ],
+      "disposable": true,
+      "requestState": false
+    },
+    {
+      "id": "platform.http-kernel.route-lifecycle",
+      "capability": "service-composition",
+      "kind": "platform",
+      "implementation": "withRouteLifecycle",
+      "port": null,
+      "source": "src/composition/http-kernel.server.ts",
+      "exportName": "withRouteLifecycle",
+      "lifetime": "process",
+      "runtime": "nodejs",
+      "visibility": "public",
+      "dependencies": [
+        "platform.request-context.factory"
+      ],
+      "decorators": [],
+      "aliases": [],
+      "tags": [],
+      "priority": 0,
+      "configKeys": [],
+      "secretKeys": [],
+      "disposable": false,
+      "requestState": false
+    },
+    {
+      "id": "platform.kernel-configuration.validator",
+      "capability": "service-composition",
+      "kind": "platform",
+      "implementation": "validateKernelConfiguration",
+      "port": null,
+      "source": "src/platform/kernel-config/validate-kernel-config.server.ts",
+      "exportName": "validateKernelConfiguration",
+      "lifetime": "process",
+      "runtime": "nodejs",
+      "visibility": "private",
+      "dependencies": [],
+      "decorators": [],
+      "aliases": [],
+      "tags": [],
+      "priority": 0,
+      "configKeys": [
+        "APP_ID",
+        "APP_STAGE",
+        "COMPOSITION_HASH"
+      ],
+      "secretKeys": [],
+      "disposable": false,
+      "requestState": false
+    },
+    {
+      "id": "platform.request-context.factory",
+      "capability": "service-composition",
+      "kind": "factory",
+      "implementation": "createRouteRequestContext",
+      "port": null,
+      "source": "src/composition/request-context.server.ts",
+      "exportName": "createRouteRequestContext",
+      "lifetime": "process",
+      "runtime": "nodejs",
+      "visibility": "public",
+      "dependencies": [],
+      "decorators": [],
+      "aliases": [],
+      "tags": [],
+      "priority": 0,
+      "configKeys": [],
+      "secretKeys": [],
+      "disposable": false,
+      "requestState": false
+    }
+  ]
+}

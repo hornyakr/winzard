@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "name": "service-composition",
+  "provides": [
+    "service-composition"
+  ],
+  "requires": [
+    "next-app",
+    "forge",
+    "kernel-configuration"
+  ],
+  "files": [
+    "instrumentation.ts",
+    "src/composition/application.composition.definition.ts",
+    "src/platform/composition/contract.ts",
+    "src/platform/composition/fingerprint.ts",
+    "src/platform/composition/validate-composition.server.ts"
+  ],
+  "generated": [
+    "src/generated/composition/registry.ts",
+    "src/generated/composition/graph-manifest.json",
+    "src/generated/composition/source-manifest.json",
+    "docs/90-generated/composition/service-inventory.md",
+    "docs/90-generated/composition/composition-graph.md",
+    "docs/90-generated/composition/service-lifetimes.md",
+    "docs/90-generated/composition/composition-security-status.md"
+  ],
+  "dependencies": {
+    "runtime": [
+      "server-only"
+    ],
+    "development": []
+  },
+  "composition": {
+    "schemaVersion": 1,
+    "definitionPattern": "src/**/composition*.definition.ts",
+    "runtime": [
+      "nodejs",
+      "edge"
+    ]
+  },
+  "environment": [
+    "COMPOSITION_HASH"
+  ],
+  "configuration": [
+    {
+      "key": "COMPOSITION_HASH",
+      "owner": "service-composition",
+      "required": false,
+      "phase": "process-start",
+      "classification": "internal",
+      "rebuildRequired": false,
+      "restartRequired": true,
+      "type": "string[4,64]",
+      "example": "auto",
+      "description": "Opcionális deployment-elvárás a canonical composition fingerprinthez; auto esetén nincs külső pin.",
+      "introduced": "0.1.0",
+      "defaultValue": "auto"
+    }
+  ]
+}

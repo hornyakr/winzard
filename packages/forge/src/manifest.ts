@@ -7,6 +7,7 @@ export const knownCapabilities = [
   'next-app',
   'kernel-configuration',
   'http-kernel',
+  'service-composition',
   'forge',
   'presentation-contract',
   'modular-application',

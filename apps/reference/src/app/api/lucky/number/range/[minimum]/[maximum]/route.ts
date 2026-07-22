@@ -1,4 +1,4 @@
-import { demoModule } from '@/composition/demo';
+import { demoModule } from '@/composition/demo.server';
 import { toLuckyNumberResponse } from '@/modules/demo/lucky-number/index.server';
 import { luckyNumberRangeParamsSchema } from '@/modules/demo/lucky-number/presentation/lucky-number.schemas';
 import { withRouteLifecycle } from '@/composition/http-kernel.server';

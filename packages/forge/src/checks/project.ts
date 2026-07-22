@@ -4,6 +4,7 @@ import path from 'node:path';
 import ts from 'typescript';
 
 import { checkConfigurationDrift } from '../configuration/drift';
+import { buildCompositionInventory } from '../composition/inventory';
 import { runDocumentationChecks } from '../documentation/checks';
 import { runKernelChecks } from '../kernel/checks';
 import { buildKernelConfigurationInventory } from '../kernel-configuration/inventory';
@@ -65,6 +66,16 @@ const CAPABILITY_REQUIREMENTS: Readonly<Record<WinzardCapability, Readonly<{
       'src/platform/kernel-config/validate-kernel-config.server.ts',
     ],
     requires: ['next-app', 'forge'],
+  },
+  'service-composition': {
+    all: [
+      'src/platform/composition/contract.ts',
+      'src/platform/composition/fingerprint.ts',
+      'src/platform/composition/validate-composition.server.ts',
+      'src/generated/composition/registry.ts',
+      'src/generated/composition/graph-manifest.json',
+    ],
+    requires: ['next-app', 'forge', 'kernel-configuration'],
   },
   'http-kernel': {
     all: [
@@ -384,7 +395,11 @@ export function inspectSourceFile({ root, filePath, source }: SourceInspectionIn
     }
   }
 
-  if (projectFile.startsWith('src/composition/') && !importsServerOnly) {
+  if (
+    projectFile.startsWith('src/composition/') &&
+    !projectFile.endsWith('.composition.definition.ts') &&
+    !importsServerOnly
+  ) {
     add('COMPOSITION_MISSING_SERVER_ONLY', 'A composition root fájlnak explicit server-only határt kell deklarálnia.');
   }
   if (
@@ -539,6 +554,12 @@ export async function runProjectChecks(root = process.cwd()): Promise<readonly C
   if (enabled.has('kernel-configuration')) {
     const kernelConfiguration = await buildKernelConfigurationInventory(root);
     failures.push(...kernelConfiguration.issues
+      .filter(({ severity }) => severity === 'error')
+      .map(({ code, file, message }) => ({ code, file, message })));
+  }
+  if (enabled.has('service-composition')) {
+    const composition = await buildCompositionInventory(root, { resolveConfig: true });
+    failures.push(...composition.issues
       .filter(({ severity }) => severity === 'error')
       .map(({ code, file, message }) => ({ code, file, message })));
   }

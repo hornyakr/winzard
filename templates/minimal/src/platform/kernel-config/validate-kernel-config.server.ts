@@ -7,10 +7,6 @@ import { createAppConfig } from '@/platform/config/app-env';
 
 import { createBuildIdentity } from './build-identity';
 import { createCacheNamespace } from './cache-namespace';
-import {
-  compositionFingerprint,
-  type CompositionEntry,
-} from './composition-fingerprint';
 import { createHostPolicy } from './host-policy';
 import { KernelConfigurationError } from './kernel-config.errors';
 import { createLocaleConfiguration } from './locale-config';
@@ -19,17 +15,6 @@ import { createRuntimeEnvironment } from './runtime-environment';
 import { createWebRuntimeMode } from './runtime-mode';
 import { verifyRuntimeWritableRoot } from './runtime-writable-root.server';
 
-const startupCompositionEntries: readonly CompositionEntry[] = Object.freeze([
-  Object.freeze({
-    operationId: 'kernel.configuration',
-    portId: 'kernel.configuration',
-    adapterId: 'winzard.kernel-configuration.v1',
-    packageVersion: '0.1.0',
-    capability: 'kernel-configuration',
-    lifetime: 'singleton',
-    configSchemaVersion: 1,
-  }),
-]);
 
 function contained(root: string, target: string): boolean {
   const relative = path.relative(
@@ -95,16 +80,4 @@ export async function validateKernelConfiguration(
     deploymentId: identity.deploymentId,
     schemaVersion: positiveInteger(input.CACHE_SCHEMA_VERSION, 1, 'CACHE_SCHEMA_VERSION'),
   });
-  const compositionHash = compositionFingerprint(startupCompositionEntries);
-  const expectedCompositionHash = input.COMPOSITION_HASH?.trim();
-  if (
-    expectedCompositionHash &&
-    expectedCompositionHash !== 'auto' &&
-    expectedCompositionHash !== compositionHash
-  ) {
-    throw new KernelConfigurationError(
-      'KERNEL_COMPOSITION_HASH_DRIFT',
-      'A runtime composition fingerprint eltér a deployment contracttól.',
-    );
-  }
 }

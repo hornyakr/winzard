@@ -151,6 +151,7 @@ describe('Forge architecture checks', () => {
 
   it('server-only határt kér a composition roothoz és a Node adapterhez', () => {
     expect(inspect('src/composition/demo.ts', 'export const demo = {};')).toContainEqual(expect.objectContaining({ code: 'COMPOSITION_MISSING_SERVER_ONLY' }));
+    expect(inspect('src/composition/demo.composition.definition.ts', 'export const demo = defineComposition({});')).not.toContainEqual(expect.objectContaining({ code: 'COMPOSITION_MISSING_SERVER_ONLY' }));
     expect(inspect('src/modules/demo/infrastructure/node.ts', "import { randomInt } from 'node:crypto';")).toContainEqual(expect.objectContaining({ code: 'NODE_ADAPTER_MISSING_SERVER_ONLY' }));
   });
 

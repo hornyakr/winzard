@@ -5,7 +5,7 @@
 
 # Configuration reference
 
-Inventory SHA-256: `sha256:35c6653ac8a85173444081ec0a9bdea3aa2def97e9b8d1be23c9131183f53c5c`
+Inventory SHA-256: `sha256:bf6446d2dd6a4304f93c74c72604a818483af653e78f7b778da590b6edc60093`
 
 Profile: `reference`
 
@@ -18,7 +18,7 @@ Profile: `reference`
 | `APP_URL` | application-shell | URL(http:,https:,origin-only) | yes | process-start | internal | no | yes | - | `http://localhost:3000` | 0.1.0 | - | - | Az alkalmazás megbízható canonical originje szerveroldali URL-generáláshoz. |
 | `BUILD_ID` | kernel-configuration | string[1,128] | no | build-time | internal | yes | no | `local-build` | `local-build` | 0.1.0 | - | - | Az immutable build hordozható azonosítója; hiányában local módban a commitazonosító használható. |
 | `CACHE_SCHEMA_VERSION` | kernel-configuration | integer[1,10000] | no | process-start | internal | no | yes | `1` | `1` | 0.1.0 | - | - | A cache-entry formátum és namespace pozitív egész schema verziója. |
-| `COMPOSITION_HASH` | kernel-configuration | string[4,64] | no | process-start | internal | no | yes | `auto` | `auto` | 0.1.0 | - | - | Opcionális deployment-elvárás a canonical composition fingerprinthez; auto esetén nincs külső pin. |
+| `COMPOSITION_HASH` | service-composition | string[4,64] | no | process-start | internal | no | yes | `auto` | `auto` | 0.1.0 | - | - | Opcionális deployment-elvárás a canonical composition fingerprinthez; auto esetén nincs külső pin. |
 | `DEFAULT_LOCALE` | kernel-configuration | enum(hu\|en) | no | process-start | internal | no | yes | `hu` | `hu` | 0.1.0 | - | - | A támogatott locale-listából választott alapértelmezett locale. |
 | `DEPLOYMENT_ID` | kernel-configuration | string[1,128] | no | build-time | internal | yes | no | `local-deployment` | `local-deployment` | 0.1.0 | - | - | Egy konkrét rollout valamennyi példányán egységes deploymentazonosító. |
 | `ENABLED_LOCALES` | kernel-configuration | csv-enum(hu\|en) | no | process-start | internal | no | yes | `hu,en` | `hu,en` | 0.1.0 | - | - | Vesszővel tagolt, zárt locale-allowlist. |

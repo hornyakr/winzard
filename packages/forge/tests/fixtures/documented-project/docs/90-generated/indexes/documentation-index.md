@@ -13,6 +13,7 @@
 | [ATLAS-POLICY-AI-001](../../70-ai/policies/ATLAS-POLICY-AI-001.md) | AI-assisted Delivery Policy | contract/policy | accepted | implemented | not_applicable | role:project-owner |
 | [ATLAS-TASK-0001](../../40-delivery/tasks/ATLAS-TASK-0001.md) | Implement catalog filter | delivery/task-brief | accepted | not_started | unverified | role:project-owner |
 | [ATLAS-VISION-001](../../10-product/ATLAS-VISION-001.md) | Project Brief | product/vision | proposed | not_applicable | unverified | role:project-owner |
+| [WZ-EVIDENCE-COMPOSITION-001](../../80-winzard/platform-contracts/WZ-EVIDENCE-COMPOSITION-001.md) | Winzard service composition verification | evidence/test-result | accepted | not_applicable | not_applicable | role:winzard-maintainer |
 
 ## Source hashes
 
@@ -23,3 +24,4 @@
 - ATLAS-POLICY-AI-001: `sha256:a3648a7332e8ce77567ffb4a5d6f3b3e2a576589af44cfb864dfaa983d0a1b1b`
 - ATLAS-TASK-0001: `sha256:7d816ad32cc05c8ccf50dd3b9dd13b80763f11192bff06d36cb76e3e74da163c`
 - ATLAS-VISION-001: `sha256:c98776a757e39bd404c47d8bea9a6320efee891da9e90d6564c2291807736831`
+- WZ-EVIDENCE-COMPOSITION-001: `sha256:74b2beaa64c5efd559962f60394d40fb05d7b12873d07aeff4c70445b421f819`

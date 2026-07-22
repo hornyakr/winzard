@@ -6,25 +6,26 @@
 
 ```json
 {
-  "total": 7,
+  "total": 8,
   "byKind": {
     "contract": 2,
     "delivery": 1,
+    "evidence": 1,
     "guidance": 3,
     "product": 1
   },
   "byDocumentStatus": {
-    "accepted": 4,
+    "accepted": 5,
     "proposed": 3
   },
   "byImplementationStatus": {
     "implemented": 1,
-    "not_applicable": 4,
+    "not_applicable": 5,
     "not_started": 1,
     "partial": 1
   },
   "byVerificationStatus": {
-    "not_applicable": 4,
+    "not_applicable": 5,
     "unverified": 3
   }
 }
@@ -39,3 +40,4 @@
 - ATLAS-POLICY-AI-001: `sha256:a3648a7332e8ce77567ffb4a5d6f3b3e2a576589af44cfb864dfaa983d0a1b1b`
 - ATLAS-TASK-0001: `sha256:7d816ad32cc05c8ccf50dd3b9dd13b80763f11192bff06d36cb76e3e74da163c`
 - ATLAS-VISION-001: `sha256:c98776a757e39bd404c47d8bea9a6320efee891da9e90d6564c2291807736831`
+- WZ-EVIDENCE-COMPOSITION-001: `sha256:74b2beaa64c5efd559962f60394d40fb05d7b12873d07aeff4c70445b421f819`

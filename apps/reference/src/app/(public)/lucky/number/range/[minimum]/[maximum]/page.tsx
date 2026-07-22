@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 
-import { demoModule } from '@/composition/demo';
+import { demoModule } from '@/composition/demo.server';
 import {
   InvalidLuckyNumberRangeError,
   LuckyNumberView,
