@@ -44,6 +44,7 @@ describe('PostgreSQL persistence contracts', () => {
   it('SKIP LOCKED claim korlátosan és stabil sorrendben foglal', async () => {
     const first = randomUUID();
     const second = randomUUID();
+    const availableAt = new Date('2026-07-22T09:59:00.000Z');
     await database.outboxMessage.createMany({
       data: [
         {
@@ -51,6 +52,7 @@ describe('PostgreSQL persistence contracts', () => {
           source: 'urn:winzard:test',
           type: 'test.claim.v1',
           occurredAt: new Date('2026-07-22T10:00:00.000Z'),
+          availableAt,
           payload: { id: first },
           metadata: {},
         },
@@ -59,6 +61,7 @@ describe('PostgreSQL persistence contracts', () => {
           source: 'urn:winzard:test',
           type: 'test.claim.v1',
           occurredAt: new Date('2026-07-22T10:00:01.000Z'),
+          availableAt,
           payload: { id: second },
           metadata: {},
         },
