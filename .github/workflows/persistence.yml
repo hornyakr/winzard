@@ -51,6 +51,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Type-check
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm typecheck 2>&1 | tee /tmp/persistence-typecheck.log
+
+      - name: Upload type-check diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: persistence-typecheck-${{ github.run_id }}
+          path: /tmp/persistence-typecheck.log
+          if-no-files-found: error
+
       - name: Validate Prisma schema
         run: pnpm db:validate:webapp
 
