@@ -1,14 +1,14 @@
 # Service composition – 3. szakasz verifikáció
 
-Testelt commit: `5f1b0c9bdb350b3e30c33c9587beeef99a736ed2`
+Testelt commit: `1cdbd00e9230fb109954c1a2879bff243ea1af9a`
 
-GitHub Actions futás: `29916602168` / attempt `1`
+GitHub Actions futás: `29916893576` / attempt `1`
 
 | Kapu | Eredmény |
 | --- | --- |
 | `core` | FAIL (exit 1) |
-| `database` | FAIL (exit 1) |
 | `runtime-security` | PASS |
 | `reproducibility` | PASS |
+| `database` | PASS |
 
 A `main` ágba merge nem történt.
