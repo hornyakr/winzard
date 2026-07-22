@@ -4,13 +4,20 @@
 
 # Composition graph
 
-Composition SHA-256: `0c83d7a398983413b41b85c118705bb4a5d68ac3ce1058890220de62de5f6627`
+Composition SHA-256: `9f9c910c320820abbd1cf3225b53a8dad40472ce9c48cde07cb485d644b93a9d`
 
 ```mermaid
 graph TD
+  demo_events_root["demo.events.root"] --> demo_events_command_dispatch["demo.events.command.dispatch"]
+  demo_events_root["demo.events.root"] --> demo_events_dispatcher["demo.events.dispatcher"]
+  demo_events_root["demo.events.root"] --> demo_events_handler_record["demo.events.handler.record"]
+  demo_events_root["demo.events.root"] --> demo_events_trace["demo.events.trace"]
   demo_lucky_number_root["demo.lucky-number.root"] --> demo_lucky_number_command_generate["demo.lucky-number.command.generate"]
   demo_lucky_number_root["demo.lucky-number.root"] --> demo_lucky_number_policy["demo.lucky-number.policy"]
   demo_lucky_number_root["demo.lucky-number.root"] --> demo_lucky_number_query_get["demo.lucky-number.query.get"]
+  demo_events_command_dispatch --> demo_events_dispatcher
+  demo_events_dispatcher --> demo_events_handler_record
+  demo_events_dispatcher --> demo_events_trace
   demo_lucky_number_command_generate --> demo_lucky_number_policy
   demo_lucky_number_command_generate --> demo_lucky_number_query_get
   demo_lucky_number_query_get --> demo_lucky_number_random_validated

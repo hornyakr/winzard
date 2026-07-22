@@ -4,10 +4,14 @@
 
 # Service lifetimes
 
-Composition SHA-256: `0c83d7a398983413b41b85c118705bb4a5d68ac3ce1058890220de62de5f6627`
+Composition SHA-256: `9f9c910c320820abbd1cf3225b53a8dad40472ce9c48cde07cb485d644b93a9d`
 
 | Lifetime | Service | Request state | Disposable |
 | --- | --- | --- | --- |
+| process | `demo.events.command.dispatch` | no | no |
+| process | `demo.events.dispatcher` | no | no |
+| process | `demo.events.handler.record` | no | no |
+| process | `demo.events.trace` | no | no |
 | process | `demo.lucky-number.command.generate` | no | no |
 | process | `demo.lucky-number.policy` | no | no |
 | process | `demo.lucky-number.query.get` | no | no |

@@ -8,14 +8,10 @@ import {
   EVENT_CLASSIFICATIONS,
   EVENT_FAILURE_POLICIES,
   EVENT_PHASES,
-  type EventCategory,
-  type EventClassification,
   type EventDefinitionRecord,
-  type EventFailurePolicy,
   type EventHandlerDefinitionRecord,
   type EventInventory,
   type EventIssue,
-  type EventPhase,
   type EventRecord,
 } from './types';
 

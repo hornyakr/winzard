@@ -4,7 +4,7 @@
 
 # Composition security status
 
-Composition SHA-256: `0c83d7a398983413b41b85c118705bb4a5d68ac3ce1058890220de62de5f6627`
+Composition SHA-256: `9f9c910c320820abbd1cf3225b53a8dad40472ce9c48cde07cb485d644b93a9d`
 
 | Severity | Area | Code | File | Message |
 | --- | --- | --- | --- | --- |

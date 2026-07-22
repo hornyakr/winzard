@@ -4,22 +4,16 @@ export const eventComposition = defineComposition({
   schemaVersion: 1,
   id: 'demo.events',
   capability: 'event-dispatching',
-  roots: [
-    {
-      id: 'demo.events.root',
-      source: 'src/composition/demo.server.ts',
-      export: 'demoModule',
-      runtime: 'nodejs',
-      services: [
-        'demo.events.dispatcher',
-        'demo.events.trace',
-        'demo.events.handler.record-generated',
-      ],
-    },
-  ],
+  roots: [{
+    id: 'demo.events.root',
+    source: 'src/composition/event-runtime.server.ts',
+    export: 'eventRuntime',
+    runtime: 'nodejs',
+    services: ['demo.events.dispatcher', 'demo.events.trace', 'demo.events.command.dispatch', 'demo.events.handler.record'],
+  }],
   services: [
     {
-      id: 'demo.events.handler.record-generated',
+      id: 'demo.events.handler.record',
       kind: 'application',
       implementation: 'recordLuckyNumberGenerated',
       source: 'src/modules/demo/lucky-number/application/event-handlers/record-lucky-number-generated.ts',
@@ -51,10 +45,18 @@ export const eventComposition = defineComposition({
       lifetime: 'process',
       runtime: 'universal',
       visibility: 'private',
-      dependencies: [
-        'demo.events.handler.record-generated',
-        'demo.events.trace',
-      ],
+      dependencies: ['demo.events.handler.record', 'demo.events.trace'],
+    },
+    {
+      id: 'demo.events.command.dispatch',
+      kind: 'application',
+      implementation: 'DispatchLuckyNumberGenerated',
+      source: 'src/modules/demo/lucky-number/application/commands/dispatch-lucky-number-generated.ts',
+      export: 'DispatchLuckyNumberGenerated',
+      lifetime: 'process',
+      runtime: 'universal',
+      visibility: 'public',
+      dependencies: ['demo.events.dispatcher'],
     },
   ],
 });
