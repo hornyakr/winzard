@@ -137,5 +137,26 @@ jobs:
             apps/reference/docs/90-generated/delivery
           if-no-files-found: error
 
+      - name: Verify adjacent view contracts
+        id: viewverify
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm verify:views 2>&1 | tee /tmp/forms-views.log
+
+      - name: Regenerate view evidence for diagnostics
+        if: failure() && steps.viewverify.outcome == 'failure'
+        run: pnpm forge view:contracts --project apps/reference
+
+      - name: Upload adjacent view diagnostics
+        if: failure() && steps.viewverify.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: forms-views-${{ github.run_id }}
+          path: |
+            /tmp/forms-views.log
+            apps/reference/docs/90-generated/views
+          if-no-files-found: error
+
       - name: Build reference application
         run: pnpm build
