@@ -4,7 +4,7 @@
 
 # View contracts
 
-Inventory SHA-256: `ad2aa7109c851fc130f5857eb1381d94fac34785205b4831708c2da8cf9f6b4f`
+Inventory SHA-256: `1ea190fbf32feed6d1186d0890c1afad307c945ece7a721642296bf1dd0917eb`
 
 | View | File | Props type | Props | View models | Route builders | Tests |
 | --- | --- | --- | --- | --- | --- | --- |
