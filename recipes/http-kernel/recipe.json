@@ -6,7 +6,8 @@
   ],
   "requires": [
     "next-app",
-    "forge"
+    "forge",
+    "kernel-configuration"
   ],
   "files": [
     "instrumentation.ts",

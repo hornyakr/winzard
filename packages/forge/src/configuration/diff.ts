@@ -32,9 +32,9 @@ export async function diffConfiguration(
       owner: fromRecord.definition.owner,
       fromStatus: fromRecord.status,
       toStatus: toRecord?.status ?? 'missing',
-      fromFingerprint: fromRecord.fingerprint,
-      toFingerprint: toRecord?.fingerprint ?? null,
-      changed: fromRecord.status !== toRecord?.status || fromRecord.fingerprint !== toRecord?.fingerprint,
+      fromFingerprint: fromRecord.definition.classification === 'secret' ? null : fromRecord.fingerprint,
+      toFingerprint: toRecord?.definition.classification === 'secret' ? null : toRecord?.fingerprint ?? null,
+      changed: fromRecord.status !== toRecord?.status || fromRecord.comparisonFingerprint !== toRecord?.comparisonFingerprint,
     };
   });
   return {

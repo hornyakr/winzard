@@ -16,6 +16,8 @@ export function configurationValidationLabel(
   switch (validation.kind) {
     case 'enum':
       return `enum(${validation.values.join('|')})`;
+    case 'csv-enum':
+      return `csv-enum(${validation.values.join('|')})`;
     case 'integer':
       return boundedLabel('integer', validation.minimum, validation.maximum);
     case 'secret':

@@ -13,6 +13,7 @@ export type ConfigurationValidation =
   | Readonly<{ kind: 'string'; minimumLength?: number; maximumLength?: number }>
   | Readonly<{ kind: 'url'; protocols?: readonly string[]; originOnly?: boolean }>
   | Readonly<{ kind: 'enum'; values: readonly string[] }>
+  | Readonly<{ kind: 'csv-enum'; values: readonly string[]; minimumItems?: number }>
   | Readonly<{ kind: 'integer'; minimum?: number; maximum?: number }>
   | Readonly<{ kind: 'boolean' }>
   | Readonly<{ kind: 'postgres-url' }>
@@ -81,6 +82,7 @@ export type ConfigurationRecord = Readonly<{
   empty: boolean;
   valid: boolean;
   fingerprint: string | null;
+  comparisonFingerprint: string | null;
   length: number | null;
   consumers: readonly string[];
   issues: readonly ConfigurationIssue[];

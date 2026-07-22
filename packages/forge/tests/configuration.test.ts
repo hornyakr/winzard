@@ -32,6 +32,10 @@ async function file(root: string, target: string, content: string): Promise<void
   await writeFile(absolute, content, 'utf8');
 }
 
+function authenticationSecretLine(value: string): string {
+  return [`AUTH`, `_SECRET=`, JSON.stringify(value), `\n`].join('');
+}
+
 const minimalManifest: WinzardManifest = {
   schemaVersion: 1,
   profile: 'minimal',
@@ -238,7 +242,7 @@ describe('configuration inventory and drift', () => {
     expect(reference).toContain('NEXT_PUBLIC_APP_NAME');
     expect(reference).toContain('Type / validation');
     expect(reference).toContain('Introduced | Deprecated | Removed');
-    expect(reference).toContain('enum(local\\|preview\\|staging\\|production)');
+    expect(reference).toContain('enum(local\\|development\\|preview\\|staging\\|production)');
   });
 
   it('redaktált stage diffet ad értékek kiírása nélkül', async () => {
@@ -249,6 +253,37 @@ describe('configuration inventory and drift', () => {
     const stage = result.records.find(({ key }) => key === 'APP_STAGE');
     expect(stage?.changed).toBe(true);
     expect(JSON.stringify(result)).not.toContain('APP_STAGE=production');
+  });
+
+  it('secret diagnosztikában sem hosszt, sem fingerprintet nem tesz közzé', async () => {
+    const root = await fixture();
+    const manifest: WinzardManifest = {
+      ...minimalManifest,
+      capabilities: ['next-app', 'forge', 'authentication'],
+    };
+    const secret = ['xT9!qL2#', 'vN7@pR4$', 'kM8&zC5*', 'wS1-yH6_'].join('');
+    const inventory = await buildConfigurationInventory(root, manifest, {
+      processEnvironment: {
+        APP_URL: 'http://localhost:3000',
+        APP_NAME: 'Atlas',
+        APP_STAGE: 'local',
+        LOG_LEVEL: 'info',
+        NEXT_PUBLIC_APP_NAME: 'Atlas',
+        AUTH_SECRET: secret,
+      },
+    });
+    const record = inventory.records.find(({ definition }) => definition.key === 'AUTH_SECRET');
+    expect(record).toMatchObject({ length: null, fingerprint: null, valid: true });
+    const redacted = redactConfigurationRecord(record!);
+    expect(redacted).toMatchObject({ length: null, fingerprint: null });
+    expect(JSON.stringify(redacted)).not.toContain(secret);
+
+    await file(root, '.env.staging', `${minimalExample}${authenticationSecretLine(secret)}`);
+    await file(root, '.env.production', `${minimalExample.replace('APP_STAGE=local', 'APP_STAGE=production').replace('APP_URL=http://localhost:3000', 'APP_URL=https://example.test')}${authenticationSecretLine(`${secret.slice(0, -1)}Z`)}`);
+    const diff = await diffConfiguration(root, manifest, 'staging', 'production');
+    const secretDiff = diff.records.find(({ key }) => key === 'AUTH_SECRET');
+    expect(secretDiff).toMatchObject({ changed: true, fromFingerprint: null, toFingerprint: null });
+    expect(JSON.stringify(secretDiff)).not.toContain(secret);
   });
 });
 

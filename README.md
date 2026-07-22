@@ -40,6 +40,21 @@ pnpm forge make:view catalog/product/product-card --dry-run --project apps/refer
 
 A `presentation-contract` capability explicit view modelleket, minimális Server/Client határt, biztonságos asset- és URL-kezelést, valamint generált view-contract bizonyítékot tesz ellenőrizhetővé.
 
+## Kernelkonfiguráció és deployment-identitás
+
+A `kernel-configuration` capability explicit project/build rootot, reprodukálható
+buildazonosságot, runtime módot, locale-, Host- és proxy trust policyt, cache
+namespace-t, secret rotation contractot és Forge evidence-et biztosít.
+
+```bash
+pnpm forge kernel-config:list --project apps/reference
+pnpm forge kernel-config:check --project apps/reference
+pnpm forge runtime:check --project apps/reference
+pnpm forge proxy:trust --project apps/reference
+pnpm forge locale:check --project apps/reference
+pnpm forge kernel-config:docs --check --project apps/reference
+```
+
 ## HTTP-kernel és request–response lifecycle
 
 A Next.js marad az autoritatív delivery kernel. A Winzard típusos adjacent contractokat, immutable request-contextet, explicit Route Handler kernelt, központi response-policyt, abort- és body-limit védelmet, valamint Forge lifecycle-diagnosztikát ad fölé.
@@ -111,6 +126,7 @@ A root `build` kizárólag a referenciaalkalmazás Next.js buildjét futtatja. P
 
 ## Dokumentáció
 
+- [Kernel-szintű konfiguráció](docs/public_documentation/winzard-kernel-configuration.md)
 - [HTTP-kernel és request–response lifecycle](docs/public_documentation/winzard-http-kernel.md)
 - [Konfiguráció Winzard alkalmazásokban](docs/public_documentation/winzard-configuration.md)
 - [Normatív capability- és setup-kiegészítés](docs/public_documentation/winzard-setup-capabilities.md)

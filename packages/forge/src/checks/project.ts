@@ -6,6 +6,7 @@ import ts from 'typescript';
 import { checkConfigurationDrift } from '../configuration/drift';
 import { runDocumentationChecks } from '../documentation/checks';
 import { runKernelChecks } from '../kernel/checks';
+import { buildKernelConfigurationInventory } from '../kernel-configuration/inventory';
 import { loadProjectManifest, type WinzardCapability, type WinzardManifest } from '../manifest';
 import { runRouteChecks } from '../routing/checks';
 import { runViewChecks } from '../views/checks';
@@ -36,6 +37,35 @@ const CAPABILITY_REQUIREMENTS: Readonly<Record<WinzardCapability, Readonly<{
     any: [['next.config.ts', 'next.config.mjs', 'next.config.js']],
   },
   forge: {},
+  'kernel-configuration': {
+    all: [
+      'instrumentation.ts',
+      'next.config.ts',
+      'src/proxy.ts',
+      'src/platform/kernel-config/build-identity.ts',
+      'src/platform/kernel-config/cache-namespace.ts',
+      'src/platform/kernel-config/composition-fingerprint.ts',
+      'src/platform/kernel-config/file-offload.server.ts',
+      'src/platform/kernel-config/filesystem.server.ts',
+      'src/platform/kernel-config/host-policy.ts',
+      'src/platform/kernel-config/internal-headers.ts',
+      'src/platform/kernel-config/kernel-configuration.ts',
+      'src/platform/kernel-config/locale-config.ts',
+      'src/platform/kernel-config/method-override.ts',
+      'src/platform/kernel-config/next-config.cjs',
+      'src/platform/kernel-config/next-config.ts',
+      'src/platform/kernel-config/project-paths.ts',
+      'src/platform/kernel-config/proxy-trust.ts',
+      'src/platform/kernel-config/runtime-environment.ts',
+      'src/platform/kernel-config/runtime-mode.ts',
+      'src/platform/kernel-config/runtime-writable-root.server.ts',
+      'src/platform/kernel-config/secret-keyring.server.ts',
+      'src/platform/kernel-config/structured-log.ts',
+      'src/platform/kernel-config/utf8.ts',
+      'src/platform/kernel-config/validate-kernel-config.server.ts',
+    ],
+    requires: ['next-app', 'forge'],
+  },
   'http-kernel': {
     all: [
       'instrumentation.ts',
@@ -50,7 +80,7 @@ const CAPABILITY_REQUIREMENTS: Readonly<Record<WinzardCapability, Readonly<{
       'src/platform/http/request-context.server.ts',
       'src/platform/http/response-policy.ts',
     ],
-    requires: ['next-app', 'forge'],
+    requires: ['next-app', 'forge', 'kernel-configuration'],
   },
   'presentation-contract': { all: ['src/app'], requires: ['next-app', 'forge'] },
   'modular-application': { all: ['src/modules', 'src/composition'] },
@@ -505,6 +535,12 @@ export async function runProjectChecks(root = process.cwd()): Promise<readonly C
       .map(({ code, file, message }) => ({ code, file, message })));
     const routingIssues = await runRouteChecks(root);
     failures.push(...routingIssues.filter(({ severity }) => severity === 'error').map(({ code, file, message }) => ({ code, file, message })));
+  }
+  if (enabled.has('kernel-configuration')) {
+    const kernelConfiguration = await buildKernelConfigurationInventory(root);
+    failures.push(...kernelConfiguration.issues
+      .filter(({ severity }) => severity === 'error')
+      .map(({ code, file, message }) => ({ code, file, message })));
   }
   if (enabled.has('http-kernel')) {
     const kernelIssues = await runKernelChecks(root);

@@ -9,7 +9,7 @@ applyTo: ".env.example,.env.test,instrumentation.ts,next.config.*,package.json,w
 # WZ-CONTRACT-CONFIGURATION-001 — Winzard configuration and secret boundary contract
 
 Source: `docs/80-winzard/platform-contracts/WZ-CONTRACT-CONFIGURATION-001.md`
-Hash: `sha256:0d65fdb6511167c35d5134269e4f1dcd94a853fe0224724d33316fc42880c414`
+Hash: `sha256:46d2854a36758cb3305b83ed71ad64de14f694dd3b85144e0da5069172da539b`
 
 ## Contract
 
@@ -19,7 +19,7 @@ Hash: `sha256:0d65fdb6511167c35d5134269e4f1dcd94a853fe0224724d33316fc42880c414`
 - `NODE_ENV` is limited to `development`, `production` and `test`; deployment stages use a separate `APP_STAGE` contract.
 - `NEXT_PUBLIC_*` values are public and may be frozen into the build artifact. A secret never uses that prefix or `next.config.env`.
 - Runtime or local `.env*` files, credentials, private keys and raw configuration dumps are not committed, generated or included in AI context.
-- Diagnostics show only key metadata, source, status, length and a short fingerprint. They never print the raw value.
+- Diagnostics show only key metadata, source and status. Public/internal values may expose a short fingerprint; secret values expose neither raw data, length nor fingerprint.
 - An installed capability alone determines whether its configuration is required. The presence of an env key never activates a capability.
 
 ## Constraints and prohibitions

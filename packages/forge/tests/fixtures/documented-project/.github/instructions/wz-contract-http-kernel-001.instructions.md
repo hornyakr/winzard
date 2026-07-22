@@ -9,7 +9,7 @@ applyTo: "instrumentation.ts,src/proxy.ts,src/app/**,src/application/**,src/comp
 # WZ-CONTRACT-HTTP-KERNEL-001 — Winzard HTTP-kernel and request lifecycle contract
 
 Source: `docs/80-winzard/platform-contracts/WZ-CONTRACT-HTTP-KERNEL-001.md`
-Hash: `sha256:9b476c0407bc17a22775ef905241e3331dfe0117b4929b7a2f9e479f616e08a3`
+Hash: `sha256:22dfa8e9baff6d7552893b2bae49ee9164af93fde5d05768dc93cd121a1b5e93`
 
 ## Contract
 

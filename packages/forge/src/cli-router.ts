@@ -17,6 +17,11 @@ import { instrumentationIssues, requestContextIssues, responsePolicyIssues } fro
 import { checkKernelDocumentation, generateKernelDocumentation } from './kernel/docs';
 import { buildKernelInventory, inspectKernel } from './kernel/inventory';
 import { renderKernelGraph, renderKernelInspection, renderKernelIssues } from './kernel/render';
+import { kernelLocaleIssues, kernelProxyIssues, kernelRuntimeIssues } from './kernel-configuration/checks';
+import { checkKernelConfigurationDocumentation, generateKernelConfigurationDocumentation } from './kernel-configuration/docs';
+import { buildKernelConfigurationInventory, diffKernelConfiguration, inspectKernelConfiguration } from './kernel-configuration/inventory';
+import { renderArtifactComparison, renderArtifactManifest, renderKernelConfigurationDiff, renderKernelConfigurationInspection, renderKernelConfigurationIssues, renderKernelConfigurationList } from './kernel-configuration/render';
+import { compareArtifactManifests, createArtifactManifest } from './kernel-configuration/reproducibility';
 import { loadProjectManifest } from './manifest';
 import { checkViewDocumentation, generateViewDocumentation } from './views/docs';
 import { generateView } from './views/generator';
@@ -25,7 +30,7 @@ import { renderViewAssets, renderViewInspection, renderViewIssues, renderViewLis
 
 const args = process.argv.slice(2);
 const command = args[0] ?? 'list';
-const OPTIONS_WITH_VALUES = new Set(['--project', '--node-env', '--from', '--to', '--method', '--changed-from']);
+const OPTIONS_WITH_VALUES = new Set(['--project', '--node-env', '--from', '--to', '--method', '--changed-from', '--artifact', '--compare', '--runtime-mode']);
 
 function positionalArguments(values: readonly string[]): readonly string[] {
   const output: string[] = [];
@@ -212,6 +217,129 @@ async function configurationCommand(): Promise<boolean> {
 }
 
 
+function cliUsage(message: string): never {
+  const error = new Error(message) as Error & { exitCode?: number };
+  error.exitCode = 2;
+  throw error;
+}
+
+async function kernelConfigurationCommand(): Promise<boolean> {
+  const commands = new Set([
+    'kernel-config:list',
+    'kernel-config:inspect',
+    'kernel-config:check',
+    'kernel-config:diff',
+    'kernel-config:fingerprint',
+    'kernel-config:docs',
+    'runtime:mode',
+    'runtime:check',
+    'proxy:trust',
+    'locale:check',
+    'build:reproducibility',
+  ]);
+  if (!commands.has(command)) return false;
+  if (!['linux', 'darwin', 'win32'].includes(process.platform)) {
+    console.error(`[KERNEL_PLATFORM_UNSUPPORTED] ${process.platform}`);
+    process.exitCode = 3;
+    return true;
+  }
+  if (command === 'build:reproducibility') {
+    const artifact = option('--artifact') ?? '.next';
+    const left = await createArtifactManifest(root, artifact);
+    const comparisonPath = option('--compare');
+    if (!comparisonPath) {
+      console.log(json ? JSON.stringify(left, null, 2) : renderArtifactManifest(left));
+      return true;
+    }
+    const right = await createArtifactManifest(root, comparisonPath);
+    const comparison = compareArtifactManifests(left, right);
+    console.log(json
+      ? JSON.stringify({ left, right, comparison }, null, 2)
+      : renderArtifactComparison(comparison));
+    if (!comparison.equal) process.exitCode = 1;
+    return true;
+  }
+  if (command === 'kernel-config:diff') {
+    const from = option('--from') ?? positionals[0];
+    const to = option('--to') ?? positionals[1];
+    if (!from || !to) cliUsage('A kernel-config:diff parancshoz két stage vagy --from és --to szükséges.');
+    const diff = await diffKernelConfiguration(root, from, to);
+    console.log(json ? JSON.stringify(diff, null, 2) : [
+      renderKernelConfigurationDiff(diff),
+      ...(diff.issues.length > 0
+        ? [`\n${renderKernelConfigurationIssues(diff.issues, 'kernel-config:diff')}`]
+        : []),
+    ].join(''));
+    if (hasErrors(diff.issues)) process.exitCode = 1;
+    return true;
+  }
+  if (command === 'kernel-config:docs') {
+    if (flag('--check')) {
+      const issues = await checkKernelConfigurationDocumentation(root);
+      console.log(json
+        ? JSON.stringify({ issues }, null, 2)
+        : renderKernelConfigurationIssues(issues, 'kernel-config:docs --check'));
+      if (hasErrors(issues)) process.exitCode = 1;
+    } else {
+      const files = await generateKernelConfigurationDocumentation(root);
+      console.log(json ? JSON.stringify({ files }, null, 2) : `GENERATED: ${files.length} kernel configuration document`);
+    }
+    return true;
+  }
+  const runtimeMode = option('--runtime-mode');
+  if (runtimeMode && !['web', 'cli', 'worker'].includes(runtimeMode)) {
+    cliUsage('--runtime-mode csak web, cli vagy worker lehet.');
+  }
+  const inventory = await buildKernelConfigurationInventory(root, {
+    ...(option('--node-env') ? { nodeEnv: option('--node-env') ?? undefined } : {}),
+    ...(runtimeMode ? { runtimeMode: runtimeMode as 'web' | 'cli' | 'worker' } : {}),
+  });
+  if (command === 'kernel-config:list') {
+    console.log(json ? JSON.stringify(inventory, null, 2) : renderKernelConfigurationList(inventory));
+    if (hasErrors(inventory.issues)) process.exitCode = 1;
+    return true;
+  }
+  if (command === 'kernel-config:inspect') {
+    const query = positionals[0];
+    if (!query) cliUsage('A kernel-config:inspect parancshoz rekordazonosító szükséges.');
+    const records = inspectKernelConfiguration(inventory, query);
+    const issues = inventory.issues.filter((issue) =>
+      records.some((record) => issue.key === record.id || issue.area === record.id));
+    console.log(json
+      ? JSON.stringify({ records, issues }, null, 2)
+      : [
+        renderKernelConfigurationInspection(records),
+        ...(issues.length > 0 ? [`\n${renderKernelConfigurationIssues(issues, 'kernel-config:inspect')}`] : []),
+      ].join(''));
+    if (records.length === 0 || hasErrors(issues)) process.exitCode = 1;
+    return true;
+  }
+  if (command === 'kernel-config:fingerprint') {
+    console.log(json
+      ? JSON.stringify({ fingerprint: inventory.fingerprint }, null, 2)
+      : inventory.fingerprint);
+    if (hasErrors(inventory.issues)) process.exitCode = 1;
+    return true;
+  }
+  if (command === 'runtime:mode') {
+    const records = inventory.records.filter(({ id }) => id === 'runtime-mode');
+    console.log(json ? JSON.stringify({ records }, null, 2) : renderKernelConfigurationInspection(records));
+    return true;
+  }
+  const selected = command === 'runtime:check'
+    ? kernelRuntimeIssues(inventory)
+    : command === 'proxy:trust'
+      ? kernelProxyIssues(inventory)
+      : command === 'locale:check'
+        ? kernelLocaleIssues(inventory)
+        : inventory.issues;
+  console.log(json
+    ? JSON.stringify({ issues: selected, fingerprint: inventory.fingerprint }, null, 2)
+    : renderKernelConfigurationIssues(selected, command));
+  if (hasErrors(selected)) process.exitCode = 1;
+  return true;
+}
+
 async function kernelCommand(): Promise<boolean> {
   const kernelCommands = new Set([
     'kernel:graph',
@@ -390,6 +518,17 @@ try {
   if (command === 'list') {
     await import('./cli');
     console.log([
+      'kernel-config:list',
+      'kernel-config:inspect',
+      'kernel-config:check',
+      'kernel-config:diff',
+      'kernel-config:fingerprint',
+      'kernel-config:docs',
+      'runtime:mode',
+      'runtime:check',
+      'proxy:trust',
+      'locale:check',
+      'build:reproducibility',
       'kernel:graph',
       'kernel:inspect',
       'kernel:check',
@@ -423,10 +562,12 @@ try {
     ].join('\n'));
   } else if (command === 'check' || command === 'security:check') {
     await projectCheck(command === 'security:check');
-  } else if (!await configurationCommand() && !await kernelCommand() && !await viewCommand() && !await deliveryCommand()) {
+  } else if (!await kernelConfigurationCommand() && !await configurationCommand() && !await kernelCommand() && !await viewCommand() && !await deliveryCommand()) {
     await import('./cli');
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = 1;
+  process.exitCode = typeof error === 'object' && error !== null && 'exitCode' in error
+    ? Number((error as { exitCode: unknown }).exitCode)
+    : 1;
 }

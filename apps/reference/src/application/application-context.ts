@@ -1,3 +1,5 @@
+import { supportedLocales, type SupportedLocale } from '@/platform/kernel-config/locale-config';
+
 export type ApplicationActor =
   | Readonly<{ kind: 'anonymous' }>
   | Readonly<{
@@ -11,7 +13,9 @@ export type ApplicationActor =
       scopes: readonly string[];
     }>;
 
-export type ApplicationLocale = 'hu' | 'en';
+export const applicationLocales = supportedLocales;
+
+export type ApplicationLocale = SupportedLocale;
 
 export type ApplicationContext = Readonly<{
   actor: ApplicationActor;

@@ -55,7 +55,7 @@ tags:
 - `NODE_ENV` is limited to `development`, `production` and `test`; deployment stages use a separate `APP_STAGE` contract.
 - `NEXT_PUBLIC_*` values are public and may be frozen into the build artifact. A secret never uses that prefix or `next.config.env`.
 - Runtime or local `.env*` files, credentials, private keys and raw configuration dumps are not committed, generated or included in AI context.
-- Diagnostics show only key metadata, source, status, length and a short fingerprint. They never print the raw value.
+- Diagnostics show only key metadata, source and status. Public/internal values may expose a short fingerprint; secret values expose neither raw data, length nor fingerprint.
 - An installed capability alone determines whether its configuration is required. The presence of an env key never activates a capability.
 
 ## Constraints and prohibitions
