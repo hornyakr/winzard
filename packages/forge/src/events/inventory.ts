@@ -124,10 +124,19 @@ export async function buildEventInventory(root: string): Promise<EventInventory>
       definitions.push(Object.freeze({ id, file: projectFile, exportName: definition.exportName, events: Object.freeze(definitionEvents) }));
     }
   }
-  const eventKeys = new Set<string>(); const handlerIds = new Set<string>(); const aliases = new Set<string>();
+  const eventIds = new Set<string>();
+  const eventTypes = new Set<string>();
+  const handlerIds = new Set<string>();
+  const aliases = new Set<string>();
   for (const event of events) {
-    for (const key of [event.id, event.type]) { if (eventKeys.has(key)) issue(issues, { severity: 'error', area: 'registry', code: 'EVENT_DUPLICATE_ID', file: event.definitionFile, eventType: event.type, message: `Duplikált event azonosító vagy type: ${key}.` }); eventKeys.add(key); }
-    for (const alias of event.aliases) { if (eventKeys.has(alias) || aliases.has(alias)) issue(issues, { severity: 'error', area: 'registry', code: 'EVENT_ALIAS_DUPLICATE', file: event.definitionFile, eventType: event.type, message: `Duplikált event alias: ${alias}.` }); aliases.add(alias); }
+    if (eventIds.has(event.id)) issue(issues, { severity: 'error', area: 'registry', code: 'EVENT_DUPLICATE_ID', file: event.definitionFile, eventType: event.type, message: `Duplikált event ID: ${event.id}.` });
+    if (eventTypes.has(event.type)) issue(issues, { severity: 'error', area: 'registry', code: 'EVENT_DUPLICATE_TYPE', file: event.definitionFile, eventType: event.type, message: `Duplikált event type: ${event.type}.` });
+    eventIds.add(event.id);
+    eventTypes.add(event.type);
+    for (const alias of event.aliases) {
+      if (eventIds.has(alias) || eventTypes.has(alias) || aliases.has(alias)) issue(issues, { severity: 'error', area: 'registry', code: 'EVENT_ALIAS_DUPLICATE', file: event.definitionFile, eventType: event.type, message: `Duplikált event alias: ${alias}.` });
+      aliases.add(alias);
+    }
     for (const handler of event.handlers) { if (handlerIds.has(handler.id)) issue(issues, { severity: 'error', area: 'registry', code: 'EVENT_HANDLER_DUPLICATE_ID', file: event.definitionFile, eventType: event.type, handlerId: handler.id, message: `Duplikált handler ID: ${handler.id}.` }); handlerIds.add(handler.id); }
     for (const target of [event.source, event.producer, ...event.handlers.map(({ source }) => source)]) if (!await exists(path.join(root, target))) issue(issues, { severity: 'error', area: 'contract', code: 'EVENT_SOURCE_MISSING', file: event.definitionFile, eventType: event.type, message: `Hiányzó source: ${target}.` });
   }
