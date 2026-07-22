@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { COMPOSITION_COMMANDS } from '../src/composition/cli';
 import { checkCompositionDocumentation, generateCompositionDocumentation } from '../src/composition/docs';
 import { checkCompositionGeneration, generateComposition } from '../src/composition/generator';
 import { buildCompositionInventory, compositionWhy } from '../src/composition/inventory';
@@ -16,6 +17,7 @@ async function file(root: string, target: string, content: string): Promise<void
 
 async function fixture(): Promise<string> {
   const root = await mkdtemp(path.join(os.tmpdir(), 'winzard-composition-'));
+  await file(root, 'instrumentation.ts', "export async function register() { const composition = await import('./src/platform/composition/validate-composition.server'); await composition.validateComposition(); }\n");
   await file(root, 'src/composition/app.server.ts', "import 'server-only'; export const application = {};\n");
   await file(root, 'src/modules/catalog/application/query.ts', 'export class Query {}\n');
   await file(root, 'src/modules/catalog/infrastructure/repository.ts', 'export class Repository {}\n');
@@ -46,6 +48,42 @@ describe('Forge service composition platform', () => {
       'catalog.query',
       'catalog.repository',
     ]);
+  });
+
+  it('a globális Forge command-lista számára publikálja a composition parancsokat', () => {
+    expect(COMPOSITION_COMMANDS).toEqual([
+      'composition:list',
+      'composition:inspect',
+      'composition:graph',
+      'composition:check',
+      'composition:why',
+      'composition:docs',
+      'composition:generate',
+      'service:aliases',
+      'service:lifetimes',
+    ]);
+  });
+
+  it('ismeretlen mezőt, hibás enumot és hiányzó startup validátort fail-closed jelez', async () => {
+    const root = await fixture();
+    await file(root, 'instrumentation.ts', 'export async function register() {}\n');
+    await file(root, 'src/composition/catalog.composition.definition.ts', `
+export const catalog = defineComposition({
+  schemaVersion: 1,
+  id: 'catalog',
+  capability: 'service-composition',
+  roots: [{ id: 'catalog.root', source: 'src/composition/app.server.ts', export: 'application', runtime: 'browser', services: ['catalog.query'], unexpected: true }],
+  services: [
+    { id: 'catalog.query', kind: 'application', implementation: 'Query', source: 'src/modules/catalog/application/query.ts', export: 'Query', lifetime: 'proces', runtime: 'nodejs', visibility: 'public', dependencies: [] },
+  ],
+});
+`);
+    const codes = (await buildCompositionInventory(root)).issues.map(({ code }) => code);
+    expect(codes).toEqual(expect.arrayContaining([
+      'COMPOSITION_UNKNOWN_FIELD',
+      'COMPOSITION_ENUM_INVALID',
+      'COMPOSITION_STARTUP_VALIDATOR_MISSING',
+    ]));
   });
 
   it('async function composition exportot is felismer', async () => {

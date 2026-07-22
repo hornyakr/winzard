@@ -12,7 +12,7 @@ import {
   renderCompositionList,
 } from './render';
 
-const COMMANDS = new Set([
+export const COMPOSITION_COMMANDS = Object.freeze([
   'composition:list',
   'composition:inspect',
   'composition:graph',
@@ -22,7 +22,9 @@ const COMMANDS = new Set([
   'composition:generate',
   'service:aliases',
   'service:lifetimes',
-]);
+] as const);
+
+const COMMANDS = new Set<string>(COMPOSITION_COMMANDS);
 
 function parsedArguments(values: readonly string[]): Readonly<{
   positionals: readonly string[];
@@ -112,10 +114,19 @@ export async function runCompositionCli(args: readonly string[]): Promise<boolea
     console.log(json ? JSON.stringify({ issues: inventory.issues, fingerprint: inventory.fingerprint }, null, 2) : renderCompositionIssues(inventory.issues, 'composition:check'));
   } else if (command === 'composition:why') {
     const query = parsed.positionals[0];
-    if (!query) throw Object.assign(new Error('A composition:why parancshoz service ID szükséges.'), { exitCode: 2 });
-    const chain = compositionWhy(inventory, query);
-    console.log(json ? JSON.stringify({ chain }, null, 2) : chain.length > 0 ? chain.join(' → ') : `No path to ${query}.`);
-    if (chain.length === 0) process.exitCode = 1;
+    if (!query) throw Object.assign(new Error('A composition:why parancshoz service ID, port vagy implementáció szükséges.'), { exitCode: 2 });
+    const exact = inventory.services.find(({ id }) => id === query);
+    const matches = exact ? [exact] : inspectComposition(inventory, query);
+    if (matches.length !== 1) {
+      const code = matches.length === 0 ? 'COMPOSITION_SERVICE_UNKNOWN' : 'COMPOSITION_SERVICE_AMBIGUOUS';
+      console.error(`[${code}] ${query}`);
+      process.exitCode = 1;
+    } else {
+      const target = matches[0]?.id ?? query;
+      const chain = compositionWhy(inventory, target);
+      console.log(json ? JSON.stringify({ target, chain }, null, 2) : chain.length > 0 ? chain.join(' → ') : `No path to ${target}.`);
+      if (chain.length === 0) process.exitCode = 1;
+    }
   } else if (command === 'service:aliases') {
     console.log(json ? JSON.stringify({ aliases: inventory.services.flatMap(({ id, aliases }) => aliases.map((alias) => ({ alias, id }))) }, null, 2) : renderCompositionAliases(inventory));
   } else if (command === 'service:lifetimes') {

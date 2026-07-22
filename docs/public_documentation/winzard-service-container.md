@@ -1,7 +1,7 @@
 ---
 title: "Szolgáltatások, dependency injection és composition root Winzard alkalmazásokban"
 description: "A Symfony Service Container teljes témakészletének Winzard-specifikus átültetése explicit TypeScript composition rootokkal, portokkal, adapterekkel, factorykkel, service lifetime-okkal, registries-zel, graph-ellenőrzéssel és tesztelhető dependency injectionnel."
-status: "implemented-specification"
+status: "implemented-unverified"
 document_version: "0.1.0"
 last_verified: "2026-07-22"
 source_basis: "Symfony Docs — Service Container"

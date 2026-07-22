@@ -35,6 +35,13 @@ const SOURCE_FILE = /\.(?:ts|tsx|js|jsx|mjs|cjs)$/u;
 const IGNORED_DIRECTORIES = new Set(['.git', '.next', 'generated', 'node_modules']);
 const SERVICE_ID = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/u;
 const CONFIG_KEY = /^[A-Z][A-Z0-9_]*$/u;
+const DEFINITION_FIELDS = new Set(['schemaVersion', 'id', 'capability', 'roots', 'services']);
+const ROOT_FIELDS = new Set(['id', 'source', 'export', 'runtime', 'services']);
+const SERVICE_FIELDS = new Set([
+  'id', 'kind', 'implementation', 'port', 'source', 'export', 'lifetime', 'runtime',
+  'visibility', 'dependencies', 'decorators', 'aliases', 'tags', 'priority', 'configKeys',
+  'secretKeys', 'disposable', 'requestState',
+]);
 
 function projectPath(root: string, file: string): string {
   return path.relative(root, file).split(path.sep).join('/');
@@ -127,6 +134,159 @@ function unique(values: readonly string[]): readonly string[] {
   return Object.freeze([...new Set(values)].sort());
 }
 
+function validateUnknownFields(
+  value: CompositionJsonObject,
+  allowed: ReadonlySet<string>,
+  file: string,
+  context: string,
+  issues: CompositionIssue[],
+): void {
+  for (const key of Object.keys(value)) {
+    if (!allowed.has(key)) {
+      issues.push(issue('contract', 'COMPOSITION_UNKNOWN_FIELD', file, `${context}: ismeretlen mező: ${key}.`));
+    }
+  }
+}
+
+function validateStringField(
+  value: CompositionJsonObject,
+  key: string,
+  file: string,
+  context: string,
+  issues: CompositionIssue[],
+  optional = false,
+): void {
+  const item = value[key];
+  if (item === undefined && optional) return;
+  if (typeof item !== 'string' || item.trim() === '') {
+    issues.push(issue('contract', 'COMPOSITION_FIELD_INVALID', file, `${context}.${key} nem üres string legyen.`));
+  }
+}
+
+function validateOptionalNullableString(
+  value: CompositionJsonObject,
+  key: string,
+  file: string,
+  context: string,
+  issues: CompositionIssue[],
+): void {
+  const item = value[key];
+  if (item === undefined || item === null) return;
+  if (typeof item !== 'string' || item.trim() === '') {
+    issues.push(issue('contract', 'COMPOSITION_FIELD_INVALID', file, `${context}.${key} string vagy null legyen.`));
+  }
+}
+
+function validateEnumField(
+  value: CompositionJsonObject,
+  key: string,
+  allowed: readonly string[],
+  file: string,
+  context: string,
+  issues: CompositionIssue[],
+): void {
+  const item = value[key];
+  if (typeof item !== 'string' || !allowed.includes(item)) {
+    issues.push(issue('contract', 'COMPOSITION_ENUM_INVALID', file, `${context}.${key} csak ${allowed.join(', ')} lehet.`));
+  }
+}
+
+function validateStringArrayField(
+  value: CompositionJsonObject,
+  key: string,
+  file: string,
+  context: string,
+  issues: CompositionIssue[],
+  optional = true,
+): void {
+  const item = value[key];
+  if (item === undefined && optional) return;
+  if (!Array.isArray(item) || item.some((entry) => typeof entry !== 'string' || entry.trim() === '')) {
+    issues.push(issue('contract', 'COMPOSITION_FIELD_INVALID', file, `${context}.${key} nem üres stringek tömbje legyen.`));
+    return;
+  }
+  if (new Set(item).size !== item.length) {
+    issues.push(issue('contract', 'COMPOSITION_ARRAY_DUPLICATE', file, `${context}.${key} duplikált elemet tartalmaz.`));
+  }
+}
+
+function validateOptionalBoolean(
+  value: CompositionJsonObject,
+  key: string,
+  file: string,
+  context: string,
+  issues: CompositionIssue[],
+): void {
+  if (value[key] !== undefined && typeof value[key] !== 'boolean') {
+    issues.push(issue('contract', 'COMPOSITION_FIELD_INVALID', file, `${context}.${key} boolean legyen.`));
+  }
+}
+
+function validateOptionalInteger(
+  value: CompositionJsonObject,
+  key: string,
+  file: string,
+  context: string,
+  issues: CompositionIssue[],
+): void {
+  if (value[key] !== undefined && !Number.isInteger(value[key])) {
+    issues.push(issue('contract', 'COMPOSITION_FIELD_INVALID', file, `${context}.${key} egész szám legyen.`));
+  }
+}
+
+function validateDefinitionShape(
+  file: string,
+  value: CompositionJsonObject,
+  issues: CompositionIssue[],
+): void {
+  validateUnknownFields(value, DEFINITION_FIELDS, file, 'definition', issues);
+  validateStringField(value, 'id', file, 'definition', issues);
+  validateStringField(value, 'capability', file, 'definition', issues);
+
+  for (const key of ['roots', 'services'] as const) {
+    const entries = value[key];
+    if (!Array.isArray(entries)) {
+      issues.push(issue('contract', 'COMPOSITION_FIELD_INVALID', file, `definition.${key} objektumtömb legyen.`));
+      continue;
+    }
+    entries.forEach((entry, index) => {
+      if (!isCompositionJsonObject(entry as CompositionJsonLiteral)) {
+        issues.push(issue('contract', 'COMPOSITION_FIELD_INVALID', file, `definition.${key}[${index}] objektum legyen.`));
+      }
+    });
+  }
+
+  objectArray(value, 'roots').forEach((root, index) => {
+    const context = `root[${index}]`;
+    validateUnknownFields(root, ROOT_FIELDS, file, context, issues);
+    validateStringField(root, 'id', file, context, issues);
+    validateStringField(root, 'source', file, context, issues);
+    validateStringField(root, 'export', file, context, issues);
+    validateEnumField(root, 'runtime', COMPOSITION_RUNTIMES, file, context, issues);
+    validateStringArrayField(root, 'services', file, context, issues, false);
+  });
+
+  objectArray(value, 'services').forEach((service, index) => {
+    const context = `service[${index}]`;
+    validateUnknownFields(service, SERVICE_FIELDS, file, context, issues);
+    validateStringField(service, 'id', file, context, issues);
+    validateEnumField(service, 'kind', COMPOSITION_KINDS, file, context, issues);
+    validateStringField(service, 'implementation', file, context, issues);
+    validateOptionalNullableString(service, 'port', file, context, issues);
+    validateStringField(service, 'source', file, context, issues);
+    validateOptionalNullableString(service, 'export', file, context, issues);
+    validateEnumField(service, 'lifetime', COMPOSITION_LIFETIMES, file, context, issues);
+    validateEnumField(service, 'runtime', COMPOSITION_RUNTIMES, file, context, issues);
+    validateEnumField(service, 'visibility', COMPOSITION_VISIBILITIES, file, context, issues);
+    for (const key of ['dependencies', 'decorators', 'aliases', 'tags', 'configKeys', 'secretKeys'] as const) {
+      validateStringArrayField(service, key, file, context, issues);
+    }
+    validateOptionalInteger(service, 'priority', file, context, issues);
+    validateOptionalBoolean(service, 'disposable', file, context, issues);
+    validateOptionalBoolean(service, 'requestState', file, context, issues);
+  });
+}
+
 function decodeDefinition(
   file: string,
   parsed: ParsedCompositionDefinition,
@@ -138,6 +298,7 @@ function decodeDefinition(
 }> {
   const value = parsed.value;
   const issues: CompositionIssue[] = [];
+  validateDefinitionShape(file, value, issues);
   const definitionId = stringValue(value, 'id');
   const capability = stringValue(value, 'capability');
   if (value.schemaVersion !== 1) {
@@ -374,6 +535,11 @@ async function sourceIssues(
       }
     }
   }
+  const instrumentation = await source('instrumentation.ts');
+  if (!instrumentation || !/\bvalidateComposition\s*\(/u.test(instrumentation)) {
+    issues.push(issue('runtime', 'COMPOSITION_STARTUP_VALIDATOR_MISSING', 'instrumentation.ts', 'A service-composition capability Node startup hookja nem hívja a validateComposition validátort.'));
+  }
+
   for (const absolute of sourceFiles) {
     const file = projectPath(root, absolute);
     if (!SOURCE_FILE.test(file) || file.includes('/generated/')) continue;

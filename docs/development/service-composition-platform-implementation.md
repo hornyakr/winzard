@@ -17,7 +17,8 @@ generated evidence and a reusable recipe.
 - canonical secret-free composition fingerprint and `COMPOSITION_HASH` pinning;
 - typed multiple binding and decorator example in the reference application;
 - deterministic Markdown evidence and drift checks;
-- human and JSON Forge diagnostics.
+- human and JSON Forge diagnostics;
+- all nine composition/service commands published through the global `forge list` surface.
 
 ## Forge surface
 
