@@ -104,6 +104,8 @@ export type InstalledExtensionState = Readonly<{
   recipe: string | null;
   recipeVersion: string | null;
   capabilities: readonly string[];
+  requires: readonly string[];
+  conflicts: readonly string[];
   runtimeDependencies: readonly string[];
   developmentDependencies: readonly string[];
   files: readonly InstalledFileState[];
@@ -153,6 +155,7 @@ export type RecipePlan = Readonly<{
   operations: readonly RecipePlanOperation[];
   issues: readonly ExtensionIssue[];
   unchanged: readonly string[];
+  migrations: readonly string[];
 }>;
 
 export type CapabilityNode = Readonly<{
