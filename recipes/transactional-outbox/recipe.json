@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "name": "transactional-outbox",
+  "provides": [
+    "transactional-outbox"
+  ],
+  "requires": [
+    "event-dispatching",
+    "integration-messaging",
+    "prisma-postgresql"
+  ],
+  "files": [
+    "src/platform/messaging/outbox.ts"
+  ],
+  "generated": [],
+  "dependencies": {
+    "runtime": [],
+    "development": []
+  },
+  "database": {
+    "provider": "postgresql",
+    "models": [
+      "OutboxMessage",
+      "InboxMessage",
+      "DeadLetterMessage"
+    ]
+  }
+}

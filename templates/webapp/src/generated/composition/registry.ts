@@ -3,9 +3,10 @@
 
 import 'server-only';
 import { withRouteLifecycle as compositionRoot0 } from "@/composition/http-kernel.server";
-import { createRouteRequestContext as compositionRoot1 } from "@/composition/request-context.server";
+import { messaging as compositionRoot1 } from "@/composition/messaging.server";
+import { createRouteRequestContext as compositionRoot2 } from "@/composition/request-context.server";
 
-export const generatedCompositionFingerprint = "b02d59cb7fda51f57e58a7862a4bc15f577c16ea73e2032a7689b3f95f3c2ae6";
+export const generatedCompositionFingerprint = "e7bf519d53e22f21109a728b734bd09bcc3f507ef44d6ae676fff373e560553b";
 
 export const generatedCompositionRoots = [
   {
@@ -17,6 +18,19 @@ export const generatedCompositionRoots = [
     "runtime": "nodejs",
     "services": [
       "platform.http-kernel.route-lifecycle"
+    ]
+  },
+  {
+    "id": "platform.messaging.root",
+    "definitionId": "platform.messaging",
+    "definitionFile": "src/composition/messaging.composition.definition.ts",
+    "source": "src/composition/messaging.server.ts",
+    "exportName": "messaging",
+    "runtime": "nodejs",
+    "services": [
+      "platform.messaging.inbox-repository",
+      "platform.messaging.outbox-repository",
+      "platform.messaging.outbox-writer"
     ]
   },
   {
@@ -114,6 +128,81 @@ export const generatedCompositionRegistry = [
     "requestState": false
   },
   {
+    "id": "platform.messaging.inbox-repository",
+    "definitionId": "platform.messaging",
+    "definitionFile": "src/composition/messaging.composition.definition.ts",
+    "capability": "transactional-outbox",
+    "kind": "infrastructure",
+    "implementation": "PrismaInboxRepository",
+    "port": "InboxRepository",
+    "source": "src/platform/messaging/prisma-outbox.repository.ts",
+    "exportName": "PrismaInboxRepository",
+    "lifetime": "process",
+    "runtime": "nodejs",
+    "visibility": "private",
+    "dependencies": [
+      "platform.database.client"
+    ],
+    "decorators": [],
+    "aliases": [],
+    "tags": [],
+    "priority": 0,
+    "configKeys": [],
+    "secretKeys": [],
+    "disposable": false,
+    "requestState": false
+  },
+  {
+    "id": "platform.messaging.outbox-repository",
+    "definitionId": "platform.messaging",
+    "definitionFile": "src/composition/messaging.composition.definition.ts",
+    "capability": "transactional-outbox",
+    "kind": "infrastructure",
+    "implementation": "PrismaOutboxRepository",
+    "port": "OutboxRepository",
+    "source": "src/platform/messaging/prisma-outbox.repository.ts",
+    "exportName": "PrismaOutboxRepository",
+    "lifetime": "process",
+    "runtime": "nodejs",
+    "visibility": "private",
+    "dependencies": [
+      "platform.database.client"
+    ],
+    "decorators": [],
+    "aliases": [],
+    "tags": [],
+    "priority": 0,
+    "configKeys": [],
+    "secretKeys": [],
+    "disposable": false,
+    "requestState": false
+  },
+  {
+    "id": "platform.messaging.outbox-writer",
+    "definitionId": "platform.messaging",
+    "definitionFile": "src/composition/messaging.composition.definition.ts",
+    "capability": "transactional-outbox",
+    "kind": "infrastructure",
+    "implementation": "PrismaOutboxWriter",
+    "port": "OutboxWriter",
+    "source": "src/platform/messaging/prisma-outbox.repository.ts",
+    "exportName": "PrismaOutboxWriter",
+    "lifetime": "process",
+    "runtime": "nodejs",
+    "visibility": "private",
+    "dependencies": [
+      "platform.database.client"
+    ],
+    "decorators": [],
+    "aliases": [],
+    "tags": [],
+    "priority": 0,
+    "configKeys": [],
+    "secretKeys": [],
+    "disposable": false,
+    "requestState": false
+  },
+  {
     "id": "platform.request-context.factory",
     "definitionId": "platform.web",
     "definitionFile": "src/composition/platform.composition.definition.ts",
@@ -140,5 +229,6 @@ export const generatedCompositionRegistry = [
 
 export const generatedCompositionRootInstances = Object.freeze([
   Object.freeze({ id: "platform.http-kernel.root", value: compositionRoot0 }),
-  Object.freeze({ id: "platform.request-context.root", value: compositionRoot1 }),
+  Object.freeze({ id: "platform.messaging.root", value: compositionRoot1 }),
+  Object.freeze({ id: "platform.request-context.root", value: compositionRoot2 }),
 ] as const);

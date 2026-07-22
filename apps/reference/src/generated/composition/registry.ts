@@ -2,11 +2,26 @@
 // Do not edit directly.
 
 import 'server-only';
-import { demoModule as compositionRoot0 } from "@/composition/demo.server";
+import { eventRuntime as compositionRoot0 } from "@/composition/event-runtime.server";
+import { demoModule as compositionRoot1 } from "@/composition/demo.server";
 
-export const generatedCompositionFingerprint = "0c83d7a398983413b41b85c118705bb4a5d68ac3ce1058890220de62de5f6627";
+export const generatedCompositionFingerprint = "9f9c910c320820abbd1cf3225b53a8dad40472ce9c48cde07cb485d644b93a9d";
 
 export const generatedCompositionRoots = [
+  {
+    "id": "demo.events.root",
+    "definitionId": "demo.events",
+    "definitionFile": "src/composition/events.composition.definition.ts",
+    "source": "src/composition/event-runtime.server.ts",
+    "exportName": "eventRuntime",
+    "runtime": "nodejs",
+    "services": [
+      "demo.events.command.dispatch",
+      "demo.events.dispatcher",
+      "demo.events.handler.record",
+      "demo.events.trace"
+    ]
+  },
   {
     "id": "demo.lucky-number.root",
     "definitionId": "demo.lucky-number",
@@ -23,6 +38,105 @@ export const generatedCompositionRoots = [
 ] as const;
 
 export const generatedCompositionRegistry = [
+  {
+    "id": "demo.events.command.dispatch",
+    "definitionId": "demo.events",
+    "definitionFile": "src/composition/events.composition.definition.ts",
+    "capability": "event-dispatching",
+    "kind": "application",
+    "implementation": "DispatchLuckyNumberGenerated",
+    "port": null,
+    "source": "src/modules/demo/lucky-number/application/commands/dispatch-lucky-number-generated.ts",
+    "exportName": "DispatchLuckyNumberGenerated",
+    "lifetime": "process",
+    "runtime": "universal",
+    "visibility": "public",
+    "dependencies": [
+      "demo.events.dispatcher"
+    ],
+    "decorators": [],
+    "aliases": [],
+    "tags": [],
+    "priority": 0,
+    "configKeys": [],
+    "secretKeys": [],
+    "disposable": false,
+    "requestState": false
+  },
+  {
+    "id": "demo.events.dispatcher",
+    "definitionId": "demo.events",
+    "definitionFile": "src/composition/events.composition.definition.ts",
+    "capability": "event-dispatching",
+    "kind": "platform",
+    "implementation": "SequentialDomainEventDispatcher",
+    "port": "DomainEventDispatcher",
+    "source": "src/platform/events/dispatcher.ts",
+    "exportName": "SequentialDomainEventDispatcher",
+    "lifetime": "process",
+    "runtime": "universal",
+    "visibility": "private",
+    "dependencies": [
+      "demo.events.handler.record",
+      "demo.events.trace"
+    ],
+    "decorators": [],
+    "aliases": [],
+    "tags": [],
+    "priority": 0,
+    "configKeys": [],
+    "secretKeys": [],
+    "disposable": false,
+    "requestState": false
+  },
+  {
+    "id": "demo.events.handler.record",
+    "definitionId": "demo.events",
+    "definitionFile": "src/composition/events.composition.definition.ts",
+    "capability": "event-dispatching",
+    "kind": "application",
+    "implementation": "recordLuckyNumberGenerated",
+    "port": null,
+    "source": "src/modules/demo/lucky-number/application/event-handlers/record-lucky-number-generated.ts",
+    "exportName": "recordLuckyNumberGenerated",
+    "lifetime": "process",
+    "runtime": "universal",
+    "visibility": "private",
+    "dependencies": [],
+    "decorators": [],
+    "aliases": [],
+    "tags": [
+      "event-handler"
+    ],
+    "priority": 0,
+    "configKeys": [],
+    "secretKeys": [],
+    "disposable": false,
+    "requestState": false
+  },
+  {
+    "id": "demo.events.trace",
+    "definitionId": "demo.events",
+    "definitionFile": "src/composition/events.composition.definition.ts",
+    "capability": "event-dispatching",
+    "kind": "platform",
+    "implementation": "RecordingEventDispatchTrace",
+    "port": null,
+    "source": "src/platform/events/recording-trace.ts",
+    "exportName": "RecordingEventDispatchTrace",
+    "lifetime": "process",
+    "runtime": "universal",
+    "visibility": "private",
+    "dependencies": [],
+    "decorators": [],
+    "aliases": [],
+    "tags": [],
+    "priority": 0,
+    "configKeys": [],
+    "secretKeys": [],
+    "disposable": false,
+    "requestState": false
+  },
   {
     "id": "demo.lucky-number.command.generate",
     "definitionId": "demo.lucky-number",
@@ -180,5 +294,6 @@ export const generatedCompositionRegistry = [
 ] as const;
 
 export const generatedCompositionRootInstances = Object.freeze([
-  Object.freeze({ id: "demo.lucky-number.root", value: compositionRoot0 }),
+  Object.freeze({ id: "demo.events.root", value: compositionRoot0 }),
+  Object.freeze({ id: "demo.lucky-number.root", value: compositionRoot1 }),
 ] as const);

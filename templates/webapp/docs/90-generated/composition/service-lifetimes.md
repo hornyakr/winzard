@@ -4,11 +4,14 @@
 
 # Service lifetimes
 
-Composition SHA-256: `b02d59cb7fda51f57e58a7862a4bc15f577c16ea73e2032a7689b3f95f3c2ae6`
+Composition SHA-256: `e7bf519d53e22f21109a728b734bd09bcc3f507ef44d6ae676fff373e560553b`
 
 | Lifetime | Service | Request state | Disposable |
 | --- | --- | --- | --- |
 | process | `platform.database.client` | no | yes |
 | process | `platform.http-kernel.route-lifecycle` | no | no |
 | process | `platform.kernel-configuration.validator` | no | no |
+| process | `platform.messaging.inbox-repository` | no | no |
+| process | `platform.messaging.outbox-repository` | no | no |
+| process | `platform.messaging.outbox-writer` | no | no |
 | process | `platform.request-context.factory` | no | no |

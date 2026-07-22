@@ -1,7 +1,11 @@
 {
   "schemaVersion": 1,
-  "fingerprint": "0c83d7a398983413b41b85c118705bb4a5d68ac3ce1058890220de62de5f6627",
+  "fingerprint": "9f9c910c320820abbd1cf3225b53a8dad40472ce9c48cde07cb485d644b93a9d",
   "sources": [
+    {
+      "path": "src/composition/events.composition.definition.ts",
+      "sha256": "8eba04dfee69a9cabc5f50b8e96f0b52ad1763ac9387a0cfd3dd6213f0dfc8fe"
+    },
     {
       "path": "src/composition/demo.composition.definition.ts",
       "sha256": "5567540d66c82b14cdee22338c29579c454d0ea6f6c8bf9131e8c72c01958ef7"

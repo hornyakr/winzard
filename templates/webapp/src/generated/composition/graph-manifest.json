@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "fingerprint": "b02d59cb7fda51f57e58a7862a4bc15f577c16ea73e2032a7689b3f95f3c2ae6",
+  "fingerprint": "e7bf519d53e22f21109a728b734bd09bcc3f507ef44d6ae676fff373e560553b",
   "roots": [
     {
       "id": "platform.http-kernel.root",
@@ -9,6 +9,17 @@
       "runtime": "nodejs",
       "services": [
         "platform.http-kernel.route-lifecycle"
+      ]
+    },
+    {
+      "id": "platform.messaging.root",
+      "source": "src/composition/messaging.server.ts",
+      "exportName": "messaging",
+      "runtime": "nodejs",
+      "services": [
+        "platform.messaging.inbox-repository",
+        "platform.messaging.outbox-repository",
+        "platform.messaging.outbox-writer"
       ]
     },
     {
@@ -92,6 +103,75 @@
         "APP_STAGE",
         "COMPOSITION_HASH"
       ],
+      "secretKeys": [],
+      "disposable": false,
+      "requestState": false
+    },
+    {
+      "id": "platform.messaging.inbox-repository",
+      "capability": "transactional-outbox",
+      "kind": "infrastructure",
+      "implementation": "PrismaInboxRepository",
+      "port": "InboxRepository",
+      "source": "src/platform/messaging/prisma-outbox.repository.ts",
+      "exportName": "PrismaInboxRepository",
+      "lifetime": "process",
+      "runtime": "nodejs",
+      "visibility": "private",
+      "dependencies": [
+        "platform.database.client"
+      ],
+      "decorators": [],
+      "aliases": [],
+      "tags": [],
+      "priority": 0,
+      "configKeys": [],
+      "secretKeys": [],
+      "disposable": false,
+      "requestState": false
+    },
+    {
+      "id": "platform.messaging.outbox-repository",
+      "capability": "transactional-outbox",
+      "kind": "infrastructure",
+      "implementation": "PrismaOutboxRepository",
+      "port": "OutboxRepository",
+      "source": "src/platform/messaging/prisma-outbox.repository.ts",
+      "exportName": "PrismaOutboxRepository",
+      "lifetime": "process",
+      "runtime": "nodejs",
+      "visibility": "private",
+      "dependencies": [
+        "platform.database.client"
+      ],
+      "decorators": [],
+      "aliases": [],
+      "tags": [],
+      "priority": 0,
+      "configKeys": [],
+      "secretKeys": [],
+      "disposable": false,
+      "requestState": false
+    },
+    {
+      "id": "platform.messaging.outbox-writer",
+      "capability": "transactional-outbox",
+      "kind": "infrastructure",
+      "implementation": "PrismaOutboxWriter",
+      "port": "OutboxWriter",
+      "source": "src/platform/messaging/prisma-outbox.repository.ts",
+      "exportName": "PrismaOutboxWriter",
+      "lifetime": "process",
+      "runtime": "nodejs",
+      "visibility": "private",
+      "dependencies": [
+        "platform.database.client"
+      ],
+      "decorators": [],
+      "aliases": [],
+      "tags": [],
+      "priority": 0,
+      "configKeys": [],
       "secretKeys": [],
       "disposable": false,
       "requestState": false

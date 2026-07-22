@@ -9,6 +9,8 @@
     "forge",
     "presentation-contract",
     "modular-application",
-    "liveness"
+    "liveness",
+    "event-dispatching",
+    "integration-messaging"
   ]
 }

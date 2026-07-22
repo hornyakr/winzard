@@ -5,6 +5,7 @@ import ts from 'typescript';
 
 import { checkConfigurationDrift } from '../configuration/drift';
 import { buildCompositionInventory } from '../composition/inventory';
+import { buildEventInventory } from '../events/inventory';
 import { runDocumentationChecks } from '../documentation/checks';
 import { runKernelChecks } from '../kernel/checks';
 import { buildKernelConfigurationInventory } from '../kernel-configuration/inventory';
@@ -66,6 +67,22 @@ const CAPABILITY_REQUIREMENTS: Readonly<Record<WinzardCapability, Readonly<{
       'src/platform/kernel-config/validate-kernel-config.server.ts',
     ],
     requires: ['next-app', 'forge'],
+  },
+  'event-dispatching': {
+    all: [
+      'src/platform/events/contract.ts',
+      'src/platform/events/aggregate-root.ts',
+      'src/platform/events/dispatcher.ts',
+      'src/platform/events/validate-events.server.ts',
+      'src/generated/events/registry.ts',
+      'src/generated/events/graph-manifest.json',
+    ],
+    requires: ['next-app', 'forge', 'kernel-configuration'],
+  },
+  'integration-messaging': { requires: ['event-dispatching'] },
+  'transactional-outbox': {
+    all: ['src/platform/messaging/outbox.ts', 'prisma/schema.prisma'],
+    requires: ['integration-messaging', 'prisma-postgresql'],
   },
   'service-composition': {
     all: [
@@ -398,6 +415,7 @@ export function inspectSourceFile({ root, filePath, source }: SourceInspectionIn
   if (
     projectFile.startsWith('src/composition/') &&
     !projectFile.endsWith('.composition.definition.ts') &&
+    !projectFile.endsWith('.event.definition.ts') &&
     !importsServerOnly
   ) {
     add('COMPOSITION_MISSING_SERVER_ONLY', 'A composition root fájlnak explicit server-only határt kell deklarálnia.');
@@ -556,6 +574,10 @@ export async function runProjectChecks(root = process.cwd()): Promise<readonly C
     failures.push(...kernelConfiguration.issues
       .filter(({ severity }) => severity === 'error')
       .map(({ code, file, message }) => ({ code, file, message })));
+  }
+  if (enabled.has('event-dispatching')) {
+    const eventInventory = await buildEventInventory(root);
+    failures.push(...eventInventory.issues.filter(({ severity }) => severity === 'error').map(({ code, file, message }) => ({ code, file, message })));
   }
   if (enabled.has('service-composition')) {
     const composition = await buildCompositionInventory(root, { resolveConfig: true });

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "fingerprint": "5fb6332c9647bf987b7ee034a8200eeb70ae301c1b4fe4fb24ab626a9815a750",
+  "events": [
+    {
+      "type": "demo.lucky-number.generated",
+      "producer": "src/modules/demo/lucky-number/application/commands/dispatch-lucky-number-generated.ts",
+      "handlers": [
+        {
+          "id": "demo.lucky-number.generated.record",
+          "phase": "after-commit"
+        }
+      ]
+    }
+  ]
+}

@@ -4,11 +4,17 @@
 
 # Composition graph
 
-Composition SHA-256: `b02d59cb7fda51f57e58a7862a4bc15f577c16ea73e2032a7689b3f95f3c2ae6`
+Composition SHA-256: `e7bf519d53e22f21109a728b734bd09bcc3f507ef44d6ae676fff373e560553b`
 
 ```mermaid
 graph TD
   platform_http_kernel_root["platform.http-kernel.root"] --> platform_http_kernel_route_lifecycle["platform.http-kernel.route-lifecycle"]
+  platform_messaging_root["platform.messaging.root"] --> platform_messaging_inbox_repository["platform.messaging.inbox-repository"]
+  platform_messaging_root["platform.messaging.root"] --> platform_messaging_outbox_repository["platform.messaging.outbox-repository"]
+  platform_messaging_root["platform.messaging.root"] --> platform_messaging_outbox_writer["platform.messaging.outbox-writer"]
   platform_request_context_root["platform.request-context.root"] --> platform_request_context_factory["platform.request-context.factory"]
   platform_http_kernel_route_lifecycle --> platform_request_context_factory
+  platform_messaging_inbox_repository --> platform_database_client
+  platform_messaging_outbox_repository --> platform_database_client
+  platform_messaging_outbox_writer --> platform_database_client
 ```
