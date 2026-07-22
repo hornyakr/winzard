@@ -17,7 +17,7 @@ import type {
 } from './types';
 
 const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs']);
-const IGNORED_DIRECTORIES = new Set(['.git', '.next', 'node_modules']);
+const IGNORED_DIRECTORIES = new Set(['.git', '.next', 'generated', 'node_modules']);
 
 function sha256(value: string): string {
   return createHash('sha256').update(value).digest('hex');
@@ -60,13 +60,15 @@ function issue(code: string, file: string, message: string, severity: Persistenc
 function literal(node: ts.Expression): unknown {
   if (ts.isParenthesizedExpression(node)) return literal(node.expression);
   if (ts.isAsExpression(node) || ts.isSatisfiesExpression(node)) return literal(node.expression);
-  if (ts.isCallExpression(node) && node.arguments[0] && ts.isExpression(node.arguments[0])) return literal(node.arguments[0]);
+  if (ts.isCallExpression(node) && node.arguments[0]) return literal(node.arguments[0]);
   if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
   if (ts.isNumericLiteral(node)) return Number(node.text);
   if (node.kind === ts.SyntaxKind.TrueKeyword) return true;
   if (node.kind === ts.SyntaxKind.FalseKeyword) return false;
   if (node.kind === ts.SyntaxKind.NullKeyword) return null;
-  if (ts.isArrayLiteralExpression(node)) return node.elements.map((element) => ts.isExpression(element) ? literal(element) : undefined);
+  if (ts.isArrayLiteralExpression(node)) {
+    return node.elements.map((element) => ts.isSpreadElement(element) ? undefined : literal(element));
+  }
   if (ts.isObjectLiteralExpression(node)) {
     const output: Record<string, unknown> = {};
     for (const property of node.properties) {
