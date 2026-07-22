@@ -39,15 +39,27 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Reconstruct and apply finalization payload
+      - name: Reconstruct finalization archive
+        shell: bash
+        run: cat tools/event-finalize.part.* | base64 -d > /tmp/event-finalize.tar.gz
+
+      - name: Verify finalization archive
         shell: bash
         run: |
-          cat tools/event-finalize.part.* | base64 -d > /tmp/event-finalize.tar.gz
+          sha256sum /tmp/event-finalize.tar.gz
           test "$(sha256sum /tmp/event-finalize.tar.gz | cut -d' ' -f1)" = "73cafd2cdef685f864d7e2582d8c8ad1392fcf4e8de1356900cc4d86c7a148be"
+
+      - name: Extract finalization archive
+        shell: bash
+        run: |
           rm -rf /tmp/event-finalize
           mkdir -p /tmp/event-finalize
           tar -xzf /tmp/event-finalize.tar.gz -C /tmp/event-finalize --strip-components=1
-          bash /tmp/event-finalize/apply.sh "$PWD"
+          test -x /tmp/event-finalize/apply.sh
+
+      - name: Apply finalization patch
+        shell: bash
+        run: bash /tmp/event-finalize/apply.sh "$PWD"
 
       - name: Correct Prisma runtime and transaction client boundaries
         shell: bash
