@@ -41,7 +41,7 @@ jobs:
 
       - name: Reconstruct finalization archive
         shell: bash
-        run: cat tools/event-finalize.part.* | base64 -d > /tmp/event-finalize.tar.gz
+        run: cat tools/event-finalize.part.* | base64 --decode --ignore-garbage > /tmp/event-finalize.tar.gz
 
       - name: Verify finalization archive
         shell: bash
