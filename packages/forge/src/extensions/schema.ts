@@ -29,6 +29,19 @@ function stringValue(value: unknown): string | null {
   return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
 }
 
+function unknownFields(raw: Record<string, unknown>, allowed: readonly string[], file: string, issues: ExtensionIssue[]): void {
+  const accepted = new Set(allowed);
+  for (const key of Object.keys(raw)) {
+    if (!accepted.has(key)) issues.push({ severity: 'error', area: 'manifest', code: 'EXTENSION_MANIFEST_INVALID', file, message: `Ismeretlen mező: ${key}.` });
+  }
+}
+
+function safeRelative(value: string): boolean {
+  if (path.isAbsolute(value) || value.includes('\0')) return false;
+  const normalized = path.normalize(value);
+  return normalized !== '..' && !normalized.startsWith(`..${path.sep}`) && !path.isAbsolute(normalized);
+}
+
 function uniqueStrings(
   raw: unknown,
   file: string,
@@ -173,6 +186,7 @@ export async function loadRecipeManifest(recipeRoot: string): Promise<Readonly<{
   const issues: ExtensionIssue[] = [];
   const raw = await jsonFile(file, issues, 'recipe');
   if (!raw) return { manifest: null, issues };
+  unknownFields(raw, ['schemaVersion', 'name', 'version', 'provides', 'requires', 'conflicts', 'dependencies', 'environment', 'configuration', 'files', 'generated', 'migrations'], file, issues);
   const name = stringValue(raw.name);
   const version = stringValue(raw.version) ?? '1.0.0';
   if (raw.schemaVersion !== 1 || !name || !IDENTIFIER.test(name) || !SEMVER.test(version)) {
@@ -217,16 +231,26 @@ function providers(raw: unknown, file: string, issues: ExtensionIssue[]): readon
     return [];
   }
   const output: ExtensionProvider[] = [];
+  const ids = new Set<string>();
   for (const item of records) {
     if (!isRecord(item)) continue;
     const id = stringValue(item.id) ?? stringValue(item.default);
     const contract = stringValue(item.contract);
     const packageName = stringValue(item.package) ?? id;
-    if (!id || !contract || !packageName) {
-      issues.push({ severity: 'error', area: 'manifest', code: 'EXTENSION_MANIFEST_INVALID', file, message: 'A provider id, contract és package mezője kötelező.' });
+    if (!id || !contract || !packageName || ids.has(id)) {
+      issues.push({ severity: 'error', area: 'manifest', code: 'EXTENSION_MANIFEST_INVALID', file, message: `A provider id, contract és package mezője kötelező és az id legyen egyedi: ${String(id)}.` });
       continue;
     }
+    ids.add(id);
     output.push(Object.freeze({ id, contract, package: packageName, required: item.required !== false, default: item.default === true || typeof item.default === 'string' }));
+  }
+  const contracts = new Set(output.map(({ contract }) => contract));
+  for (const contract of contracts) {
+    const entries = output.filter((item) => item.contract === contract);
+    const defaults = entries.filter((item) => item.default);
+    if (defaults.length > 1 || (entries.filter((item) => item.required).length > 1 && defaults.length !== 1)) {
+      issues.push({ severity: 'error', area: 'manifest', code: 'EXTENSION_PROVIDER_AMBIGUOUS', file, message: `A(z) ${contract} provider-választása nem egyértelmű.` });
+    }
   }
   return Object.freeze(output.sort((left, right) => left.id.localeCompare(right.id)));
 }
@@ -251,6 +275,7 @@ export async function loadExtensionManifest(sourceRoot: string): Promise<Readonl
     issues.push({ severity: 'error', area: 'manifest', code: 'EXTENSION_MANIFEST_MISSING', file: sourceRoot, message: 'Hiányzik az extension.json vagy winzard-extension.json.' });
     return { manifest: null, issues: Object.freeze(issues) };
   }
+  unknownFields(raw, ['schemaVersion', 'name', 'displayName', 'version', 'stability', 'provides', 'requires', 'conflicts', 'packages', 'providers', 'recipe', 'documentation', 'compatibility'], file, issues);
   const name = stringValue(raw.name);
   const version = stringValue(raw.version);
   const stability = raw.stability === 'stable' || raw.stability === 'deprecated' ? raw.stability : 'experimental';
@@ -270,6 +295,13 @@ export async function loadExtensionManifest(sourceRoot: string): Promise<Readonl
   const recipeName = recipeRoot ? stringValue(recipeRoot.name) : null;
   const recipeVersion = recipeRoot ? stringValue(recipeRoot.version) : null;
   const recipePath = recipeRoot ? stringValue(recipeRoot.path) ?? `recipes/${recipeName ?? ''}` : null;
+  if (recipeVersion && !SEMVER.test(recipeVersion)) issues.push({ severity: 'error', area: 'manifest', code: 'EXTENSION_MANIFEST_INVALID', file, message: 'A recipe verziója érvényes semver legyen.' });
+  if (recipePath && !safeRelative(recipePath)) issues.push({ severity: 'error', area: 'security', code: 'EXTENSION_PATH_ESCAPE', file, message: `A recipe path a forrásgyökéren belül maradjon: ${recipePath}.` });
+  const documentationEntry = documentationRoot ? stringValue(documentationRoot.entry) : null;
+  const consumerPack = documentationRoot ? stringValue(documentationRoot.consumerPack) : null;
+  for (const documentationPath of [documentationEntry, consumerPack]) {
+    if (documentationPath && !safeRelative(documentationPath)) issues.push({ severity: 'error', area: 'security', code: 'EXTENSION_PATH_ESCAPE', file, message: `A dokumentációs path a forrásgyökéren belül maradjon: ${documentationPath}.` });
+  }
   const manifest: ExtensionManifest = Object.freeze({
     schemaVersion: 1,
     name: name ?? '<invalid>',
@@ -288,8 +320,8 @@ export async function loadExtensionManifest(sourceRoot: string): Promise<Readonl
     recipe: recipeRoot && recipeName && recipeVersion && recipePath
       ? Object.freeze({ name: recipeName, version: recipeVersion, path: recipePath })
       : null,
-    documentation: documentationRoot && stringValue(documentationRoot.entry)
-      ? Object.freeze({ entry: stringValue(documentationRoot.entry) ?? '', consumerPack: stringValue(documentationRoot.consumerPack) })
+    documentation: documentationEntry
+      ? Object.freeze({ entry: documentationEntry, consumerPack })
       : null,
     compatibility: Object.freeze({
       node: stringValue(compatibilityRoot.node),
