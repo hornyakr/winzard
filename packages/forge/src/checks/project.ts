@@ -395,7 +395,11 @@ export function inspectSourceFile({ root, filePath, source }: SourceInspectionIn
     }
   }
 
-  if (projectFile.startsWith('src/composition/') && !importsServerOnly) {
+  if (
+    projectFile.startsWith('src/composition/') &&
+    !projectFile.endsWith('.composition.definition.ts') &&
+    !importsServerOnly
+  ) {
     add('COMPOSITION_MISSING_SERVER_ONLY', 'A composition root fájlnak explicit server-only határt kell deklarálnia.');
   }
   if (

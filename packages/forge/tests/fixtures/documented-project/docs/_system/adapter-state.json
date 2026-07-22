@@ -3,11 +3,11 @@
   "files": [
     {
       "file": ".github/copilot-instructions.md",
-      "sha256": "sha256:4895b34472d9424c3eea68b38497c2ba34bca98d70ec659a08051d16fd437349"
+      "sha256": "sha256:1e6eb8daeb3ac101c4fe88ed4097141aa66c0c067ed640c99245333c6fcfc782"
     },
     {
       "file": ".github/instructions/wz-contract-composition-001.instructions.md",
-      "sha256": "sha256:fd1847d7136b61e0fbabaefa226ba32c5f7c084366e3f6f25b1a23be8412def6"
+      "sha256": "sha256:8a39fd31542f95127b8ce42240364f61f961882160feebbd904d51d4c509f7e7"
     },
     {
       "file": ".github/instructions/wz-contract-configuration-001.instructions.md",
@@ -39,15 +39,15 @@
     },
     {
       "file": "AGENTS.md",
-      "sha256": "sha256:cf666fb2c2985839638131323c87228698603950d20c528e8b4b18c42975dff3"
+      "sha256": "sha256:155859ad0a2173f3758a32ef5c92bbf7b2b79f2276ee5a93d34f81defad3f3e9"
     },
     {
       "file": "CLAUDE.md",
-      "sha256": "sha256:da3b10f1cb7504319f1b4339c58698dd1fc08e74aacf9fd337372ae25a4b8b91"
+      "sha256": "sha256:b4bbd12d4b2bce3c806def3d991290ede4a9b7418b6243960ac788fbf385ac00"
     },
     {
       "file": "GEMINI.md",
-      "sha256": "sha256:9684855f132c628e8d5e72afbaf5eb1ad22d0cb8a9e315766b8626f1be9044aa"
+      "sha256": "sha256:541bffe789ff7728269f61482b042dc12006e717c62d97a662a06acfc833f1c3"
     }
   ]
 }

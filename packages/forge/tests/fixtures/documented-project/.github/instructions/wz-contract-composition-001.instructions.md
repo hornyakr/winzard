@@ -9,7 +9,7 @@ applyTo: "src/composition/**,src/modules/**,src/generated/composition/**"
 # WZ-CONTRACT-COMPOSITION-001 — Winzard service composition
 
 Source: `docs/80-winzard/platform-contracts/WZ-CONTRACT-COMPOSITION-001.md`
-Hash: `sha256:d92a261367ba99c9d9e544af365c8043b55f40df16dad7560d4a58e8692faff1`
+Hash: `sha256:04725634026f7810379570aa904d823de4f5b7a96d164a812b869478a713a246`
 
 ## Contract
 

@@ -9,7 +9,7 @@ subtype: policy
 authority: generated
 document_status: accepted
 implementation_status: implemented
-verification_status: verified
+verification_status: unverified
 owner: role:winzard-maintainer
 approvers:
   - role:winzard-maintainer
@@ -18,7 +18,7 @@ ai_access: allowed
 context_priority: required
 created: 2026-07-22
 updated: 2026-07-22
-last_verified: 2026-07-22
+last_verified:
 review_due:
 applies_to:
   - src/composition/**
@@ -28,9 +28,7 @@ depends_on:
   - WZ-CONTRACT-MODULES-001
 supersedes: []
 superseded_by: []
-evidence:
-  - command:pnpm forge composition:check --project .
-  - command:pnpm forge composition:generate --check --project .
+evidence: []
 tags:
   - architecture
   - dependency-injection

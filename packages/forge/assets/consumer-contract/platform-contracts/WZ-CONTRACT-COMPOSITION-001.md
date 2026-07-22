@@ -18,7 +18,7 @@ ai_access: allowed
 context_priority: required
 created: 2026-07-22
 updated: 2026-07-22
-last_verified: 2026-07-22
+last_verified:
 review_due:
 applies_to:
   - src/composition/**

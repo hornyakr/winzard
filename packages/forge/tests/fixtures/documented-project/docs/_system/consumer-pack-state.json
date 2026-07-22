@@ -16,7 +16,7 @@
     },
     {
       "file": "manifest/source-manifest.json",
-      "sha256": "sha256:707740e0e7ed9b8454504ed09d5de4d68e69d39962b2f4ccffe280359bce6209"
+      "sha256": "sha256:34bba6305bee5660088542fe8c68068951b1da9ddb84163bcff0c8623933cbe5"
     },
     {
       "file": "manifest/source-manifest.md",
@@ -28,7 +28,7 @@
     },
     {
       "file": "platform-contracts/WZ-CONTRACT-COMPOSITION-001.md",
-      "sha256": "sha256:d92a261367ba99c9d9e544af365c8043b55f40df16dad7560d4a58e8692faff1"
+      "sha256": "sha256:04725634026f7810379570aa904d823de4f5b7a96d164a812b869478a713a246"
     },
     {
       "file": "platform-contracts/WZ-CONTRACT-CONFIGURATION-001.md",
