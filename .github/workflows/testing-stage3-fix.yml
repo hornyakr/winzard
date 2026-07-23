@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - agent/testing-platform-v1
-  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -31,29 +31,18 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Apply Stage 3 corrections
+      - name: Apply non-workflow Stage 3 corrections
         shell: python
         run: |
           import json
           from pathlib import Path
 
-          replacements = {
-              'POSTGRES_DB: winzard\n': 'POSTGRES_DB: winzard_test\n',
-              'POSTGRES_PASSWORD: winzard_dev_only\n': 'POSTGRES_PASSWORD: winzard_test_only\n',
-              'pg_isready -U winzard -d winzard': 'pg_isready -U winzard -d winzard_test',
-              'postgresql://winzard:winzard_dev_only@127.0.0.1:5432/winzard?schema=public':
-                  'postgresql://winzard:winzard_test_only@127.0.0.1:5432/winzard_test?schema=public',
-          }
-          for relative in [
-              '.github/workflows/persistence.yml',
-              '.github/workflows/verify.yml',
-              'docs/development/persistence-development-checks.md',
-          ]:
-              file = Path(relative)
-              source = file.read_text()
-              for old, new in replacements.items():
-                  source = source.replace(old, new)
-              file.write_text(source)
+          documentation = Path('docs/development/persistence-development-checks.md')
+          source = documentation.read_text().replace(
+              'postgresql://winzard:winzard_dev_only@127.0.0.1:5432/winzard?schema=public',
+              'postgresql://winzard:winzard_test_only@127.0.0.1:5432/winzard_test?schema=public',
+          )
+          documentation.write_text(source)
 
           package = Path('package.json')
           data = json.loads(package.read_text())
@@ -84,24 +73,6 @@ jobs:
           )
           playwright.write_text(source)
 
-          testing_workflow = Path('.github/workflows/testing.yml')
-          source = testing_workflow.read_text()
-          old = "  browser-accessibility:\n    runs-on: ubuntu-latest\n    timeout-minutes: 25\n    steps:\n"
-          new = (
-              "  browser-accessibility:\n"
-              "    runs-on: ubuntu-latest\n"
-              "    timeout-minutes: 25\n"
-              "    env:\n"
-              "      APP_URL: http://127.0.0.1:3200\n"
-              "      TRUSTED_HOSTS: 127.0.0.1:3200,127.0.0.1,localhost:3200,localhost,[::1]\n"
-              "      SERVER_ACTION_ALLOWED_ORIGINS: 127.0.0.1:3200,localhost:3200\n"
-              "      PLAYWRIGHT_PORT: '3200'\n"
-              "    steps:\n"
-          )
-          if old not in source and 'PLAYWRIGHT_PORT:' not in source:
-              raise SystemExit('browser-accessibility insertion point not found')
-          testing_workflow.write_text(source.replace(old, new))
-
           inventory = Path('packages/forge/src/testing/inventory.ts')
           source = inventory.read_text().replace(
               "const testFiles = (await collect(absoluteRoot, (name) => TEST_FILE.test(name))).map((value) => projectPath(absoluteRoot, value));",
@@ -130,18 +101,17 @@ jobs:
           pnpm forge test:check --project .
           pnpm forge test:docs --check --project .
 
-      - name: Commit Stage 3 corrections
+      - name: Commit non-workflow Stage 3 corrections
         shell: bash
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add .github/workflows/persistence.yml .github/workflows/verify.yml \
-            .github/workflows/testing.yml playwright.config.ts \
-            apps/reference/docs/90-generated/delivery docs/90-generated/testing \
-            docs/development/persistence-development-checks.md \
+          git add playwright.config.ts apps/reference/docs/90-generated/delivery \
+            docs/90-generated/testing docs/development/persistence-development-checks.md \
             packages/forge/src/testing/inventory.ts \
             packages/forge/tests/configuration.test.ts \
             packages/forge/tests/local-environment.test.ts \
             package.json pnpm-lock.yaml
           git commit -m "fix(testing): align final Stage 3 contracts"
+          git pull --rebase origin agent/testing-platform-v1
           git push origin HEAD:agent/testing-platform-v1

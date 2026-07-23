@@ -131,6 +131,11 @@ jobs:
   browser-accessibility:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      APP_URL: http://127.0.0.1:3200
+      TRUSTED_HOSTS: 127.0.0.1:3200,127.0.0.1,localhost:3200,localhost,[::1]
+      SERVER_ACTION_ALLOWED_ORIGINS: 127.0.0.1:3200,localhost:3200
+      PLAYWRIGHT_PORT: '3200'
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
