@@ -4,7 +4,7 @@
 
 # Request lifecycle evidence
 
-Inventory SHA-256: `979467c9709eda3db74add9be9c65529ada2d855fe92ebd21758ae4f1e9a7b87`
+Inventory SHA-256: `f87b0353f445f8fe83df954a7c9c875df8756bb86a7858436e271e89ab6abfc9`
 
 ## demo.lucky-number.api
 
@@ -63,7 +63,7 @@ generateLuckyNumberAction
 → error mapping: -
 → after response: -
 → instrumentation: onRequestError, register
-→ tests: tests/e2e/lucky-number.smoke.ts, tests/unit/app/api/lucky/number/route.test.ts, tests/unit/app/api/lucky/number/routing.test.ts, tests/unit/modules/demo/lucky-number/lucky-number.presenter.test.ts, tests/unit/modules/demo/lucky-number/routing.test.ts
+→ tests: tests/browser/lucky-number.spec.ts, tests/e2e/lucky-number.smoke.ts, tests/unit/app/api/lucky/number/route.test.ts, tests/unit/app/api/lucky/number/routing.test.ts, tests/unit/modules/demo/lucky-number/lucky-number.presenter.test.ts, tests/unit/modules/demo/lucky-number/routing.test.ts
 ```
 
 ## demo.lucky-number.range.api
