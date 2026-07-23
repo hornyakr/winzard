@@ -3,14 +3,15 @@ import { describe, expect, it } from 'vitest';
 import {
   createRequestContextFactory,
   type RequestContextResolvers,
+  type RequestContextSource,
 } from '../../../../src/platform/http/request-context';
 
 const resolvers: RequestContextResolvers = Object.freeze({
   requestId: Object.freeze({
-    resolve: (source) => source.headers.get('x-request-id') ?? crypto.randomUUID(),
+    resolve: (source: RequestContextSource) => source.headers.get('x-request-id') ?? crypto.randomUUID(),
   }),
   actor: Object.freeze({
-    resolve: (source) => {
+    resolve: (source: RequestContextSource) => {
       const userId = source.headers.get('x-user-id');
       return userId
         ? Object.freeze({
@@ -22,10 +23,10 @@ const resolvers: RequestContextResolvers = Object.freeze({
     },
   }),
   tenant: Object.freeze({
-    resolve: (source) => source.headers.get('x-tenant-id') ?? undefined,
+    resolve: (source: RequestContextSource) => source.headers.get('x-tenant-id') ?? undefined,
   }),
   locale: Object.freeze({
-    resolve: (source) => source.headers.get('x-locale') === 'en' ? 'en' : 'hu',
+    resolve: (source: RequestContextSource) => source.headers.get('x-locale') === 'en' ? 'en' : 'hu',
   }),
   traceId: Object.freeze({ resolve: () => undefined }),
   clientIp: Object.freeze({ resolve: () => undefined }),
