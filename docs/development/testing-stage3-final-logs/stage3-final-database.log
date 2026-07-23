@@ -1,0 +1,179 @@
+$ prisma validate --config templates/webapp/prisma.config.ts
+Loaded Prisma config from templates/webapp/prisma.config.ts.
+
+Prisma schema loaded from templates/webapp/prisma/schema.prisma.
+The schema at templates/webapp/prisma/schema.prisma is valid 🚀
+$ prisma generate --config templates/webapp/prisma.config.ts
+Loaded Prisma config from templates/webapp/prisma.config.ts.
+
+Prisma schema loaded from templates/webapp/prisma/schema.prisma.
+┌─────────────────────────────────────────────────────────┐
+│  Update available 7.8.0 -> 7.9.0                        │
+│  Run the following to update                            │
+│    npm i --save-dev prisma@latest                       │
+│    npm i @prisma/client@latest                          │
+└─────────────────────────────────────────────────────────┘
+
+✔ Generated Prisma Client (7.8.0) to ./templates/webapp/src/generated/prisma in 39ms
+
+$ prisma migrate deploy --config templates/webapp/prisma.config.ts
+Loaded Prisma config from templates/webapp/prisma.config.ts.
+
+Prisma schema loaded from templates/webapp/prisma/schema.prisma.
+Datasource "db": PostgreSQL database "winzard_test", schema "public" at "127.0.0.1:5432"
+
+2 migrations found in prisma/migrations
+
+Applying migration `20260717000000_bootstrap`
+Applying migration `20260722130000_event_messaging`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260717000000_bootstrap/
+    └─ migration.sql
+  └─ 20260722130000_event_messaging/
+    └─ migration.sql
+
+All migrations have been successfully applied.
+$ pnpm setup:local && pnpm verify:contracts && pnpm forge check --project templates/webapp && pnpm forge env:check --project templates/webapp && pnpm verify:persistence && pnpm db:validate:webapp && pnpm db:generate:webapp && pnpm verify:webapp-template && pnpm db:migrate:deploy:webapp
+$ tsx tools/setup-local-environment.ts
+$ pnpm forge contract:check --project apps/reference && pnpm forge contract:generate --check --project apps/reference && pnpm forge deprecation:check --project apps/reference && pnpm forge contract:check --project templates/minimal && pnpm forge contract:generate --check --project templates/minimal && pnpm forge contract:check --project templates/webapp && pnpm forge contract:generate --check --project templates/webapp
+$ tsx packages/forge/src/cli-router.ts contract:check --project apps/reference
+PASS: contract:check
+$ tsx packages/forge/src/cli-router.ts contract:generate --check --project apps/reference
+PASS: contract:generate --check
+$ tsx packages/forge/src/cli-router.ts deprecation:check --project apps/reference
+PASS: deprecation:check
+$ tsx packages/forge/src/cli-router.ts contract:check --project templates/minimal
+PASS: contract:check
+$ tsx packages/forge/src/cli-router.ts contract:generate --check --project templates/minimal
+PASS: contract:generate --check
+$ tsx packages/forge/src/cli-router.ts contract:check --project templates/webapp
+PASS: contract:check
+$ tsx packages/forge/src/cli-router.ts contract:generate --check --project templates/webapp
+PASS: contract:generate --check
+$ tsx packages/forge/src/cli-router.ts check --project templates/webapp
+PASS: check (templates/webapp)
+$ tsx packages/forge/src/cli-router.ts env:check --project templates/webapp
+PASS: env:check (templates/webapp)
+$ vitest run packages/forge/tests/persistence.test.ts && pnpm forge database:check --project templates/webapp && pnpm forge schema:docs --check --project templates/webapp && pnpm forge migration:check --project templates/webapp && pnpm forge repository:check --project templates/webapp
+[33mThe plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the [1mresolve.tsconfigPaths[22m option. You can remove the plugin and set [1mresolve.tsconfigPaths: true[22m in your Vite config instead.[39m
+[33mThe plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the [1mresolve.tsconfigPaths[22m option. You can remove the plugin and set [1mresolve.tsconfigPaths: true[22m in your Vite config instead.[39m
+[33mThe plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the [1mresolve.tsconfigPaths[22m option. You can remove the plugin and set [1mresolve.tsconfigPaths: true[22m in your Vite config instead.[39m
+[33mThe plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the [1mresolve.tsconfigPaths[22m option. You can remove the plugin and set [1mresolve.tsconfigPaths: true[22m in your Vite config instead.[39m
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/winzard/winzard[39m
+
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/persistence.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 67[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 07:46:18
+[2m   Duration [22m 478ms[2m (transform 118ms, setup 0ms, import 304ms, tests 67ms, environment 0ms)[22m
+
+$ tsx packages/forge/src/cli-router.ts database:check --project templates/webapp
+PASS: database:check
+$ tsx packages/forge/src/cli-router.ts schema:docs --check --project templates/webapp
+PASS: schema:docs --check
+$ tsx packages/forge/src/cli-router.ts migration:check --project templates/webapp
+PASS: migration:check
+$ tsx packages/forge/src/cli-router.ts repository:check --project templates/webapp
+PASS: repository:check
+$ prisma validate --config templates/webapp/prisma.config.ts
+Loaded Prisma config from templates/webapp/prisma.config.ts.
+
+Prisma schema loaded from templates/webapp/prisma/schema.prisma.
+The schema at templates/webapp/prisma/schema.prisma is valid 🚀
+$ prisma generate --config templates/webapp/prisma.config.ts
+Loaded Prisma config from templates/webapp/prisma.config.ts.
+
+Prisma schema loaded from templates/webapp/prisma/schema.prisma.
+
+✔ Generated Prisma Client (7.8.0) to ./templates/webapp/src/generated/prisma in 50ms
+
+$ pnpm setup:local && pnpm forge check --project templates/webapp && pnpm forge lifecycle:docs --check --project templates/webapp && pnpm forge kernel-config:docs --check --project templates/webapp && pnpm forge composition:generate --check --project templates/webapp && pnpm forge composition:check --resolve-config --project templates/webapp && pnpm forge composition:docs --check --project templates/webapp && vitest run --config templates/webapp/vitest.config.ts && next typegen templates/webapp && tsc -p templates/webapp/tsconfig.json --noEmit && next build templates/webapp
+$ tsx tools/setup-local-environment.ts
+$ tsx packages/forge/src/cli-router.ts check --project templates/webapp
+PASS: check (templates/webapp)
+$ tsx packages/forge/src/cli-router.ts lifecycle:docs --check --project templates/webapp
+PASS: lifecycle:docs --check
+$ tsx packages/forge/src/cli-router.ts kernel-config:docs --check --project templates/webapp
+PASS: kernel-config:docs --check
+$ tsx packages/forge/src/cli-router.ts composition:generate --check --project templates/webapp
+PASS: composition:generate --check
+$ tsx packages/forge/src/cli-router.ts composition:check --resolve-config --project templates/webapp
+PASS: composition:check
+$ tsx packages/forge/src/cli-router.ts composition:docs --check --project templates/webapp
+PASS: composition:docs --check
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/winzard/winzard/templates/webapp[39m
+
+ [32m✓[39m tests/unit/platform/http/proxy.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/http-kernel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/kernel-config/kernel-configuration.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 47[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/delivery-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/request-context.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/messaging/outbox.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/request-body.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/request-context-isolation.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/response-policy.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/kernel-contracts.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m10 passed[39m[22m[90m (10)[39m
+[2m      Tests [22m [1m[32m42 passed[39m[22m[90m (42)[39m
+[2m   Start at [22m 07:46:31
+[2m   Duration [22m 854ms[2m (transform 428ms, setup 0ms, import 834ms, tests 208ms, environment 1ms)[22m
+
+Generating route types...
+✓ Types generated successfully
+⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+▲ Next.js 16.2.10 (Turbopack)
+- Experiments (use with caution):
+  · serverActions
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.3s
+  Running TypeScript ...
+  Finished TypeScript in 2.2s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/3) ...
+✓ Generating static pages using 3 workers (3/3) in 120ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/health/live
+└ ƒ /api/health/ready
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+$ prisma migrate deploy --config templates/webapp/prisma.config.ts
+Loaded Prisma config from templates/webapp/prisma.config.ts.
+
+Prisma schema loaded from templates/webapp/prisma/schema.prisma.
+Datasource "db": PostgreSQL database "winzard_test", schema "public" at "127.0.0.1:5432"
+
+2 migrations found in prisma/migrations
+
+
+No pending migrations to apply.
+$ vitest run --config vitest.integration.config.ts
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/winzard/winzard/templates/webapp[39m
+
+ [32m✓[39m tests/integration/persistence.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 217[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m   Start at [22m 07:46:43
+[2m   Duration [22m 474ms[2m (transform 65ms, setup 16ms, import 130ms, tests 217ms, environment 0ms)[22m
+
+QUERY_PLAN_EVIDENCE=/tmp/outbox-claim.query-plan.json
+QUERY_PLAN_HASH=b6c38f072bd93880c6e536fa4c94376b9eb7b16ee388b9d3382493b50b907de5
+QUERY_PLAN_INDEXES=OutboxMessage_status_availableAt_idx
