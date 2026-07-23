@@ -1,0 +1,246 @@
+$ playwright test --config playwright.config.ts --project=chromium
+[WebServer] $ pnpm setup:local && next build apps/reference
+[WebServer] $ tsx tools/setup-local-environment.ts
+[WebServer] ⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+[WebServer] ▲ Next.js 16.2.10 (Turbopack)
+[WebServer] - Experiments (use with caution):
+[WebServer]   · serverActions
+[WebServer] 
+[WebServer]   Creating an optimized production build ...
+[WebServer] ✓ Compiled successfully in 4.3s
+[WebServer]   Running TypeScript ...
+[WebServer]   Finished TypeScript in 3.2s ...
+[WebServer]   Collecting page data using 3 workers ...
+[WebServer]   Generating static pages using 3 workers (0/4) ...
+[WebServer]   Generating static pages using 3 workers (1/4) 
+[WebServer]   Generating static pages using 3 workers (2/4) 
+[WebServer]   Generating static pages using 3 workers (3/4) 
+[WebServer] ✓ Generating static pages using 3 workers (4/4) in 154ms
+[WebServer]   Finalizing page optimization ...
+[WebServer] 
+[WebServer] Route (app)
+[WebServer] ┌ ○ /
+[WebServer] ├ ○ /_not-found
+[WebServer] ├ ƒ /api/health/live
+[WebServer] ├ ƒ /api/lucky/number
+[WebServer] ├ ƒ /api/lucky/number/range/[minimum]/[maximum]
+[WebServer] ├ ƒ /lucky/number
+[WebServer] └ ƒ /lucky/number/range/[minimum]/[maximum]
+[WebServer] 
+[WebServer] 
+[WebServer] ƒ Proxy (Middleware)
+[WebServer] 
+[WebServer] ○  (Static)   prerendered as static content
+[WebServer] ƒ  (Dynamic)  server-rendered on demand
+[WebServer] 
+[WebServer] ▲ Next.js 16.2.10
+[WebServer] - Local:         http://127.0.0.1:3200
+[WebServer] - Network:       http://127.0.0.1:3200
+[WebServer] ✓ Ready in 129ms
+
+Running 3 tests using 2 workers
+
+  ✓  2 [chromium] › apps/reference/tests/browser/lucky-number.spec.ts:20:1 › generates a custom lucky number through the hydrated form (1.0s)
+  ✓  1 [chromium] › apps/reference/tests/browser/lucky-number.spec.ts:31:1 › returns an accessible field error for a reversed range (1.1s)
+  ✘  3 [chromium] › apps/reference/tests/browser/lucky-number.spec.ts:42:1 › @a11y lucky-number form has no detectable WCAG A or AA violations (1.2s)
+  ✘  4 [chromium] › apps/reference/tests/browser/lucky-number.spec.ts:42:1 › @a11y lucky-number form has no detectable WCAG A or AA violations (retry #1) (1.2s)
+
+
+  1) [chromium] › apps/reference/tests/browser/lucky-number.spec.ts:42:1 › @a11y lucky-number form has no detectable WCAG A or AA violations 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  -  1
+    + Received  + 58
+
+    - Array []
+    + Array [
+    +   Object {
+    +     "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    +     "help": "Elements must meet minimum color contrast ratio thresholds",
+    +     "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=playwright",
+    +     "id": "color-contrast",
+    +     "impact": "serious",
+    +     "nodes": Array [
+    +       Object {
+    +         "all": Array [],
+    +         "any": Array [
+    +           Object {
+    +             "data": Object {
+    +               "bgColor": "#09090b",
+    +               "contrastRatio": 4.12,
+    +               "expectedContrastRatio": "4.5:1",
+    +               "fgColor": "#71717b",
+    +               "fontSize": "10.5pt (14px)",
+    +               "fontWeight": "normal",
+    +               "messageKey": null,
+    +             },
+    +             "id": "color-contrast",
+    +             "impact": "serious",
+    +             "message": "Element has insufficient color contrast of 4.12 (foreground color: #71717b, background color: #09090b, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +             "relatedNodes": Array [
+    +               Object {
+    +                 "html": "<body>",
+    +                 "target": Array [
+    +                   "body",
+    +                 ],
+    +               },
+    +             ],
+    +           },
+    +         ],
+    +         "failureSummary": "Fix any of the following:
+    +   Element has insufficient color contrast of 4.12 (foreground color: #71717b, background color: #09090b, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +         "html": "<p class=\"font-mono text-sm uppercase tracking-[0.2em] text-zinc-500\">Winzard presentation referencia</p>",
+    +         "impact": "serious",
+    +         "none": Array [],
+    +         "target": Array [
+    +           ".font-mono",
+    +         ],
+    +       },
+    +     ],
+    +     "tags": Array [
+    +       "cat.color",
+    +       "wcag2aa",
+    +       "wcag143",
+    +       "TTv5",
+    +       "TT13.c",
+    +       "EN-301-549",
+    +       "EN-9.1.4.3",
+    +       "ACT",
+    +       "RGAAv4",
+    +       "RGAA-3.2.1",
+    +     ],
+    +   },
+    + ]
+
+      47 |     .analyze();
+      48 |
+    > 49 |   expect(result.violations).toEqual([]);
+         |                             ^
+      50 | });
+      51 |
+        at /home/runner/work/winzard/winzard/apps/reference/tests/browser/lucky-number.spec.ts:49:29
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium/video-1.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  -  1
+    + Received  + 58
+
+    - Array []
+    + Array [
+    +   Object {
+    +     "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    +     "help": "Elements must meet minimum color contrast ratio thresholds",
+    +     "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=playwright",
+    +     "id": "color-contrast",
+    +     "impact": "serious",
+    +     "nodes": Array [
+    +       Object {
+    +         "all": Array [],
+    +         "any": Array [
+    +           Object {
+    +             "data": Object {
+    +               "bgColor": "#09090b",
+    +               "contrastRatio": 4.12,
+    +               "expectedContrastRatio": "4.5:1",
+    +               "fgColor": "#71717b",
+    +               "fontSize": "10.5pt (14px)",
+    +               "fontWeight": "normal",
+    +               "messageKey": null,
+    +             },
+    +             "id": "color-contrast",
+    +             "impact": "serious",
+    +             "message": "Element has insufficient color contrast of 4.12 (foreground color: #71717b, background color: #09090b, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +             "relatedNodes": Array [
+    +               Object {
+    +                 "html": "<body>",
+    +                 "target": Array [
+    +                   "body",
+    +                 ],
+    +               },
+    +             ],
+    +           },
+    +         ],
+    +         "failureSummary": "Fix any of the following:
+    +   Element has insufficient color contrast of 4.12 (foreground color: #71717b, background color: #09090b, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +         "html": "<p class=\"font-mono text-sm uppercase tracking-[0.2em] text-zinc-500\">Winzard presentation referencia</p>",
+    +         "impact": "serious",
+    +         "none": Array [],
+    +         "target": Array [
+    +           ".font-mono",
+    +         ],
+    +       },
+    +     ],
+    +     "tags": Array [
+    +       "cat.color",
+    +       "wcag2aa",
+    +       "wcag143",
+    +       "TTv5",
+    +       "TT13.c",
+    +       "EN-301-549",
+    +       "EN-9.1.4.3",
+    +       "ACT",
+    +       "RGAAv4",
+    +       "RGAA-3.2.1",
+    +     ],
+    +   },
+    + ]
+
+      47 |     .analyze();
+      48 |
+    > 49 |   expect(result.violations).toEqual([]);
+         |                             ^
+      50 | });
+      51 |
+        at /home/runner/work/winzard/winzard/apps/reference/tests/browser/lucky-number.spec.ts:49:29
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium-retry1/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium-retry1/video-1.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium-retry1/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium-retry1/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › apps/reference/tests/browser/lucky-number.spec.ts:42:1 › @a11y lucky-number form has no detectable WCAG A or AA violations 
+  2 passed (18.0s)
+[ELIFECYCLE] Command failed with exit code 1.

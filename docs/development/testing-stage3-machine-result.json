@@ -1,0 +1,8 @@
+{
+  "candidate": "131ca6f0f44cedb24414d54c65ec696bc21a29d5",
+  "core": "failure",
+  "database": "failure",
+  "browser": "failure",
+  "runtimeSecurity": "success",
+  "reproducibility": "success"
+}

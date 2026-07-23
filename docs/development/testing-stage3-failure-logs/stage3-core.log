@@ -1,0 +1,123 @@
+$ pnpm typegen && pnpm typecheck && pnpm lint && pnpm test && pnpm verify:testing && pnpm verify:documentation && pnpm verify:routing && pnpm verify:delivery && pnpm verify:kernel && pnpm verify:kernel-configuration && pnpm verify:composition && pnpm verify:events && pnpm verify:contracts && pnpm verify:extensions && pnpm verify:views && pnpm verify:forms && pnpm verify:configuration && pnpm forge check --project apps/reference && pnpm verify:minimal-template && pnpm build && pnpm test:application
+$ pnpm setup:local && next typegen apps/reference
+$ tsx tools/setup-local-environment.ts
+Generating route types...
+✓ Types generated successfully
+$ tsc -p tsconfig.json --noEmit && tsc -p apps/reference/tsconfig.json --noEmit && tsc -p packages/config/tsconfig.json --noEmit && tsc -p packages/forge/tsconfig.json --noEmit
+$ eslint . --max-warnings=0
+Pages directory cannot be found at /home/runner/work/winzard/winzard/pages or /home/runner/work/winzard/winzard/src/pages. If using a custom path, please configure with the `no-html-link-for-pages` rule in your eslint config file.
+$ pnpm test:unit && pnpm test:contract
+$ vitest run --project unit-node
+[33mThe plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the [1mresolve.tsconfigPaths[22m option. You can remove the plugin and set [1mresolve.tsconfigPaths: true[22m in your Vite config instead.[39m
+[33mThe plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the [1mresolve.tsconfigPaths[22m option. You can remove the plugin and set [1mresolve.tsconfigPaths: true[22m in your Vite config instead.[39m
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/winzard/winzard[39m
+
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/kernel-config/kernel-configuration.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 49[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/http-kernel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/configuration.test.ts [2m([22m[2m23 tests[22m[2m)[22m[33m 457[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/kernel-configuration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 156[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/project.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 42[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/composition.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 625[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/views.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 180[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/delivery.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 62[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/extensions.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 47[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/contracts.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 141[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/local-environment.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/extension-lifecycle.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 65[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/kernel.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 155[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/forms.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 75[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/documentation.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 3127[2mms[22m[39m
+     [33m[2m✓[22m[39m determinista, hash-elt context package-et állít elő elfogadott taskból [33m 490[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/app/api/lucky/number/routing.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/routing.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 91[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/events-runtime.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 53[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/request-context.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/extension-schema.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/persistence.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 112[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/events.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 64[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/delivery-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/proxy.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/get-lucky-number.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/events/dispatcher.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.actions.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/config/tests/app-env.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/request-body.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.form.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/contracts/random-integer-generator.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/event-dispatch.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.presenter.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/composition.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/routing.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/generate-lucky-number.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/response-policy.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 34[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/app/api/lucky/number/route.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/node-crypto-random-integer-generator.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/composition/composition.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/fixtures/testing-project/tests/unit/catalog.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 2[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m41 passed[39m[22m[90m (41)[39m
+[2m      Tests [22m [1m[32m229 passed[39m[22m[90m (229)[39m
+[2m   Start at [22m 07:36:36
+[2m   Duration [22m 5.59s[2m (transform 1.45s, setup 0ms, import 5.48s, tests 5.89s, environment 4ms)[22m
+
+$ vitest run --project contract-node
+[33mThe plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the [1mresolve.tsconfigPaths[22m option. You can remove the plugin and set [1mresolve.tsconfigPaths: true[22m in your Vite config instead.[39m
+[33mThe plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the [1mresolve.tsconfigPaths[22m option. You can remove the plugin and set [1mresolve.tsconfigPaths: true[22m in your Vite config instead.[39m
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/winzard/winzard[39m
+
+ [32m✓[39m [30m[45m contract-node [49m[39m packages/forge/tests/testing.contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m   Start at [22m 07:36:42
+[2m   Duration [22m 400ms[2m (transform 97ms, setup 0ms, import 272ms, tests 28ms, environment 0ms)[22m
+
+$ pnpm forge test:check --project . && pnpm forge test:docs --check --project .
+$ tsx packages/forge/src/cli-router.ts test:check --project .
+[WARNING] [TEST_FIXED_SLEEP_USED] apps/reference/tests/e2e/lucky-number.smoke.ts: Fix időalapú várakozás található a tesztben.
+
+PASS WITH WARNINGS: test:check (1 issue)
+$ tsx packages/forge/src/cli-router.ts test:docs --check --project .
+PASS: test:docs --check
+$ pnpm forge check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:generate --check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:sync --check --project packages/forge/tests/fixtures/documented-project && pnpm forge docs:adapters --check --project packages/forge/tests/fixtures/documented-project && pnpm forge context:check ATLAS-TASK-0001 --project packages/forge/tests/fixtures/documented-project
+$ tsx packages/forge/src/cli-router.ts check --project packages/forge/tests/fixtures/documented-project
+PASS: check (packages/forge/tests/fixtures/documented-project)
+$ tsx packages/forge/src/cli-router.ts docs:check --project packages/forge/tests/fixtures/documented-project
+PASS: docs:check (19 dokumentum, 0 warning)
+$ tsx packages/forge/src/cli-router.ts docs:generate --check --project packages/forge/tests/fixtures/documented-project
+PASS: docs:generate --check
+$ tsx packages/forge/src/cli-router.ts docs:sync --check --project packages/forge/tests/fixtures/documented-project
+PASS: docs:sync --check
+$ tsx packages/forge/src/cli-router.ts docs:adapters --check --project packages/forge/tests/fixtures/documented-project
+PASS: docs:adapters --check
+$ tsx packages/forge/src/cli-router.ts context:check ATLAS-TASK-0001 --project packages/forge/tests/fixtures/documented-project
+PASS: context:check (ATLAS-TASK-0001)
+$ pnpm forge route:check --project apps/reference && pnpm forge route:docs --check --project apps/reference
+$ tsx packages/forge/src/cli-router.ts route:check --project apps/reference
+PASS: route:check
+$ tsx packages/forge/src/cli-router.ts route:docs --check --project apps/reference
+PASS: route:check
+$ pnpm forge delivery:check --project apps/reference && pnpm forge http:contracts --check --project apps/reference
+$ tsx packages/forge/src/cli-router.ts delivery:check --project apps/reference
+PASS: delivery:check
+$ tsx packages/forge/src/cli-router.ts http:contracts --check --project apps/reference
+PASS: http:contracts --check
+$ pnpm forge kernel:check --project apps/reference && pnpm forge request-context:check --project apps/reference && pnpm forge response-policy:check --project apps/reference && pnpm forge instrumentation:check --project apps/reference && pnpm forge lifecycle:docs --check --project apps/reference
+$ tsx packages/forge/src/cli-router.ts kernel:check --project apps/reference
+PASS: kernel:check
+$ tsx packages/forge/src/cli-router.ts request-context:check --project apps/reference
+PASS: request-context:check
+$ tsx packages/forge/src/cli-router.ts response-policy:check --project apps/reference
+PASS: response-policy:check
+$ tsx packages/forge/src/cli-router.ts instrumentation:check --project apps/reference
+PASS: instrumentation:check
+$ tsx packages/forge/src/cli-router.ts lifecycle:docs --check --project apps/reference
+ERROR [KERNEL_DOC_DRIFT] docs/90-generated/kernel/kernel-contracts.md: A generált HTTP-kernel dokumentum nincs szinkronban a lifecycle contractokkal.
+ERROR [KERNEL_DOC_DRIFT] docs/90-generated/kernel/kernel-graph.md: A generált HTTP-kernel dokumentum nincs szinkronban a lifecycle contractokkal.
+ERROR [KERNEL_DOC_DRIFT] docs/90-generated/kernel/kernel-security-status.md: A generált HTTP-kernel dokumentum nincs szinkronban a lifecycle contractokkal.
+ERROR [KERNEL_DOC_DRIFT] docs/90-generated/kernel/request-lifecycle.md: A generált HTTP-kernel dokumentum nincs szinkronban a lifecycle contractokkal.
+[ELIFECYCLE] Command failed with exit code 1.
+[ELIFECYCLE] Command failed with exit code 1.
+[ELIFECYCLE] Command failed with exit code 1.

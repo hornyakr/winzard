@@ -1,0 +1,36 @@
+$ pnpm setup:local && next build apps/reference
+$ tsx tools/setup-local-environment.ts
+⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+▲ Next.js 16.2.10 (Turbopack)
+- Experiments (use with caution):
+  · serverActions
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 5.0s
+  Running TypeScript ...
+  Finished TypeScript in 3.8s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/4) ...
+  Generating static pages using 3 workers (1/4) 
+  Generating static pages using 3 workers (2/4) 
+  Generating static pages using 3 workers (3/4) 
+✓ Generating static pages using 3 workers (4/4) in 155ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/health/live
+├ ƒ /api/lucky/number
+├ ƒ /api/lucky/number/range/[minimum]/[maximum]
+├ ƒ /lucky/number
+└ ƒ /lucky/number/range/[minimum]/[maximum]
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+$ bash tools/verify-read-only-runtime.sh
+PASS: read-only runtime, trusted Host and internal-header spoofing smoke
