@@ -102,8 +102,6 @@ jobs:
               raise SystemExit('browser-accessibility insertion point not found')
           testing_workflow.write_text(source.replace(old, new))
 
-          Path('.github/workflows/testing-stage3-fix.yml').unlink()
-
       - name: Regenerate canonical evidence
         run: |
           pnpm forge http:contracts --project apps/reference
@@ -117,7 +115,6 @@ jobs:
           git add .github/workflows/persistence.yml .github/workflows/verify.yml \
             .github/workflows/testing.yml playwright.config.ts \
             apps/reference/docs/90-generated/delivery docs/90-generated/testing \
-            package.json pnpm-lock.yaml docs/development/persistence-development-checks.md \
-            .github/workflows/testing-stage3-fix.yml
+            package.json pnpm-lock.yaml docs/development/persistence-development-checks.md
           git commit -m "fix(testing): align CI, browser runtime and generated evidence"
           git push origin HEAD:agent/testing-platform-v1
