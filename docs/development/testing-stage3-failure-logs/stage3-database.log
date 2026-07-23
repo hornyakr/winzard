@@ -14,7 +14,7 @@ Prisma schema loaded from templates/webapp/prisma/schema.prisma.
 │    npm i @prisma/client@latest                          │
 └─────────────────────────────────────────────────────────┘
 
-✔ Generated Prisma Client (7.8.0) to ./templates/webapp/src/generated/prisma in 50ms
+✔ Generated Prisma Client (7.8.0) to ./templates/webapp/src/generated/prisma in 55ms
 
 $ prisma migrate deploy --config templates/webapp/prisma.config.ts
 Loaded Prisma config from templates/webapp/prisma.config.ts.
@@ -65,12 +65,12 @@ $ vitest run packages/forge/tests/persistence.test.ts && pnpm forge database:che
 
 [1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/winzard/winzard[39m
 
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/persistence.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 91[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/persistence.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 103[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
-[2m   Start at [22m 07:46:09
-[2m   Duration [22m 604ms[2m (transform 149ms, setup 0ms, import 380ms, tests 91ms, environment 0ms)[22m
+[2m   Start at [22m 07:48:19
+[2m   Duration [22m 635ms[2m (transform 154ms, setup 0ms, import 393ms, tests 103ms, environment 0ms)[22m
 
 $ tsx packages/forge/src/cli-router.ts database:check --project templates/webapp
 PASS: database:check
@@ -90,7 +90,7 @@ Loaded Prisma config from templates/webapp/prisma.config.ts.
 
 Prisma schema loaded from templates/webapp/prisma/schema.prisma.
 
-✔ Generated Prisma Client (7.8.0) to ./templates/webapp/src/generated/prisma in 59ms
+✔ Generated Prisma Client (7.8.0) to ./templates/webapp/src/generated/prisma in 72ms
 
 $ pnpm setup:local && pnpm forge check --project templates/webapp && pnpm forge lifecycle:docs --check --project templates/webapp && pnpm forge kernel-config:docs --check --project templates/webapp && pnpm forge composition:generate --check --project templates/webapp && pnpm forge composition:check --resolve-config --project templates/webapp && pnpm forge composition:docs --check --project templates/webapp && vitest run --config templates/webapp/vitest.config.ts && next typegen templates/webapp && tsc -p templates/webapp/tsconfig.json --noEmit && next build templates/webapp
 $ tsx tools/setup-local-environment.ts
@@ -109,21 +109,21 @@ PASS: composition:docs --check
 
 [1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/winzard/winzard/templates/webapp[39m
 
- [32m✓[39m tests/unit/platform/http/proxy.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 15[2mms[22m[39m
- [32m✓[39m tests/unit/platform/http/http-kernel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 39[2mms[22m[39m
- [32m✓[39m tests/unit/platform/kernel-config/kernel-configuration.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 73[2mms[22m[39m
- [32m✓[39m tests/unit/platform/http/delivery-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m tests/unit/platform/http/request-context.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 41[2mms[22m[39m
- [32m✓[39m tests/unit/platform/messaging/outbox.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m tests/unit/platform/http/request-body.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 53[2mms[22m[39m
- [32m✓[39m tests/unit/platform/http/response-policy.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 35[2mms[22m[39m
- [32m✓[39m tests/unit/platform/http/request-context-isolation.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/proxy.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/http-kernel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 42[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/kernel-config/kernel-configuration.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 75[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/delivery-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/request-context.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 46[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/messaging/outbox.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/request-body.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 60[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/request-context-isolation.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/response-policy.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 34[2mms[22m[39m
  [32m✓[39m tests/unit/platform/http/kernel-contracts.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m10 passed[39m[22m[90m (10)[39m
 [2m      Tests [22m [1m[32m42 passed[39m[22m[90m (42)[39m
-[2m   Start at [22m 07:46:26
-[2m   Duration [22m 1.09s[2m (transform 480ms, setup 0ms, import 1.01s, tests 278ms, environment 2ms)[22m
+[2m   Start at [22m 07:48:36
+[2m   Duration [22m 1.12s[2m (transform 466ms, setup 0ms, import 1.02s, tests 300ms, environment 1ms)[22m
 
 Generating route types...
 ✓ Types generated successfully
