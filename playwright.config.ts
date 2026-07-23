@@ -27,7 +27,7 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
   webServer: {
-    command: `pnpm build && pnpm start -- -H 127.0.0.1 -p ${port}`,
+    command: `pnpm build && pnpm exec next start apps/reference -H 127.0.0.1 -p ${port}`,
     url: `${baseURL}/api/health/live`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
