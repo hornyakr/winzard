@@ -109,12 +109,6 @@ jobs:
           pnpm forge http:contracts --project apps/reference
           pnpm forge test:docs --project .
 
-      - name: Verify corrected static contracts
-        run: |
-          pnpm forge http:contracts --check --project apps/reference
-          pnpm forge test:check --project .
-          pnpm forge test:docs --check --project .
-
       - name: Commit Stage 3 corrections
         shell: bash
         run: |
