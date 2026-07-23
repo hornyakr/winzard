@@ -7,15 +7,15 @@ $ playwright test --config playwright.config.ts --project=chromium
 [WebServer]   · serverActions
 [WebServer] 
 [WebServer]   Creating an optimized production build ...
-[WebServer] ✓ Compiled successfully in 4.2s
+[WebServer] ✓ Compiled successfully in 4.7s
 [WebServer]   Running TypeScript ...
-[WebServer]   Finished TypeScript in 3.1s ...
+[WebServer]   Finished TypeScript in 3.3s ...
 [WebServer]   Collecting page data using 3 workers ...
 [WebServer]   Generating static pages using 3 workers (0/4) ...
 [WebServer]   Generating static pages using 3 workers (1/4) 
 [WebServer]   Generating static pages using 3 workers (2/4) 
 [WebServer]   Generating static pages using 3 workers (3/4) 
-[WebServer] ✓ Generating static pages using 3 workers (4/4) in 145ms
+[WebServer] ✓ Generating static pages using 3 workers (4/4) in 173ms
 [WebServer]   Finalizing page optimization ...
 [WebServer] 
 [WebServer] Route (app)
@@ -36,7 +36,7 @@ $ playwright test --config playwright.config.ts --project=chromium
 [WebServer] ▲ Next.js 16.2.10
 [WebServer] - Local:         http://127.0.0.1:3200
 [WebServer] - Network:       http://127.0.0.1:3200
-[WebServer] ✓ Ready in 127ms
+[WebServer] ✓ Ready in 131ms
 
 Running 3 tests using 2 workers
 
@@ -223,11 +223,11 @@ Running 3 tests using 2 workers
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium-retry1/video.webm
+    test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium-retry1/video-1.webm
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     attachment #3: video (video/webm) ──────────────────────────────────────────────────────────────
-    test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium-retry1/video-1.webm
+    test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium-retry1/video.webm
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     Error Context: test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium-retry1/error-context.md
@@ -242,5 +242,5 @@ Running 3 tests using 2 workers
 
   1 failed
     [chromium] › apps/reference/tests/browser/lucky-number.spec.ts:42:1 › @a11y lucky-number form has no detectable WCAG A or AA violations 
-  2 passed (17.3s)
+  2 passed (17.6s)
 [ELIFECYCLE] Command failed with exit code 1.
