@@ -47,7 +47,7 @@ jobs:
           source = checks.read_text()
           old = "  'reference-app': { all: ['apps/reference'] },\n};"
           new = """  'reference-app': { all: ['apps/reference'] },
-            'testing-core': { all: ['testing.definition.ts'], requires: ['forge'] },
+            'testing-core': { all: ['testing.definition.ts'] },
             'testing-dom': { requires: ['testing-core', 'next-app'] },
             'testing-database': { requires: ['testing-core', 'prisma-postgresql'] },
             'testing-e2e': { requires: ['testing-core', 'next-app'] },
@@ -55,9 +55,14 @@ jobs:
             'testing-visual': { requires: ['testing-e2e'] },
           };"""
           if old in source:
-              checks.write_text(source.replace(old, new))
-          elif "  'testing-core':" not in source:
+              source = source.replace(old, new)
+          source = source.replace(
+              "  'testing-core': { all: ['testing.definition.ts'], requires: ['forge'] },",
+              "  'testing-core': { all: ['testing.definition.ts'] },",
+          )
+          if "  'testing-core':" not in source:
               raise SystemExit('CAPABILITY_REQUIREMENTS insertion point not found')
+          checks.write_text(source)
 
           updates = {
               Path('package.json'): ['testing-core'],
