@@ -7,15 +7,15 @@ $ playwright test --config playwright.config.ts --project=chromium
 [WebServer]   · serverActions
 [WebServer] 
 [WebServer]   Creating an optimized production build ...
-[WebServer] ✓ Compiled successfully in 4.3s
+[WebServer] ✓ Compiled successfully in 4.2s
 [WebServer]   Running TypeScript ...
-[WebServer]   Finished TypeScript in 3.2s ...
+[WebServer]   Finished TypeScript in 3.1s ...
 [WebServer]   Collecting page data using 3 workers ...
 [WebServer]   Generating static pages using 3 workers (0/4) ...
 [WebServer]   Generating static pages using 3 workers (1/4) 
 [WebServer]   Generating static pages using 3 workers (2/4) 
 [WebServer]   Generating static pages using 3 workers (3/4) 
-[WebServer] ✓ Generating static pages using 3 workers (4/4) in 154ms
+[WebServer] ✓ Generating static pages using 3 workers (4/4) in 145ms
 [WebServer]   Finalizing page optimization ...
 [WebServer] 
 [WebServer] Route (app)
@@ -36,14 +36,14 @@ $ playwright test --config playwright.config.ts --project=chromium
 [WebServer] ▲ Next.js 16.2.10
 [WebServer] - Local:         http://127.0.0.1:3200
 [WebServer] - Network:       http://127.0.0.1:3200
-[WebServer] ✓ Ready in 129ms
+[WebServer] ✓ Ready in 127ms
 
 Running 3 tests using 2 workers
 
-  ✓  2 [chromium] › apps/reference/tests/browser/lucky-number.spec.ts:20:1 › generates a custom lucky number through the hydrated form (1.0s)
-  ✓  1 [chromium] › apps/reference/tests/browser/lucky-number.spec.ts:31:1 › returns an accessible field error for a reversed range (1.1s)
+  ✓  1 [chromium] › apps/reference/tests/browser/lucky-number.spec.ts:20:1 › generates a custom lucky number through the hydrated form (1.0s)
+  ✓  2 [chromium] › apps/reference/tests/browser/lucky-number.spec.ts:31:1 › returns an accessible field error for a reversed range (1.1s)
   ✘  3 [chromium] › apps/reference/tests/browser/lucky-number.spec.ts:42:1 › @a11y lucky-number form has no detectable WCAG A or AA violations (1.2s)
-  ✘  4 [chromium] › apps/reference/tests/browser/lucky-number.spec.ts:42:1 › @a11y lucky-number form has no detectable WCAG A or AA violations (retry #1) (1.2s)
+  ✘  4 [chromium] › apps/reference/tests/browser/lucky-number.spec.ts:42:1 › @a11y lucky-number form has no detectable WCAG A or AA violations (retry #1) (1.1s)
 
 
   1) [chromium] › apps/reference/tests/browser/lucky-number.spec.ts:42:1 › @a11y lucky-number form has no detectable WCAG A or AA violations 
@@ -223,11 +223,11 @@ Running 3 tests using 2 workers
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium-retry1/video-1.webm
+    test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium-retry1/video.webm
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     attachment #3: video (video/webm) ──────────────────────────────────────────────────────────────
-    test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium-retry1/video.webm
+    test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium-retry1/video-1.webm
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     Error Context: test-results/lucky-number--a11y-lucky-n-6c330-ble-WCAG-A-or-AA-violations-chromium-retry1/error-context.md
@@ -242,5 +242,5 @@ Running 3 tests using 2 workers
 
   1 failed
     [chromium] › apps/reference/tests/browser/lucky-number.spec.ts:42:1 › @a11y lucky-number form has no detectable WCAG A or AA violations 
-  2 passed (18.0s)
+  2 passed (17.3s)
 [ELIFECYCLE] Command failed with exit code 1.
