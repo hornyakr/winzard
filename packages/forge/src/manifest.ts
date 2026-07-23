@@ -23,6 +23,12 @@ export const knownCapabilities = [
   'forge-development',
   'templates',
   'reference-app',
+  'testing-core',
+  'testing-dom',
+  'testing-database',
+  'testing-e2e',
+  'testing-accessibility',
+  'testing-visual',
 ] as const;
 
 export type WinzardCapability = (typeof knownCapabilities)[number];

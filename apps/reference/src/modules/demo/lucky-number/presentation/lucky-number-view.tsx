@@ -14,7 +14,7 @@ export function LuckyNumberView({ model }: LuckyNumberViewProps) {
     <main className="mx-auto grid min-h-screen max-w-5xl items-center gap-10 px-6 py-16 lg:grid-cols-[1fr_20rem]">
       <div className="flex flex-col gap-8">
         <header className="space-y-3">
-          <p className="font-mono text-sm uppercase tracking-[0.2em] text-zinc-500">
+          <p className="font-mono text-sm uppercase tracking-[0.2em] text-zinc-400">
             {model.eyebrow}
           </p>
           <h1 className="text-4xl font-semibold tracking-tight">

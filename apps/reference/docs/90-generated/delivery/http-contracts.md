@@ -4,11 +4,11 @@
 
 # HTTP and UI delivery contracts
 
-Inventory SHA-256: `30c9bf90ddc7bdca4c614602f3a11185e6f75ec4981855cdc8d1d9410ede8239`
+Inventory SHA-256: `bdf50fb8af7f062f359d2cf37ba0dd81c7aaac22fc58f6fd80c4a601638a30af`
 
 | Entrypoint | Contract | Context | Auth | Tenant | Input schema | Actor resolver | Authorization | Application operation | Presenter | Output | Response/cache | CSRF | Idempotency | Body limit | Tests |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `src/app/(public)/lucky/number/(index)/page.tsx` | `demo.lucky-number.page` | required | optional | none | `luckyNumberRangeQuerySchema` | `createPageRequestContext` | none | `demo.queries.getLuckyNumber` | presentLuckyNumber | `not-found`<br>`react-ui` | private-no-store | - | - | - | `tests/e2e/lucky-number.smoke.ts`<br>`tests/unit/app/api/lucky/number/route.test.ts`<br>`tests/unit/app/api/lucky/number/routing.test.ts`<br>`tests/unit/modules/demo/lucky-number/lucky-number.presenter.test.ts`<br>`tests/unit/modules/demo/lucky-number/routing.test.ts` |
+| `src/app/(public)/lucky/number/(index)/page.tsx` | `demo.lucky-number.page` | required | optional | none | `luckyNumberRangeQuerySchema` | `createPageRequestContext` | none | `demo.queries.getLuckyNumber` | presentLuckyNumber | `not-found`<br>`react-ui` | private-no-store | - | - | - | `tests/browser/lucky-number.spec.ts`<br>`tests/e2e/lucky-number.smoke.ts`<br>`tests/unit/app/api/lucky/number/route.test.ts`<br>`tests/unit/app/api/lucky/number/routing.test.ts`<br>`tests/unit/modules/demo/lucky-number/lucky-number.presenter.test.ts`<br>`tests/unit/modules/demo/lucky-number/routing.test.ts` |
 | `src/app/(public)/lucky/number/range/[minimum]/[maximum]/page.tsx` | `demo.lucky-number.range.page` | required | optional | none | `luckyNumberRangeParamsSchema` | `createPageRequestContext` | none | `demo.queries.getLuckyNumber` | presentLuckyNumber | `not-found`<br>`react-ui` | private-no-store | - | - | - | `tests/unit/app/api/lucky/number/routing.test.ts` |
 | `src/app/page.tsx` | `reference.home.page` | none | public | none | - | - | none | - | - | `react-ui` | public-static | - | - | - | `tests/e2e/lucky-number.smoke.ts` |
 | `src/app/api/health/live/route.ts` | `platform.health.live` | required | public | none | - | - | GET:none | - | - | `response` | health | none | none | - | `tests/e2e/lucky-number.smoke.ts` |

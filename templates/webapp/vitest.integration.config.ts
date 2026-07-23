@@ -16,6 +16,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/integration/**/*.test.ts'],
+    setupFiles: ['tests/helpers/database-test-environment.ts'],
     fileParallelism: false,
   },
 });

@@ -4,7 +4,7 @@
 
 # HTTP-kernel graph
 
-Inventory SHA-256: `979467c9709eda3db74add9be9c65529ada2d855fe92ebd21758ae4f1e9a7b87`
+Inventory SHA-256: `f87b0353f445f8fe83df954a7c9c875df8756bb86a7858436e271e89ab6abfc9`
 
 | Route / action | Contract | Request context | Authorization | Application operation | Presenter | Response policy | After hooks | Instrumentation |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |

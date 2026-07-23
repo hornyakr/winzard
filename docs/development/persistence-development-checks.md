@@ -32,7 +32,7 @@ pnpm verify:webapp-template
 ## PostgreSQL integration
 
 ```bash
-export DATABASE_URL='postgresql://winzard:winzard_dev_only@127.0.0.1:5432/winzard?schema=public'
+export DATABASE_URL='postgresql://winzard:winzard_test_only@127.0.0.1:5432/winzard_test?schema=public'
 export DATABASE_POOL_MAX=10
 export DATABASE_CONNECTION_TIMEOUT_MS=5000
 

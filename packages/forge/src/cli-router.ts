@@ -5,6 +5,7 @@ import { runEventCli } from './events/cli';
 import { EXTENSION_COMMANDS, runExtensionCli } from './extensions/cli';
 import { FORM_COMMANDS, runFormCli } from './forms/cli';
 import { PERSISTENCE_COMMANDS, runPersistenceCli } from './persistence/cli';
+import { TESTING_COMMANDS, runTestingCli } from './testing/cli';
 
 try {
   const args = process.argv.slice(2);
@@ -14,11 +15,17 @@ try {
     !await runCompositionCli(args) &&
     !await runExtensionCli(args) &&
     !await runFormCli(args) &&
-    !await runPersistenceCli(args)
+    !await runPersistenceCli(args) &&
+    !await runTestingCli(args)
   ) {
     await import('./cli-router-base');
     if ((args[0] ?? 'list') === 'list') {
-      console.log([...EXTENSION_COMMANDS, ...FORM_COMMANDS, ...PERSISTENCE_COMMANDS].join('\n'));
+      console.log([
+        ...EXTENSION_COMMANDS,
+        ...FORM_COMMANDS,
+        ...PERSISTENCE_COMMANDS,
+        ...TESTING_COMMANDS,
+      ].join('\n'));
     }
   }
 } catch (error) {

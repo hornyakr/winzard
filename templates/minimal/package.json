@@ -24,7 +24,8 @@
       "forge",
       "presentation-contract",
       "event-dispatching",
-      "integration-messaging"
+      "integration-messaging",
+      "testing-core"
     ]
   },
   "dependencies": {

@@ -1,0 +1,173 @@
+name: Testing
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+  APP_URL: http://localhost:3000
+  APP_NAME: Winzard Reference
+  APP_STAGE: local
+  LOG_LEVEL: error
+  NEXT_PUBLIC_APP_NAME: Winzard Reference
+  APP_ID: winzard-reference
+  APP_REGION: local
+  GIT_COMMIT: ${{ github.sha }}
+  BUILD_ID: ${{ github.sha }}
+  DEPLOYMENT_ID: testing-${{ github.run_id }}-${{ github.run_attempt }}
+  SOURCE_DATE_EPOCH: '0'
+  DEFAULT_LOCALE: hu
+  ENABLED_LOCALES: hu,en
+  TRUSTED_HOSTS: localhost:3000,127.0.0.1,[::1]
+  SERVER_ACTION_ALLOWED_ORIGINS: localhost:3000,127.0.0.1:3200
+  SERVER_ACTION_BODY_SIZE_LIMIT: 1mb
+  TRUSTED_PROXY_MODE: none
+  TRUSTED_PROXY_CIDRS: 127.0.0.1/32
+  TRUSTED_PROXY_HOPS: '1'
+  NEXT_DIST_DIR: .next
+  NEXT_OUTPUT_STANDALONE: 'false'
+  PRODUCTION_BROWSER_SOURCE_MAPS: 'false'
+  PRODUCTION_BROWSER_SOURCE_MAPS_WAIVER: not-required
+  KERNEL_VERBOSE_DIAGNOSTICS: 'false'
+  CACHE_SCHEMA_VERSION: '1'
+  COMPOSITION_HASH: auto
+  RUNTIME_WRITABLE_ROOT: /tmp/winzard-testing
+  WORKER_CONCURRENCY: '4'
+  WORKER_VISIBILITY_TIMEOUT_MS: '60000'
+  WORKER_SHUTDOWN_GRACE_MS: '30000'
+  WORKER_POLL_INTERVAL_MS: '1000'
+
+jobs:
+  unit-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Configure deterministic Server Action key
+        shell: bash
+        run: |
+          {
+            printf 'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY='
+            printf '%s' '${{ github.repository_id }}:${{ github.sha }}' \
+              | openssl dgst -sha256 -binary \
+              | base64 -w0
+            printf '\n'
+          } >> "$GITHUB_ENV"
+      - name: Type-check testing platform
+        run: pnpm typecheck
+      - name: Run unit and contract suites
+        run: pnpm test
+      - name: Verify testing inventory and generated evidence
+        run: pnpm verify:testing
+
+  component:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run jsdom component contracts
+        run: pnpm test:component
+
+  database-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_DB: winzard_test
+          POSTGRES_USER: winzard
+          POSTGRES_PASSWORD: winzard_test_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U winzard -d winzard_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://winzard:winzard_test_only@127.0.0.1:5432/winzard_test?schema=public
+      DATABASE_POOL_MAX: '4'
+      DATABASE_CONNECTION_TIMEOUT_MS: '5000'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:validate:webapp
+      - run: pnpm db:generate:webapp
+      - run: pnpm db:migrate:deploy:webapp
+      - name: Run PostgreSQL contract suite
+        run: pnpm test:database
+
+  browser-accessibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      APP_URL: http://127.0.0.1:3200
+      TRUSTED_HOSTS: 127.0.0.1:3200,127.0.0.1,localhost:3200,localhost,[::1]
+      SERVER_ACTION_ALLOWED_ORIGINS: 127.0.0.1:3200,localhost:3200
+      PLAYWRIGHT_PORT: '3200'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Configure deterministic Server Action key
+        shell: bash
+        run: |
+          {
+            printf 'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY='
+            printf '%s' '${{ github.repository_id }}:${{ github.sha }}' \
+              | openssl dgst -sha256 -binary \
+              | base64 -w0
+            printf '\n'
+          } >> "$GITHUB_ENV"
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run production browser and accessibility suite
+        id: browser
+        run: pnpm test:e2e
+      - name: Upload browser diagnostics
+        if: failure() && steps.browser.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: testing-browser-${{ github.run_id }}
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: warn
+          retention-days: 7

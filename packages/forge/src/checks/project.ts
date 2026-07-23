@@ -11,6 +11,7 @@ import { runKernelChecks } from '../kernel/checks';
 import { buildKernelConfigurationInventory } from '../kernel-configuration/inventory';
 import { loadProjectManifest, type WinzardCapability, type WinzardManifest } from '../manifest';
 import { runRouteChecks } from '../routing/checks';
+import { buildTestingInventory } from '../testing/inventory';
 import { runViewChecks } from '../views/checks';
 
 export type CheckFailure = Readonly<{
@@ -146,6 +147,12 @@ const CAPABILITY_REQUIREMENTS: Readonly<Record<WinzardCapability, Readonly<{
   'forge-development': { all: ['packages/forge/src'] },
   templates: { all: ['templates/minimal', 'templates/webapp'] },
   'reference-app': { all: ['apps/reference'] },
+  'testing-core': { all: ['testing.definition.ts'] },
+  'testing-dom': { requires: ['testing-core', 'next-app'] },
+  'testing-database': { requires: ['testing-core', 'prisma-postgresql'] },
+  'testing-e2e': { requires: ['testing-core', 'next-app'] },
+  'testing-accessibility': { requires: ['testing-e2e'] },
+  'testing-visual': { requires: ['testing-e2e'] },
 };
 
 function toProjectPath(root: string, filePath: string): string {
@@ -601,6 +608,12 @@ export async function runProjectChecks(root = process.cwd()): Promise<readonly C
   if (enabled.has('database-readiness')) {
     failures.push(...(await checkNoStore(root, 'src/app/api/health/ready/route.ts', 'READINESS_CACHE_POLICY')));
   }
+  if (enabled.has('testing-core')) {
+  const testing = await buildTestingInventory(root);
+  failures.push(...testing.issues
+    .filter(({ severity }) => severity === 'error')
+    .map(({ code, file, message }) => ({ code, file, message })));
+}
   if (enabled.has('prisma-postgresql')) failures.push(...(await checkPrismaConfig(root)));
 
   for (const filePath of await collectSourceFiles(path.join(root, 'src'))) {

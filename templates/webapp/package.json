@@ -43,7 +43,9 @@
       "database-readiness",
       "event-dispatching",
       "integration-messaging",
-      "transactional-outbox"
+      "transactional-outbox",
+      "testing-core",
+      "testing-database"
     ]
   },
   "dependencies": {

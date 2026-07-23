@@ -20,8 +20,12 @@
   "include": [
     "next-env.d.ts",
     "instrumentation.ts",
+    "testing.definition.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
+    "tests/unit/**/*.ts",
+    "tests/integration/**/*.ts",
+    "tests/helpers/**/*.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
