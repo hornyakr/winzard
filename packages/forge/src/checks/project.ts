@@ -146,6 +146,12 @@ const CAPABILITY_REQUIREMENTS: Readonly<Record<WinzardCapability, Readonly<{
   'forge-development': { all: ['packages/forge/src'] },
   templates: { all: ['templates/minimal', 'templates/webapp'] },
   'reference-app': { all: ['apps/reference'] },
+  'testing-core': { all: ['testing.definition.ts'], requires: ['forge'] },
+  'testing-dom': { requires: ['testing-core', 'next-app'] },
+  'testing-database': { requires: ['testing-core', 'prisma-postgresql'] },
+  'testing-e2e': { requires: ['testing-core', 'next-app'] },
+  'testing-accessibility': { requires: ['testing-e2e'] },
+  'testing-visual': { requires: ['testing-e2e'] },
 };
 
 function toProjectPath(root: string, filePath: string): string {

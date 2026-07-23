@@ -59,7 +59,8 @@
     "capabilities": [
       "forge-development",
       "templates",
-      "reference-app"
+      "reference-app",
+      "testing-core"
     ]
   },
   "dependencies": {

@@ -11,6 +11,10 @@
     "modular-application",
     "liveness",
     "event-dispatching",
-    "integration-messaging"
+    "integration-messaging",
+    "testing-core",
+    "testing-dom",
+    "testing-e2e",
+    "testing-accessibility"
   ]
 }
