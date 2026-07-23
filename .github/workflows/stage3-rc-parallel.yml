@@ -1,0 +1,277 @@
+name: Isolated Stage 3 Parallel Matrix
+
+on:
+  push:
+    branches:
+      - agent/testing-platform-v1-rc-isolated
+
+permissions:
+  contents: write
+
+env:
+  CANDIDATE_SHA: fb619d436dadab42ce87bf2ad0128aa13fcb93f4
+  NEXT_TELEMETRY_DISABLED: '1'
+  APP_URL: http://localhost:3000
+  APP_NAME: Winzard Reference
+  APP_STAGE: local
+  LOG_LEVEL: error
+  NEXT_PUBLIC_APP_NAME: Winzard Reference
+  APP_ID: winzard-reference
+  APP_REGION: local
+  GIT_COMMIT: fb619d436dadab42ce87bf2ad0128aa13fcb93f4
+  BUILD_ID: fb619d436dadab42ce87bf2ad0128aa13fcb93f4
+  DEPLOYMENT_ID: stage3-parallel-rc
+  SOURCE_DATE_EPOCH: '0'
+  DEFAULT_LOCALE: hu
+  ENABLED_LOCALES: hu,en
+  TRUSTED_HOSTS: localhost:3000,127.0.0.1,[::1]
+  SERVER_ACTION_ALLOWED_ORIGINS: localhost:3000
+  SERVER_ACTION_BODY_SIZE_LIMIT: 1mb
+  TRUSTED_PROXY_MODE: none
+  TRUSTED_PROXY_CIDRS: 127.0.0.1/32
+  TRUSTED_PROXY_HOPS: '1'
+  NEXT_DIST_DIR: .next
+  NEXT_OUTPUT_STANDALONE: 'false'
+  PRODUCTION_BROWSER_SOURCE_MAPS: 'false'
+  PRODUCTION_BROWSER_SOURCE_MAPS_WAIVER: not-required
+  KERNEL_VERBOSE_DIAGNOSTICS: 'false'
+  CACHE_SCHEMA_VERSION: '1'
+  COMPOSITION_HASH: auto
+  RUNTIME_WRITABLE_ROOT: /tmp/winzard-stage3-parallel
+  WORKER_CONCURRENCY: '4'
+  WORKER_VISIBILITY_TIMEOUT_MS: '60000'
+  WORKER_SHUTDOWN_GRACE_MS: '30000'
+  WORKER_POLL_INTERVAL_MS: '1000'
+
+jobs:
+  core:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+        with: { ref: '${{ env.CANDIDATE_SHA }}', fetch-depth: 0 }
+      - uses: pnpm/action-setup@v4
+        with: { version: 11.13.1 }
+      - uses: actions/setup-node@v6
+        with: { node-version-file: .node-version, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Configure key
+        shell: bash
+        run: |
+          printf 'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=' >> "$GITHUB_ENV"
+          printf '%s' '${{ github.repository_id }}:${{ env.CANDIDATE_SHA }}' | openssl dgst -sha256 -binary | base64 -w0 >> "$GITHUB_ENV"
+          printf '\n' >> "$GITHUB_ENV"
+      - name: Core and fresh checkout
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            pnpm verify:core
+            pnpm test:component
+            rm -f apps/reference/.env.local templates/minimal/.env.local templates/webapp/.env.local
+            env -u CI -u APP_URL -u APP_NAME -u APP_STAGE -u LOG_LEVEL -u NEXT_PUBLIC_APP_NAME -u NEXT_SERVER_ACTIONS_ENCRYPTION_KEY pnpm build
+            test -f apps/reference/.env.local
+            test -f templates/minimal/.env.local
+            test -f templates/webapp/.env.local
+          } 2>&1 | tee /tmp/stage3-parallel-core.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: stage3-parallel-core, path: /tmp/stage3-parallel-core.log, if-no-files-found: error }
+
+  database:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env: { POSTGRES_DB: winzard_test, POSTGRES_USER: winzard, POSTGRES_PASSWORD: winzard_test_only }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U winzard -d winzard_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://winzard:winzard_test_only@127.0.0.1:5432/winzard_test?schema=public
+      DATABASE_POOL_MAX: '10'
+      DATABASE_CONNECTION_TIMEOUT_MS: '5000'
+    steps:
+      - uses: actions/checkout@v6
+        with: { ref: '${{ env.CANDIDATE_SHA }}', fetch-depth: 0 }
+      - uses: pnpm/action-setup@v4
+        with: { version: 11.13.1 }
+      - uses: actions/setup-node@v6
+        with: { node-version-file: .node-version, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Configure key
+        shell: bash
+        run: |
+          printf 'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=' >> "$GITHUB_ENV"
+          printf '%s' '${{ github.repository_id }}:${{ env.CANDIDATE_SHA }}' | openssl dgst -sha256 -binary | base64 -w0 >> "$GITHUB_ENV"
+          printf '\n' >> "$GITHUB_ENV"
+      - name: Database and persistence
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            pnpm db:validate:webapp
+            pnpm db:generate:webapp
+            pnpm db:migrate:deploy:webapp
+            pnpm verify:database
+            pnpm --dir templates/webapp test:integration
+            pnpm --dir templates/webapp exec tsx tools/capture-outbox-query-plan.ts --output=/tmp/outbox-claim.query-plan.json --verify=tests/evidence/outbox-claim.query-plan.json
+          } 2>&1 | tee /tmp/stage3-parallel-database.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage3-parallel-database
+          path: |
+            /tmp/stage3-parallel-database.log
+            /tmp/outbox-claim.query-plan.json
+          if-no-files-found: warn
+
+  browser:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      APP_URL: http://127.0.0.1:3200
+      TRUSTED_HOSTS: 127.0.0.1:3200,127.0.0.1,localhost:3200,localhost,[::1]
+      SERVER_ACTION_ALLOWED_ORIGINS: 127.0.0.1:3200,localhost:3200
+      PLAYWRIGHT_PORT: '3200'
+    steps:
+      - uses: actions/checkout@v6
+        with: { ref: '${{ env.CANDIDATE_SHA }}', fetch-depth: 0 }
+      - uses: pnpm/action-setup@v4
+        with: { version: 11.13.1 }
+      - uses: actions/setup-node@v6
+        with: { node-version-file: .node-version, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Configure key
+        shell: bash
+        run: |
+          printf 'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=' >> "$GITHUB_ENV"
+          printf '%s' '${{ github.repository_id }}:${{ env.CANDIDATE_SHA }}' | openssl dgst -sha256 -binary | base64 -w0 >> "$GITHUB_ENV"
+          printf '\n' >> "$GITHUB_ENV"
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Browser and accessibility
+        shell: bash
+        run: pnpm test:e2e 2>&1 | tee /tmp/stage3-parallel-browser.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage3-parallel-browser
+          path: |
+            /tmp/stage3-parallel-browser.log
+            playwright-report
+            test-results
+          if-no-files-found: warn
+
+  runtime-security:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NODE_ENV: production
+      APP_URL: https://app.example.test
+      APP_NAME: Winzard Reference Runtime Smoke
+      APP_STAGE: staging
+      NEXT_PUBLIC_APP_NAME: Winzard Reference Runtime Smoke
+      TRUSTED_HOSTS: app.example.test
+      SERVER_ACTION_ALLOWED_ORIGINS: app.example.test
+      RUNTIME_WRITABLE_ROOT: /tmp/winzard-runtime-security
+    steps:
+      - uses: actions/checkout@v6
+        with: { ref: '${{ env.CANDIDATE_SHA }}', fetch-depth: 0 }
+      - uses: pnpm/action-setup@v4
+        with: { version: 11.13.1 }
+      - uses: actions/setup-node@v6
+        with: { node-version-file: .node-version, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Configure key
+        shell: bash
+        run: |
+          printf 'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=' >> "$GITHUB_ENV"
+          printf '%s' '${{ github.repository_id }}:${{ env.CANDIDATE_SHA }}' | openssl dgst -sha256 -binary | base64 -w0 >> "$GITHUB_ENV"
+          printf '\n' >> "$GITHUB_ENV"
+      - name: Runtime security
+        shell: bash
+        run: |
+          set -o pipefail
+          { pnpm build && pnpm test:runtime:readonly; } 2>&1 | tee /tmp/stage3-parallel-runtime.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: stage3-parallel-runtime, path: /tmp/stage3-parallel-runtime.log, if-no-files-found: error }
+
+  reproducibility:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with: { ref: '${{ env.CANDIDATE_SHA }}', fetch-depth: 0 }
+      - uses: pnpm/action-setup@v4
+        with: { version: 11.13.1 }
+      - uses: actions/setup-node@v6
+        with: { node-version-file: .node-version, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Configure key
+        shell: bash
+        run: |
+          printf 'NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=' >> "$GITHUB_ENV"
+          printf '%s' '${{ github.repository_id }}:${{ env.CANDIDATE_SHA }}' | openssl dgst -sha256 -binary | base64 -w0 >> "$GITHUB_ENV"
+          printf '\n' >> "$GITHUB_ENV"
+      - name: Reproducibility
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            rm -rf /tmp/winzard-repro-a
+            pnpm build
+            mv apps/reference/.next /tmp/winzard-repro-a
+            pnpm build
+            mv /tmp/winzard-repro-a apps/reference/.next-repro-a
+            pnpm forge build:reproducibility --project apps/reference --artifact .next-repro-a --compare .next
+          } 2>&1 | tee /tmp/stage3-parallel-repro.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: stage3-parallel-repro, path: /tmp/stage3-parallel-repro.log, if-no-files-found: error }
+
+  record:
+    if: always() && github.actor != 'github-actions[bot]'
+    needs: [core, database, browser, runtime-security, reproducibility]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with: { ref: agent/testing-platform-v1-rc-isolated, fetch-depth: 0 }
+      - name: Write matrix result
+        shell: python
+        env:
+          CORE: ${{ needs.core.result }}
+          DATABASE: ${{ needs.database.result }}
+          BROWSER: ${{ needs.browser.result }}
+          RUNTIME: ${{ needs.runtime-security.result }}
+          REPRO: ${{ needs.reproducibility.result }}
+        run: |
+          import json, os
+          from pathlib import Path
+          result = {
+              'candidate': os.environ['CANDIDATE_SHA'],
+              'core': os.environ['CORE'],
+              'database': os.environ['DATABASE'],
+              'browser': os.environ['BROWSER'],
+              'runtimeSecurity': os.environ['RUNTIME'],
+              'reproducibility': os.environ['REPRO'],
+          }
+          Path('stage3-parallel-result.json').write_text(json.dumps(result, indent=2) + '\n')
+      - name: Commit matrix result
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add stage3-parallel-result.json
+          git commit -m "test(testing): record parallel release-candidate matrix"
+          git pull --rebase origin agent/testing-platform-v1-rc-isolated
+          git push origin HEAD:agent/testing-platform-v1-rc-isolated
