@@ -7,10 +7,10 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  apply-stage3-fixes:
+  prepare-stage3-fixes:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -31,18 +31,29 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Apply non-workflow Stage 3 corrections
+      - name: Apply Stage 3 corrections in workspace
         shell: python
         run: |
           import json
           from pathlib import Path
 
-          documentation = Path('docs/development/persistence-development-checks.md')
-          source = documentation.read_text().replace(
-              'postgresql://winzard:winzard_dev_only@127.0.0.1:5432/winzard?schema=public',
-              'postgresql://winzard:winzard_test_only@127.0.0.1:5432/winzard_test?schema=public',
-          )
-          documentation.write_text(source)
+          replacements = {
+              'POSTGRES_DB: winzard\n': 'POSTGRES_DB: winzard_test\n',
+              'POSTGRES_PASSWORD: winzard_dev_only\n': 'POSTGRES_PASSWORD: winzard_test_only\n',
+              'pg_isready -U winzard -d winzard': 'pg_isready -U winzard -d winzard_test',
+              'postgresql://winzard:winzard_dev_only@127.0.0.1:5432/winzard?schema=public':
+                  'postgresql://winzard:winzard_test_only@127.0.0.1:5432/winzard_test?schema=public',
+          }
+          for relative in [
+              '.github/workflows/persistence.yml',
+              '.github/workflows/verify.yml',
+              'docs/development/persistence-development-checks.md',
+          ]:
+              file = Path(relative)
+              source = file.read_text()
+              for old, new in replacements.items():
+                  source = source.replace(old, new)
+              file.write_text(source)
 
           package = Path('package.json')
           data = json.loads(package.read_text())
@@ -73,18 +84,46 @@ jobs:
           )
           playwright.write_text(source)
 
+          testing_workflow = Path('.github/workflows/testing.yml')
+          source = testing_workflow.read_text()
+          old = "  browser-accessibility:\n    runs-on: ubuntu-latest\n    timeout-minutes: 25\n    steps:\n"
+          new = (
+              "  browser-accessibility:\n"
+              "    runs-on: ubuntu-latest\n"
+              "    timeout-minutes: 25\n"
+              "    env:\n"
+              "      APP_URL: http://127.0.0.1:3200\n"
+              "      TRUSTED_HOSTS: 127.0.0.1:3200,127.0.0.1,localhost:3200,localhost,[::1]\n"
+              "      SERVER_ACTION_ALLOWED_ORIGINS: 127.0.0.1:3200,localhost:3200\n"
+              "      PLAYWRIGHT_PORT: '3200'\n"
+              "    steps:\n"
+          )
+          if old not in source and 'PLAYWRIGHT_PORT:' not in source:
+              raise SystemExit('browser-accessibility insertion point not found')
+          testing_workflow.write_text(source.replace(old, new))
+
       - name: Regenerate canonical evidence
         run: |
           pnpm forge http:contracts --project apps/reference
           pnpm forge test:docs --project .
+          pnpm forge test:check --json --project . > stage3-test-check.json || true
+          git diff --binary > stage3-corrections.patch
 
-      - name: Commit non-workflow Stage 3 corrections
-        shell: bash
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add playwright.config.ts apps/reference/docs/90-generated/delivery \
-            docs/90-generated/testing package.json pnpm-lock.yaml \
+      - name: Upload canonical Stage 3 corrections
+        uses: actions/upload-artifact@v4
+        with:
+          name: testing-stage3-corrections-${{ github.run_id }}
+          path: |
+            .github/workflows/persistence.yml
+            .github/workflows/verify.yml
+            .github/workflows/testing.yml
+            playwright.config.ts
+            apps/reference/docs/90-generated/delivery
+            docs/90-generated/testing
             docs/development/persistence-development-checks.md
-          git commit -m "fix(testing): regenerate evidence and pin dependencies"
-          git push origin HEAD:agent/testing-platform-v1
+            package.json
+            pnpm-lock.yaml
+            stage3-test-check.json
+            stage3-corrections.patch
+          if-no-files-found: error
+          retention-days: 7
