@@ -1,0 +1,58 @@
+name: Testing Dependencies Bootstrap
+
+on:
+  push:
+    branches:
+      - agent/testing-platform-v1
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-lockfile:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v6
+        with:
+          ref: agent/testing-platform-v1
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install testing platform dependencies
+        run: >-
+          pnpm add -D
+          @axe-core/playwright
+          @playwright/test
+          @testing-library/dom
+          @testing-library/react
+          @testing-library/user-event
+          @vitejs/plugin-react
+          @vitest/coverage-v8
+          jsdom
+          vite-tsconfig-paths
+
+      - name: Commit package and lockfile
+        shell: bash
+        run: |
+          if git diff --quiet -- package.json pnpm-lock.yaml; then
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add package.json pnpm-lock.yaml
+          git commit -m "chore: add testing platform dependencies [skip ci]"
+          git push origin HEAD:agent/testing-platform-v1
