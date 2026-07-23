@@ -45,14 +45,17 @@ jobs:
           jsdom
           vite-tsconfig-paths
 
-      - name: Commit package and lockfile
+      - name: Generate testing evidence
+        run: pnpm forge test:docs --project .
+
+      - name: Commit generated dependency and testing evidence
         shell: bash
         run: |
-          if git diff --quiet -- package.json pnpm-lock.yaml; then
+          if git diff --quiet -- package.json pnpm-lock.yaml docs/90-generated/testing; then
             exit 0
           fi
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add package.json pnpm-lock.yaml
-          git commit -m "chore: add testing platform dependencies [skip ci]"
+          git add package.json pnpm-lock.yaml docs/90-generated/testing
+          git commit -m "chore: update testing platform evidence [skip ci]"
           git push origin HEAD:agent/testing-platform-v1
