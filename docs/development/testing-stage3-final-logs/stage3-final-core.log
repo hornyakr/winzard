@@ -13,52 +13,52 @@ $ vitest run --project unit-node
 
 [1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/winzard/winzard[39m
 
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/configuration.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 130[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/kernel-config/kernel-configuration.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 80[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/http-kernel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 41[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/kernel-configuration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 194[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/composition.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 145[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/project.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 80[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/views.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 122[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/delivery.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 125[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/extensions.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 66[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/documentation.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 2849[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/contracts.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 193[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/local-environment.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 62[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/extension-lifecycle.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 76[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/forms.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 83[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/kernel.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 259[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/routing.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 156[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/app/api/lucky/number/routing.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 42[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/events-runtime.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 79[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/request-context.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 12[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/persistence.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 136[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/extension-schema.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 48[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/proxy.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 17[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/delivery-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/events.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 77[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/get-lucky-number.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 11[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/events/dispatcher.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.actions.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 56[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/config/tests/app-env.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 18[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/request-body.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 41[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.form.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 41[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/contracts/random-integer-generator.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 22[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/event-dispatch.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 14[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/routing.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 15[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/composition.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.presenter.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/kernel-config/kernel-configuration.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 67[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/configuration.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 132[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/http-kernel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 34[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/kernel-configuration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 185[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/composition.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 139[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/project.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 86[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/views.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 102[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/delivery.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 102[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/extensions.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 73[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/documentation.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 2764[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/contracts.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 186[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/local-environment.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 44[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/extension-lifecycle.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 103[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/forms.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 82[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/kernel.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 209[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/routing.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 136[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/app/api/lucky/number/routing.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/events-runtime.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 80[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/request-context.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/persistence.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 149[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/extension-schema.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 34[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/events.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 76[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/delivery-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/proxy.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/get-lucky-number.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/events/dispatcher.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.actions.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 46[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/config/tests/app-env.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/request-body.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 60[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.form.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/contracts/random-integer-generator.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/event-dispatch.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/routing.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/lucky-number.presenter.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/composition.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
  [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/generate-lucky-number.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/response-policy.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 45[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/node-crypto-random-integer-generator.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 37[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/app/api/lucky/number/route.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 18[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/composition/composition.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/http/response-policy.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/modules/demo/lucky-number/node-crypto-random-integer-generator.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/app/api/lucky/number/route.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m apps/reference/tests/unit/platform/composition/composition.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 21[2mms[22m[39m
  [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/fixtures/testing-project/tests/unit/catalog.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m41 passed[39m[22m[90m (41)[39m
 [2m      Tests [22m [1m[32m229 passed[39m[22m[90m (229)[39m
-[2m   Start at [22m 07:46:04
-[2m   Duration [22m 7.10s[2m (transform 2.17s, setup 0ms, import 8.10s, tests 5.44s, environment 6ms)[22m
+[2m   Start at [22m 07:47:56
+[2m   Duration [22m 6.95s[2m (transform 2.29s, setup 0ms, import 8.10s, tests 5.22s, environment 5ms)[22m
 
 $ vitest run --project contract-node
 [33mThe plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the [1mresolve.tsconfigPaths[22m option. You can remove the plugin and set [1mresolve.tsconfigPaths: true[22m in your Vite config instead.[39m
@@ -66,12 +66,12 @@ $ vitest run --project contract-node
 
 [1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/winzard/winzard[39m
 
- [32m✓[39m [30m[45m contract-node [49m[39m packages/forge/tests/testing.contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m [30m[45m contract-node [49m[39m packages/forge/tests/testing.contract.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 34[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m2 passed[39m[22m[90m (2)[39m
-[2m   Start at [22m 07:46:12
-[2m   Duration [22m 543ms[2m (transform 115ms, setup 0ms, import 358ms, tests 36ms, environment 0ms)[22m
+[2m   Start at [22m 07:48:04
+[2m   Duration [22m 517ms[2m (transform 117ms, setup 0ms, import 351ms, tests 34ms, environment 0ms)[22m
 
 $ pnpm forge test:check --project . && pnpm forge test:docs --check --project .
 $ tsx packages/forge/src/cli-router.ts test:check --project .
@@ -178,14 +178,14 @@ $ vitest run packages/forge/tests/extensions.test.ts packages/forge/tests/extens
 
 [1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/winzard/winzard[39m
 
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/extension-schema.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 30[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/extension-lifecycle.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 76[2mms[22m[39m
- [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/extensions.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 46[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/extension-schema.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 40[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/extension-lifecycle.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 81[2mms[22m[39m
+ [32m✓[39m [30m[45m unit-node [49m[39m packages/forge/tests/extensions.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 49[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m3 passed[39m[22m[90m (3)[39m
 [2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
-[2m   Start at [22m 07:47:14
-[2m   Duration [22m 438ms[2m (transform 323ms, setup 0ms, import 495ms, tests 152ms, environment 1ms)[22m
+[2m   Start at [22m 07:49:04
+[2m   Duration [22m 408ms[2m (transform 265ms, setup 0ms, import 457ms, tests 170ms, environment 0ms)[22m
 
 $ pnpm forge view:check --project apps/reference && pnpm forge view:contracts --check --project apps/reference && pnpm forge view:assets --check --project apps/reference
 $ tsx packages/forge/src/cli-router.ts view:check --project apps/reference
@@ -266,20 +266,20 @@ PASS: composition:docs --check
 
 [1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/winzard/winzard/templates/minimal[39m
 
- [32m✓[39m tests/unit/platform/http/http-kernel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 36[2mms[22m[39m
- [32m✓[39m tests/unit/platform/http/proxy.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 20[2mms[22m[39m
- [32m✓[39m tests/unit/platform/kernel-config/kernel-configuration.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 88[2mms[22m[39m
- [32m✓[39m tests/unit/platform/http/delivery-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
- [32m✓[39m tests/unit/platform/http/request-context.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 42[2mms[22m[39m
- [32m✓[39m tests/unit/platform/http/request-body.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 42[2mms[22m[39m
- [32m✓[39m tests/unit/platform/http/request-context-isolation.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
- [32m✓[39m tests/unit/platform/http/response-policy.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/proxy.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/http-kernel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 34[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/kernel-config/kernel-configuration.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 77[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/delivery-contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/request-context.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/request-body.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 55[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/request-context-isolation.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/unit/platform/http/response-policy.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 36[2mms[22m[39m
  [32m✓[39m tests/unit/platform/http/kernel-contracts.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m9 passed[39m[22m[90m (9)[39m
 [2m      Tests [22m [1m[32m39 passed[39m[22m[90m (39)[39m
-[2m   Start at [22m 07:47:48
-[2m   Duration [22m 1.11s[2m (transform 476ms, setup 0ms, import 1.10s, tests 287ms, environment 2ms)[22m
+[2m   Start at [22m 07:49:36
+[2m   Duration [22m 1.06s[2m (transform 503ms, setup 0ms, import 1.06s, tests 276ms, environment 1ms)[22m
 
 Generating route types...
 ✓ Types generated successfully
