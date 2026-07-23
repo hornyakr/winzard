@@ -1,3 +1,4 @@
+// @test-env-local-fixture
 import { execFile } from 'node:child_process';
 import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';

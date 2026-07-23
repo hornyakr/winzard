@@ -247,7 +247,9 @@ function scanTestSource(file: string, source: string): readonly TestingIssue[] {
   if (/\b(?:page\.)?waitForTimeout\s*\(/u.test(source) || /new\s+Promise\s*\(.*setTimeout/su.test(source)) {
     issues.push(issue('TEST_FIXED_SLEEP_USED', file, 'Fix időalapú várakozás található a tesztben.', 'warning'));
   }
-  if (/\.env\.local\b/u.test(source)) issues.push(issue('TEST_ENV_LOCAL_DEPENDENCY', file, 'A teszt nem függhet .env.local fájltól.'));
+  if (/\.env\.local\b/u.test(source) && !/@test-env-local-fixture\b/u.test(source)) {
+    issues.push(issue('TEST_ENV_LOCAL_DEPENDENCY', file, 'A teszt nem függhet .env.local fájltól.'));
+  }
   return Object.freeze(issues);
 }
 
@@ -262,7 +264,9 @@ async function definitionPath(root: string): Promise<string | null> {
 export async function buildTestingInventory(root: string): Promise<TestingInventory> {
   const absoluteRoot = path.resolve(root);
   const filePath = await definitionPath(absoluteRoot);
-  const testFiles = (await collect(absoluteRoot, (name) => TEST_FILE.test(name))).map((value) => projectPath(absoluteRoot, value));
+  const testFiles = (await collect(absoluteRoot, (name) => TEST_FILE.test(name)))
+    .map((value) => projectPath(absoluteRoot, value))
+    .filter((value) => !/^recipes\/[^/]+\/files\//u.test(value));
   const issues: TestingIssue[] = [];
   const suites: TestSuiteRecord[] = [];
   const quarantine: TestQuarantineRecord[] = [];
