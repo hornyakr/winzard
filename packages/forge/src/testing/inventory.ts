@@ -135,8 +135,9 @@ function globExpression(glob: string): RegExp {
     const character = glob[index] ?? '';
     const next = glob[index + 1] ?? '';
     if (character === '*' && next === '*') {
-      output += '.*';
-      index += 1;
+      const slash = glob[index + 2] === '/';
+      output += slash ? '(?:.*/)?' : '.*';
+      index += slash ? 2 : 1;
     } else if (character === '*') output += '[^/]*';
     else if (character === '?') output += '[^/]';
     else output += character.replace(/[|\\{}()[\]^$+?.]/gu, '\\$&');
