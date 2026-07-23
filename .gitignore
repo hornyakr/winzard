@@ -3,6 +3,9 @@
 **/.next/
 /out/
 /coverage/
+/playwright-report/
+/test-results/
+/playwright/.auth/
 .env*
 !**/.env.example
 !**/.env.test
