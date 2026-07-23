@@ -102,6 +102,26 @@ jobs:
               raise SystemExit('browser-accessibility insertion point not found')
           testing_workflow.write_text(source.replace(old, new))
 
+          inventory = Path('packages/forge/src/testing/inventory.ts')
+          source = inventory.read_text().replace(
+              "const testFiles = (await collect(absoluteRoot, (name) => TEST_FILE.test(name))).map((value) => projectPath(absoluteRoot, value));",
+              "const testFiles = (await collect(absoluteRoot, (name) => TEST_FILE.test(name)))\n    .map((value) => projectPath(absoluteRoot, value))\n    .filter((value) => !/^recipes\\/[^/]+\\/files\\//u.test(value));",
+          ).replace(
+              "if (/\\.env\\.local\\b/u.test(source)) issues.push(issue('TEST_ENV_LOCAL_DEPENDENCY', file, 'A teszt nem függhet .env.local fájltól.'));",
+              "if (/\\.env\\.local\\b/u.test(source) && !/@test-env-local-fixture\\b/u.test(source)) {\n    issues.push(issue('TEST_ENV_LOCAL_DEPENDENCY', file, 'A teszt nem függhet .env.local fájltól.'));\n  }",
+          )
+          inventory.write_text(source)
+
+          for relative in [
+              'packages/forge/tests/configuration.test.ts',
+              'packages/forge/tests/local-environment.test.ts',
+          ]:
+              file = Path(relative)
+              source = file.read_text()
+              marker = '// @test-env-local-fixture\n'
+              if marker not in source:
+                  file.write_text(marker + source)
+
       - name: Regenerate canonical evidence
         run: |
           pnpm forge http:contracts --project apps/reference
@@ -121,6 +141,9 @@ jobs:
             apps/reference/docs/90-generated/delivery
             docs/90-generated/testing
             docs/development/persistence-development-checks.md
+            packages/forge/src/testing/inventory.ts
+            packages/forge/tests/configuration.test.ts
+            packages/forge/tests/local-environment.test.ts
             package.json
             pnpm-lock.yaml
             stage3-test-check.json
