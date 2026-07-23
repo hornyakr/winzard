@@ -60,6 +60,23 @@ jobs:
               "  'testing-core': { all: ['testing.definition.ts'], requires: ['forge'] },",
               "  'testing-core': { all: ['testing.definition.ts'] },",
           )
+          if "import { buildTestingInventory } from '../testing/inventory';" not in source:
+              source = source.replace(
+                  "import { runViewChecks } from '../views/checks';",
+                  "import { buildTestingInventory } from '../testing/inventory';\nimport { runViewChecks } from '../views/checks';",
+              )
+          testing_block = """  if (enabled.has('testing-core')) {
+            const testing = await buildTestingInventory(root);
+            failures.push(...testing.issues
+              .filter(({ severity }) => severity === 'error')
+              .map(({ code, file, message }) => ({ code, file, message })));
+          }
+          """
+          anchor = "  if (enabled.has('prisma-postgresql')) failures.push(...(await checkPrismaConfig(root)));\n"
+          if testing_block not in source:
+              if anchor not in source:
+                  raise SystemExit('runProjectChecks insertion point not found')
+              source = source.replace(anchor, testing_block + anchor)
           if "  'testing-core':" not in source:
               raise SystemExit('CAPABILITY_REQUIREMENTS insertion point not found')
           checks.write_text(source)
