@@ -7,10 +7,10 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  prepare-stage3-fixes:
+  apply-stage3-fixes:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -31,7 +31,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Apply Stage 3 corrections in workspace
+      - name: Apply Stage 3 corrections
         shell: python
         run: |
           import json
@@ -122,31 +122,26 @@ jobs:
               if marker not in source:
                   file.write_text(marker + source)
 
-      - name: Regenerate canonical evidence
+      - name: Regenerate and verify canonical evidence
         run: |
           pnpm forge http:contracts --project apps/reference
           pnpm forge test:docs --project .
-          pnpm forge test:check --json --project . > stage3-test-check.json || true
-          git diff --binary > stage3-corrections.patch
+          pnpm forge http:contracts --check --project apps/reference
+          pnpm forge test:check --project .
+          pnpm forge test:docs --check --project .
 
-      - name: Upload canonical Stage 3 corrections
-        uses: actions/upload-artifact@v4
-        with:
-          name: testing-stage3-corrections-${{ github.run_id }}
-          path: |
-            .github/workflows/persistence.yml
-            .github/workflows/verify.yml
-            .github/workflows/testing.yml
-            playwright.config.ts
-            apps/reference/docs/90-generated/delivery
-            docs/90-generated/testing
-            docs/development/persistence-development-checks.md
-            packages/forge/src/testing/inventory.ts
-            packages/forge/tests/configuration.test.ts
-            packages/forge/tests/local-environment.test.ts
-            package.json
-            pnpm-lock.yaml
-            stage3-test-check.json
-            stage3-corrections.patch
-          if-no-files-found: error
-          retention-days: 7
+      - name: Commit Stage 3 corrections
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .github/workflows/persistence.yml .github/workflows/verify.yml \
+            .github/workflows/testing.yml playwright.config.ts \
+            apps/reference/docs/90-generated/delivery docs/90-generated/testing \
+            docs/development/persistence-development-checks.md \
+            packages/forge/src/testing/inventory.ts \
+            packages/forge/tests/configuration.test.ts \
+            packages/forge/tests/local-environment.test.ts \
+            package.json pnpm-lock.yaml
+          git commit -m "fix(testing): align final Stage 3 contracts"
+          git push origin HEAD:agent/testing-platform-v1
