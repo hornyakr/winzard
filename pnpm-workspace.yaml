@@ -1,8 +1,0 @@
-packages: []
-
-allowBuilds:
-  sharp: true
-  unrs-resolver: true
-  esbuild: true
-  '@prisma/engines': true
-  prisma: true
