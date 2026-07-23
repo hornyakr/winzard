@@ -12,6 +12,8 @@ The candidate must pass the complete repository matrix on one unchanged branch h
 - Forms;
 - Fresh Checkout Build.
 
+The candidate head remains unchanged while this matrix is evaluated.
+
 ## Repair evidence
 
 Stage 3 corrected:
