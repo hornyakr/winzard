@@ -4,7 +4,7 @@
 
 # View contracts
 
-Inventory SHA-256: `1ea190fbf32feed6d1186d0890c1afad307c945ece7a721642296bf1dd0917eb`
+Inventory SHA-256: `dc983507f2404de5f8d14d8ccc4a5830c7711f10ef69d1924906fc2f9711e00d`
 
 | View | File | Props type | Props | View models | Route builders | Tests |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -18,4 +18,5 @@ Inventory SHA-256: `1ea190fbf32feed6d1186d0890c1afad307c945ece7a721642296bf1dd09
 | `LuckyNumberError` | `src/app/(public)/lucky/number/error.tsx` | `LuckyNumberErrorProps` | `error`<br>`reset` | - | - | - |
 | `LuckyNumberNotFound` | `src/app/(public)/lucky/number/not-found.tsx` | `-` | - | - | `@/modules/demo/lucky-number/presentation/lucky-number.routes#luckyNumberRoutes` | - |
 | `LuckyNumberForm` | `src/modules/demo/lucky-number/presentation/lucky-number-form.tsx` | `-` | - | - | - | - |
+| `LuckyNumberSubmitButton` | `src/modules/demo/lucky-number/presentation/lucky-number-submit-button.tsx` | `-` | - | - | - | - |
 | `LuckyNumberView` | `src/modules/demo/lucky-number/presentation/lucky-number-view.tsx` | `LuckyNumberViewProps` | `model` | `LuckyNumberViewModel` | - | `tests/unit/modules/demo/lucky-number/lucky-number.presenter.test.ts` |

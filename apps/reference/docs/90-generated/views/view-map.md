@@ -4,7 +4,7 @@
 
 # View map
 
-Inventory SHA-256: `1ea190fbf32feed6d1186d0890c1afad307c945ece7a721642296bf1dd0917eb`
+Inventory SHA-256: `dc983507f2404de5f8d14d8ccc4a5830c7711f10ef69d1924906fc2f9711e00d`
 
 | Kind | Boundary | Name | Route | File | Async |
 | --- | --- | --- | --- | --- | --- |
@@ -18,4 +18,5 @@ Inventory SHA-256: `1ea190fbf32feed6d1186d0890c1afad307c945ece7a721642296bf1dd09
 | error | client | `LuckyNumberError` | `/lucky/number` | `src/app/(public)/lucky/number/error.tsx` | no |
 | not-found | server | `LuckyNumberNotFound` | `/lucky/number` | `src/app/(public)/lucky/number/not-found.tsx` | no |
 | component | client | `LuckyNumberForm` | `-` | `src/modules/demo/lucky-number/presentation/lucky-number-form.tsx` | no |
+| component | client | `LuckyNumberSubmitButton` | `-` | `src/modules/demo/lucky-number/presentation/lucky-number-submit-button.tsx` | no |
 | component | server | `LuckyNumberView` | `-` | `src/modules/demo/lucky-number/presentation/lucky-number-view.tsx` | no |

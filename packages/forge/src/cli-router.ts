@@ -3,6 +3,7 @@ import { runCompositionCli } from './composition/cli';
 import { runContractCli } from './contracts/cli';
 import { runEventCli } from './events/cli';
 import { EXTENSION_COMMANDS, runExtensionCli } from './extensions/cli';
+import { FORM_COMMANDS, runFormCli } from './forms/cli';
 import { PERSISTENCE_COMMANDS, runPersistenceCli } from './persistence/cli';
 
 try {
@@ -12,11 +13,12 @@ try {
     !await runEventCli(args) &&
     !await runCompositionCli(args) &&
     !await runExtensionCli(args) &&
+    !await runFormCli(args) &&
     !await runPersistenceCli(args)
   ) {
     await import('./cli-router-base');
     if ((args[0] ?? 'list') === 'list') {
-      console.log([...EXTENSION_COMMANDS, ...PERSISTENCE_COMMANDS].join('\n'));
+      console.log([...EXTENSION_COMMANDS, ...FORM_COMMANDS, ...PERSISTENCE_COMMANDS].join('\n'));
     }
   }
 } catch (error) {

@@ -4,7 +4,7 @@
 
 # HTTP and UI delivery contracts
 
-Inventory SHA-256: `058d2c009bb1ef79668f6fc212ac7158ef64b94f459428b3f4339a50fa16a11f`
+Inventory SHA-256: `30c9bf90ddc7bdca4c614602f3a11185e6f75ec4981855cdc8d1d9410ede8239`
 
 | Entrypoint | Contract | Context | Auth | Tenant | Input schema | Actor resolver | Authorization | Application operation | Presenter | Output | Response/cache | CSRF | Idempotency | Body limit | Tests |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -14,4 +14,4 @@ Inventory SHA-256: `058d2c009bb1ef79668f6fc212ac7158ef64b94f459428b3f4339a50fa16
 | `src/app/api/health/live/route.ts` | `platform.health.live` | required | public | none | - | - | GET:none | - | - | `response` | health | none | none | - | `tests/e2e/lucky-number.smoke.ts` |
 | `src/app/api/lucky/number/range/[minimum]/[maximum]/route.ts` | `demo.lucky-number.range.api` | required | optional | none | `luckyNumberRangeParamsSchema` | - | GET:none | `demo.queries.getLuckyNumber` | toLuckyNumberResponse | `response` | api-private | none | none | - | `tests/unit/app/api/lucky/number/routing.test.ts` |
 | `src/app/api/lucky/number/route.ts` | `demo.lucky-number.api` | required | optional | none | `luckyNumberRequestSchema` | - | GET:none,POST:demo.lucky-number.generate-custom-range | `demo.commands.generateLuckyNumber`<br>`demo.queries.getLuckyNumber` | toLuckyNumberResponse | `response` | api-private | same-origin | none | 16384 | `tests/e2e/lucky-number.smoke.ts`<br>`tests/unit/app/api/lucky/number/route.test.ts`<br>`tests/unit/app/api/lucky/number/routing.test.ts`<br>`tests/unit/modules/demo/lucky-number/lucky-number.presenter.test.ts` |
-| `src/modules/demo/lucky-number/presentation/lucky-number.actions.ts` | `demo.lucky-number.generate.action` | required | optional | none | `luckyNumberRequestSchema` | `createActionRequestContext` | demo.lucky-number.generate-custom-range | `demo.commands.generateLuckyNumber` | toLuckyNumberResponse | `action-state` | - | framework-origin-plus-session | none | - | `tests/unit/modules/demo/lucky-number/lucky-number.actions.test.ts` |
+| `src/modules/demo/lucky-number/presentation/lucky-number.actions.ts` | `demo.lucky-number.generate.action` | required | optional | none | `luckyNumberFormSchema` | `createActionRequestContext` | demo.lucky-number.generate-custom-range | `demo.commands.generateLuckyNumber` | toGenerateLuckyNumberInput, toLuckyNumberResponse | `action-state` | - | framework-origin-plus-session | none | - | `tests/unit/modules/demo/lucky-number/lucky-number.actions.test.ts` |

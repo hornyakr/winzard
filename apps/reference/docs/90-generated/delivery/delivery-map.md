@@ -4,7 +4,7 @@
 
 # Delivery map
 
-Inventory SHA-256: `058d2c009bb1ef79668f6fc212ac7158ef64b94f459428b3f4339a50fa16a11f`
+Inventory SHA-256: `30c9bf90ddc7bdca4c614602f3a11185e6f75ec4981855cdc8d1d9410ede8239`
 
 | Kind | Method | Route | Entrypoint | Runtime | Contract | Streaming |
 | --- | --- | --- | --- | --- | --- | --- |
